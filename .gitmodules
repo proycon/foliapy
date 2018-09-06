@@ -1,0 +1,4 @@
+[submodule "folia-repo"]
+	path = folia-repo
+	url = https://github.com/proycon/folia.git
+	branch = folia2.0

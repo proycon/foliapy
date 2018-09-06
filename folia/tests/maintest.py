@@ -13,10 +13,7 @@
 #----------------------------------------------------------------
 
 
-from __future__ import print_function
-from __future__ import unicode_literals
-from __future__ import division
-from __future__ import absolute_import
+from __future__ import print_function, unicode_literals, division, absolute_import
 
 import sys
 import os
@@ -27,8 +24,8 @@ import bz2
 import re
 from datetime import datetime
 import lxml.objectify
-from pynlpl.common import u, isstring
-from pynlpl.formats import folia
+from folia.helpers import u, isstring
+import folia.main as folia
 if sys.version < '3':
     from codecs import getwriter
     stderr = getwriter('utf-8')(sys.stderr)
@@ -37,22 +34,15 @@ else:
     stderr = sys.stderr
     stdout = sys.stdout
 
-FOLIARELEASE = "v1.5.1.59"
-#FOLIARELEASE = None #development version, do *NOT* release if this is set!
 
-if os.path.exists('../../../FoLiA'):
-    FOLIAPATH = '../../../FoLiA/'
-elif os.path.exists('../../FoLiA'):
-    FOLIAPATH = '../../FoLiA/'
-elif os.path.exists('../FoLiA'):
-    FOLIAPATH = '../FoLiA/'
+if os.path.exists("folia-repo"):
+    FOLIAPATH = "folia-repo"
+elif os.path.exists("../folia-repo"):
+    FOLIAPATH = "../folia-repo"
+elif os.path.exists("../../folia-repo"):
+    FOLIAPATH = "../../folia-repo"
 else:
-    FOLIAPATH = 'FoLiA'
-    print("Downloading FoLiA",file=sys.stderr)
-    if FOLIARELEASE:
-        os.system("git clone https://github.com/proycon/folia.git FoLiA && cd FoLiA && git checkout tags/" + FOLIARELEASE + ' && cd ..')
-    else:
-        os.system("git clone https://github.com/proycon/folia.git FoLiA")
+    raise Exception("FoLiA repository not found, did you run git submodule init and are you in the test directory?")
 
 if 'TMPDIR' in os.environ:
     TMPDIR = os.environ['TMPDIR']
@@ -101,28 +91,28 @@ class Test1Read(unittest.TestCase):
         """Reading from file"""
         #write example to file
         f = io.open(os.path.join(TMPDIR,'foliatest.xml'),'w',encoding='utf-8')
-        f.write(FOLIAEXAMPLE)
+        f.write(LEGACYEXAMPLE)
         f.close()
 
         doc = folia.Document(file=os.path.join(TMPDIR,'foliatest.xml'))
         self.assertTrue(isinstance(doc,folia.Document))
 
         #sanity check: reading from file must yield the exact same data as reading from string
-        doc2 = folia.Document(string=FOLIAEXAMPLE)
+        doc2 = folia.Document(string=LEGACYEXAMPLE)
         self.assertEqual( doc, doc2)
 
     def test1a_readfromfile(self):
         """Reading from GZ file"""
         #write example to file
         f = gzip.GzipFile(os.path.join(TMPDIR,'foliatest.xml.gz'),'w')
-        f.write(FOLIAEXAMPLE.encode('utf-8'))
+        f.write(LEGACYEXAMPLE.encode('utf-8'))
         f.close()
 
         doc = folia.Document(file=os.path.join(TMPDIR,'foliatest.xml.gz'))
         self.assertTrue(isinstance(doc,folia.Document))
 
         #sanity check: reading from file must yield the exact same data as reading from string
-        doc2 = folia.Document(string=FOLIAEXAMPLE)
+        doc2 = folia.Document(string=LEGACYEXAMPLE)
         self.assertEqual( doc, doc2)
 
 
@@ -130,33 +120,33 @@ class Test1Read(unittest.TestCase):
         """Reading from BZ2 file"""
         #write example to file
         f = bz2.BZ2File(os.path.join(TMPDIR,'foliatest.xml.bz2'),'w')
-        f.write(FOLIAEXAMPLE.encode('utf-8'))
+        f.write(LEGACYEXAMPLE.encode('utf-8'))
         f.close()
 
         doc = folia.Document(file=os.path.join(TMPDIR,'foliatest.xml.bz2'))
         self.assertTrue(isinstance(doc,folia.Document))
 
         #sanity check: reading from file must yield the exact same data as reading from string
-        doc2 = folia.Document(string=FOLIAEXAMPLE)
+        doc2 = folia.Document(string=LEGACYEXAMPLE)
         self.assertEqual( doc, doc2)
 
 
     def test2_readfromstring(self):
         """Reading from string (unicode)"""
-        doc = folia.Document(string=FOLIAEXAMPLE)
+        doc = folia.Document(string=LEGACYEXAMPLE)
         self.assertTrue(isinstance(doc,folia.Document))
 
     def test2b_readfromstring(self):
         """Reading from string (bytes)"""
-        doc = folia.Document(string=FOLIAEXAMPLE.encode('utf-8'))
+        doc = folia.Document(string=LEGACYEXAMPLE.encode('utf-8'))
         self.assertTrue(isinstance(doc,folia.Document))
 
     def test3_readfromstring(self):
         """Reading from pre-parsed XML tree (as unicode(Py2)/str(Py3) obj)"""
         if sys.version < '3':
-            doc = folia.Document(tree=ElementTree.parse(StringIO(FOLIAEXAMPLE.encode('utf-8'))))
+            doc = folia.Document(tree=ElementTree.parse(StringIO(LEGACYEXAMPLE.encode('utf-8'))))
         else:
-            doc = folia.Document(tree=ElementTree.parse(BytesIO(FOLIAEXAMPLE.encode('utf-8'))))
+            doc = folia.Document(tree=ElementTree.parse(BytesIO(LEGACYEXAMPLE.encode('utf-8'))))
         self.assertTrue(isinstance(doc,folia.Document))
 
 
@@ -170,7 +160,7 @@ class Test1Read(unittest.TestCase):
 class Test2Sanity(unittest.TestCase):
 
     def setUp(self):
-        self.doc = folia.Document(string=FOLIAEXAMPLE, textvalidation=True)
+        self.doc = folia.Document(string=LEGACYEXAMPLE, textvalidation=True)
 
     def test000_count_text(self):
         """Sanity check - One text """
@@ -935,7 +925,7 @@ class Test2Sanity(unittest.TestCase):
     def test100a_sanity(self):
         """Sanity Check - A - Checking output file against input (should be equal)"""
         f = io.open(os.path.join(TMPDIR,'foliatest.xml'),'w',encoding='utf-8')
-        f.write(FOLIAEXAMPLE)
+        f.write(LEGACYEXAMPLE)
         f.close()
         self.doc.save(os.path.join(TMPDIR,'foliatest100.xml'))
         self.assertEqual(  folia.Document(file=os.path.join(TMPDIR,'foliatest100.xml'),debug=False), self.doc )
@@ -943,7 +933,7 @@ class Test2Sanity(unittest.TestCase):
     def test100b_sanity_xmldiff(self):
         """Sanity Check - B - Checking output file against input using xmldiff (should be equal)"""
         f = io.open(os.path.join(TMPDIR,'foliatest.xml'),'w',encoding='utf-8')
-        f.write(FOLIAEXAMPLE)
+        f.write(LEGACYEXAMPLE)
         f.close()
         #use xmldiff to compare the two:
         self.doc.save(os.path.join(TMPDIR,'foliatest100.xml'))
@@ -1684,7 +1674,7 @@ class Test2Sanity(unittest.TestCase):
 class Test4Edit(unittest.TestCase):
 
     def setUp(self):
-        self.doc = folia.Document(string=FOLIAEXAMPLE, textvalidation=True)
+        self.doc = folia.Document(string=LEGACYEXAMPLE, textvalidation=True)
 
     def test001_addsentence(self):
         """Edit Check - Adding a sentence to first paragraph (verbose)"""
@@ -2380,7 +2370,7 @@ class Test5Correction(unittest.TestCase):
 
     def test005_reusecorrection(self):
         """Correction - Re-using a correction with only suggestions"""
-        self.doc = folia.Document(string=FOLIAEXAMPLE)
+        self.doc = folia.Document(string=LEGACYEXAMPLE)
 
         w = self.doc.index['WR-P-E-J-0000000001.p.1.s.8.w.11'] #stippelijn
         w.correct(suggestion='stippellijn', set='corrections',cls='spelling',annotator='testscript', annotatortype=folia.AnnotatorType.AUTO)
@@ -2437,7 +2427,7 @@ class Test5Correction(unittest.TestCase):
 
 class Test6Query(unittest.TestCase):
     def setUp(self):
-        self.doc = folia.Document(string=FOLIAEXAMPLE, textvalidation=True)
+        self.doc = folia.Document(string=LEGACYEXAMPLE, textvalidation=True)
 
     def test001_findwords_simple(self):
         """Querying - Find words (simple)"""
@@ -2685,11 +2675,11 @@ class Test8Validation(unittest.TestCase):
 class Test9Validation(unittest.TestCase):
     def test001_deepvalidation(self):
         """Validation - Deep Validation"""
-        folia.Document(file=os.path.join(FOLIAPATH,'test/example.deep.xml'), deepvalidation=True, textvalidation=True, allowadhocsets=True)
+        folia.Document(file=os.path.join(FOLIAPATH,'examples/frog-deep.1.3.2.folia.xml'), deepvalidation=True, textvalidation=True, allowadhocsets=True)
 
     def test002_textvalidation(self):
         """Validation - Text Validation"""
-        folia.Document(file=os.path.join(FOLIAPATH,'test/example.textvalidation.xml'), textvalidation=True)
+        folia.Document(file=os.path.join(FOLIAPATH,'examples/textvalidation.1.5.0.folia.xml'), textvalidation=True)
 
     def test003_invalid_text_misspelled(self):
         """Validation - Invalid Text (Misspelled word)"""
@@ -2763,7 +2753,7 @@ het    ook   ?
     </p>
   </text>
 </FoLiA>""".format(version=folia.FOLIAVERSION, generator='pynlpl.formats.folia-v' + folia.LIBVERSION)
-        folia.Document(file=os.path.join(FOLIAPATH,'test/example.textvalidation.xml'), textvalidation=True)
+        folia.Document(file=os.path.join(FOLIAPATH,'examples/textvalidation.1.5.0.folia.xml'), textvalidation=True)
 
     def test006_multiple_textclasses(self):
         """Validation - Invalid Text (Multiple classes)"""
@@ -3958,14 +3948,14 @@ het    ook   ?
         self.assertEqual( doc['test.s'].text(), "Dit\n         is een rare test.\n         ")
 
 
-with io.open(FOLIAPATH + '/test/example.xml', 'r',encoding='utf-8') as foliaexample_f:
-    FOLIAEXAMPLE = foliaexample_f.read()
+with io.open(os.path.join(FOLIAPATH, 'examples/full-legacy.1.5.folia.xml'), 'r',encoding='utf-8') as foliaexample_f:
+    LEGACYEXAMPLE = foliaexample_f.read()
 
 #We cheat, by setting the generator and version attributes to match the library, so xmldiff doesn't complain when we compare against this reference
-FOLIAEXAMPLE = re.sub(r' version="[^"]*" generator="[^"]*"', ' version="' + folia.FOLIAVERSION + '" generator="pynlpl.formats.folia-v' + folia.LIBVERSION + '"', FOLIAEXAMPLE, re.MULTILINE)
+LEGACYEXAMPLE = re.sub(r' version="[^"]*" generator="[^"]*"', ' version="' + folia.FOLIAVERSION + '" generator="pynlpl.formats.folia-v' + folia.LIBVERSION + '"', LEGACYEXAMPLE, re.MULTILINE)
 
 #Another cheat, alien namespace attributes are ignored by the folia library, strip them so xmldiff doesn't complain
-FOLIAEXAMPLE = re.sub(r' xmlns:alien="[^"]*" alien:attrib="[^"]*"', '', FOLIAEXAMPLE, re.MULTILINE)
+LEGACYEXAMPLE = re.sub(r' xmlns:alien="[^"]*" alien:attrib="[^"]*"', '', LEGACYEXAMPLE, re.MULTILINE)
 
 
 DCOIEXAMPLE="""<?xml version="1.0" encoding="iso-8859-15"?>

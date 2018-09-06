@@ -15,8 +15,8 @@ cd $TESTDIR
 
 GOOD=1
 
-echo "Testing folia">&2
-$PYTHON folia.py
+echo "Testing main library">&2
+$PYTHON maintest.py
 if [ $? -ne 0 ]; then
     echo "Test failed!!!" >&2
     GOOD=0

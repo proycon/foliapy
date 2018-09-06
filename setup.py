@@ -21,7 +21,7 @@ setup(
     license = "GPL",
     keywords = "nlp computational_linguistics folia format",
     url = "https://github.com/proycon/foliapy",
-    packages=['folia','folia.tests'],
+    packages=['folia'],
     long_description=read('README.rst'),
     classifiers=[
         "Development Status :: 5 - Production/Stable",
