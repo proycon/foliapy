@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
 #----------------------------------------------------------------
-# PyNLPl - FoLiA Format Module
+# FoLiA Library for Python
 #   by Maarten van Gompel
 #   Centre for Language Studies
 #   Radboud University Nijmegen
 #
 #   https://proycon.github.io/folia
-#   httsp://github.com/proycon/pynlpl
+#   httsp://github.com/proycon/foliapy
 #   proycon AT anaproy DOT nl
 #
 #   Module for reading, editing and writing FoLiA XML
@@ -32,11 +32,7 @@ import itertools
 import glob
 import os
 import re
-try:
-    import io
-except ImportError:
-    #old-Python 2.6 fallback
-    import codecs as io
+import io
 import multiprocessing
 import bz2
 import gzip
@@ -45,8 +41,8 @@ import random
 
 
 from lxml import etree as ElementTree
-
 from lxml.builder import ElementMaker
+
 if sys.version < '3':
     from StringIO import StringIO #pylint: disable=import-error,wrong-import-order
     from urllib import urlopen #pylint: disable=no-name-in-module,wrong-import-order
@@ -62,12 +58,10 @@ else:
     stderr = sys.stderr
     stdout = sys.stdout
 
-from pynlpl.common import u, isstring
-from pynlpl.formats.foliaset import SetDefinition, DeepValidationError
-import pynlpl.algorithms
+from folia.helpers import u, isstring, sum_to_n
+from folia.foliaset import SetDefinition, DeepValidationError
 
 
-LXE=True #use lxml instead of built-in ElementTree (default)
 
 #foliaspec:version:FOLIAVERSION
 #The FoLiA version
@@ -646,10 +640,10 @@ def parsecommonarguments(object, doc, annotationtype, required, allowed, **kwarg
     #set index
     if object.id and doc:
         if object.id in doc.index:
-            if doc.debug >= 1: print("[PyNLPl FoLiA DEBUG] Duplicate ID not permitted:" + object.id,file=stderr)
+            if doc.debug >= 1: print("[FoLiA DEBUG] Duplicate ID not permitted:" + object.id,file=stderr)
             raise DuplicateIDError("Duplicate ID not permitted: " + object.id)
         else:
-            if doc.debug >= 1: print("[PyNLPl FoLiA DEBUG] Adding to index: " + object.id,file=stderr)
+            if doc.debug >= 1: print("[FoLiA DEBUG] Adding to index: " + object.id,file=stderr)
             doc.index[object.id] = object
 
     #Parse feature attributes (shortcut for feature specification for some elements)
@@ -876,7 +870,7 @@ class AbstractElement(object):
 
     #def __del__(self):
     #    if self.doc and self.doc.debug:
-    #        print >>stderr, "[PyNLPl FoLiA DEBUG] Removing " + repr(self)
+    #        print >>stderr, "[FoLiA DEBUG] Removing " + repr(self)
     #    for child in self.data:
     #        del child
     #    self.doc = None
@@ -1006,11 +1000,11 @@ class AbstractElement(object):
         valid = True
         for cls in self.doc.textclasses:
             if self.hastext(cls, strict=True) and not isinstance(self, (Linebreak, Whitespace)):
-                if self.doc and self.doc.debug: print("[PyNLPl FoLiA DEBUG] Text validation on " + repr(self),file=stderr)
+                if self.doc and self.doc.debug: print("[FoLiA DEBUG] Text validation on " + repr(self),file=stderr)
                 correctionhandling = self.findcorrectionhandling(cls)
                 if correctionhandling is None:
                     #skipping text validation, correction is too complex (nested) to handle for now; just assume valid (benefit of the doubt)
-                    if self.doc and self.doc.debug: print("[PyNLPl FoLiA DEBUG] SKIPPING Text validation on " + repr(self) + ", too complex to handle (nested corrections or inconsistent use)",file=stderr)
+                    if self.doc and self.doc.debug: print("[FoLiA DEBUG] SKIPPING Text validation on " + repr(self) + ", too complex to handle (nested corrections or inconsistent use)",file=stderr)
                     return True #just assume it's valid then
 
                 strictnormtext = self.text(cls,retaintokenisation=False,strict=True, normalize_spaces=True)
@@ -1033,7 +1027,7 @@ class AbstractElement(object):
                 if tc.offset is not None:
                     #we can't validate the reference of this element yet since it may point to higher level elements still being created!! we store it in a buffer that will
                     #be processed by pendingvalidation() after parsing and prior to serialisation
-                    if self.doc and self.doc.debug: print("[PyNLPl FoLiA DEBUG] Queing element for later offset validation: " + repr(self),file=stderr)
+                    if self.doc and self.doc.debug: print("[FoLiA DEBUG] Queing element for later offset validation: " + repr(self),file=stderr)
                     self.doc.offsetvalidationbuffer.append( (self, cls) )
         return valid
 
@@ -1311,41 +1305,41 @@ class AbstractElement(object):
         """Equality method, tests whether two elements are equal.
 
         Elements are equal if all their attributes and children are equal."""
-        if self.doc and self.doc.debug: print("[PyNLPl FoLiA DEBUG] AbstractElement Equality Check - " + repr(self) + " vs " + repr(other),file=stderr)
+        if self.doc and self.doc.debug: print("[FoLiA DEBUG] AbstractElement Equality Check - " + repr(self) + " vs " + repr(other),file=stderr)
 
         #Check if we are of the same time
         if type(self) != type(other): #pylint: disable=unidiomatic-typecheck
-            if self.doc and self.doc.debug: print("[PyNLPl FoLiA DEBUG] AbstractElement Equality Check - Type mismatch: " + str(type(self)) + " vs " + str(type(other)),file=stderr)
+            if self.doc and self.doc.debug: print("[FoLiA DEBUG] AbstractElement Equality Check - Type mismatch: " + str(type(self)) + " vs " + str(type(other)),file=stderr)
             return False
 
         #Check FoLiA attributes
         if self.id != other.id:
-            if self.doc and self.doc.debug: print("[PyNLPl FoLiA DEBUG] AbstractElement Equality Check - ID mismatch: " + str(self.id) + " vs " + str(other.id),file=stderr)
+            if self.doc and self.doc.debug: print("[FoLiA DEBUG] AbstractElement Equality Check - ID mismatch: " + str(self.id) + " vs " + str(other.id),file=stderr)
             return False
         if self.set != other.set:
-            if self.doc and self.doc.debug: print("[PyNLPl FoLiA DEBUG] AbstractElement Equality Check - Set mismatch: " + str(self.set) + " vs " + str(other.set),file=stderr)
+            if self.doc and self.doc.debug: print("[FoLiA DEBUG] AbstractElement Equality Check - Set mismatch: " + str(self.set) + " vs " + str(other.set),file=stderr)
             return False
         if self.cls != other.cls:
-            if self.doc and self.doc.debug: print("[PyNLPl FoLiA DEBUG] AbstractElement Equality Check - Class mismatch: " + repr(self.cls) + " vs " + repr(other.cls),file=stderr)
+            if self.doc and self.doc.debug: print("[FoLiA DEBUG] AbstractElement Equality Check - Class mismatch: " + repr(self.cls) + " vs " + repr(other.cls),file=stderr)
             return False
         if self.annotator != other.annotator:
-            if self.doc and self.doc.debug: print("[PyNLPl FoLiA DEBUG] AbstractElement Equality Check - Annotator mismatch: " + repr(self.annotator) + " vs " + repr(other.annotator),file=stderr)
+            if self.doc and self.doc.debug: print("[FoLiA DEBUG] AbstractElement Equality Check - Annotator mismatch: " + repr(self.annotator) + " vs " + repr(other.annotator),file=stderr)
             return False
         if self.annotatortype != other.annotatortype:
-            if self.doc and self.doc.debug: print("[PyNLPl FoLiA DEBUG] AbstractElement Equality Check - Annotator mismatch: " + repr(self.annotatortype) + " vs " + repr(other.annotatortype),file=stderr)
+            if self.doc and self.doc.debug: print("[FoLiA DEBUG] AbstractElement Equality Check - Annotator mismatch: " + repr(self.annotatortype) + " vs " + repr(other.annotatortype),file=stderr)
             return False
 
         #Check if we have same amount of children:
         mychildren = list(self)
         yourchildren = list(other)
         if len(mychildren) != len(yourchildren):
-            if self.doc and self.doc.debug: print("[PyNLPl FoLiA DEBUG] AbstractElement Equality Check - Unequal amount of children",file=stderr)
+            if self.doc and self.doc.debug: print("[FoLiA DEBUG] AbstractElement Equality Check - Unequal amount of children",file=stderr)
             return False
 
         #Now check equality of children
         for mychild, yourchild in zip(mychildren, yourchildren):
             if mychild != yourchild:
-                if self.doc and self.doc.debug: print("[PyNLPl FoLiA DEBUG] AbstractElement Equality Check - Child mismatch: " + repr(mychild) + " vs " + repr(yourchild) + " (in " + repr(self) + ", id: " + str(self.id) + ")",file=stderr)
+                if self.doc and self.doc.debug: print("[FoLiA DEBUG] AbstractElement Equality Check - Child mismatch: " + repr(mychild) + " vs " + repr(yourchild) + " (in " + repr(self) + ", id: " + str(self.id) + ")",file=stderr)
                 return False
 
         #looks like we made it! \o/
@@ -2762,7 +2756,7 @@ class AbstractElement(object):
                     args.append(subnode.tail)
             else:
                 if subnode.tag.startswith('{' + NSFOLIA + '}'):
-                    if doc.debug >= 1: print("[PyNLPl FoLiA DEBUG] Processing subnode " + subnode.tag[nslen:],file=stderr)
+                    if doc.debug >= 1: print("[FoLiA DEBUG] Processing subnode " + subnode.tag[nslen:],file=stderr)
                     try:
                         e = doc.parsexml(subnode, Class)
                     except ParseError as e:
@@ -2778,17 +2772,17 @@ class AbstractElement(object):
                     #Dcoi support
                     if Class is Text and subnode.tag[nslendcoi:] == 'body':
                         for subsubnode in subnode:
-                            if doc.debug >= 1: print("[PyNLPl FoLiA DEBUG] Processing DCOI subnode " + subnode.tag[nslendcoi:],file=stderr)
+                            if doc.debug >= 1: print("[FoLiA DEBUG] Processing DCOI subnode " + subnode.tag[nslendcoi:],file=stderr)
                             e = doc.parsexml(subsubnode, Class)
                             if e is not None:
                                 args.append(e)
                     else:
-                        if doc.debug >= 1: print( "[PyNLPl FoLiA DEBUG] Processing DCOI subnode " + subnode.tag[nslendcoi:],file=stderr)
+                        if doc.debug >= 1: print( "[FoLiA DEBUG] Processing DCOI subnode " + subnode.tag[nslendcoi:],file=stderr)
                         e = doc.parsexml(subnode, Class)
                         if e is not None:
                             args.append(e)
                 elif doc.debug >= 1:
-                    print("[PyNLPl FoLiA DEBUG] Ignoring subnode outside of FoLiA namespace: " + subnode.tag,file=stderr)
+                    print("[FoLiA DEBUG] Ignoring subnode outside of FoLiA namespace: " + subnode.tag,file=stderr)
 
 
 
@@ -2841,10 +2835,10 @@ class AbstractElement(object):
             if not AnnotationType.TOKEN in doc.annotationdefaults:
                 doc.declare(AnnotationType.TOKEN, set='http://ilk.uvt.nl/folia/sets/ilktok.foliaset')
 
-        if doc.debug >= 1: print("[PyNLPl FoLiA DEBUG] Found " + node.tag[nslen:],file=stderr)
+        if doc.debug >= 1: print("[FoLiA DEBUG] Found " + node.tag[nslen:],file=stderr)
         instance = Class(doc, *args, **kwargs)
         #if id:
-        #    if doc.debug >= 1: print >>stderr, "[PyNLPl FoLiA DEBUG] Adding to index: " + id
+        #    if doc.debug >= 1: print >>stderr, "[FoLiA DEBUG] Adding to index: " + id
         #    doc.index[id] = instance
         if dcoi:
             if dcoipos:
@@ -5381,7 +5375,7 @@ class External(AbstractElement):
         self.subdoc = None
 
         if self.include:
-            if doc.debug >= 1: print("[PyNLPl FoLiA DEBUG] Loading subdocument for inclusion: " + self.source,file=stderr)
+            if doc.debug >= 1: print("[FoLiA DEBUG] Loading subdocument for inclusion: " + self.source,file=stderr)
             #load subdocument
 
             #check if it is already loaded, if multiple references are made to the same doc we reuse the instance
@@ -5422,7 +5416,7 @@ class External(AbstractElement):
             include = node.attrib['include']
         else:
             include = False
-        if doc.debug >= 1: print("[PyNLPl FoLiA DEBUG] Found external",file=stderr)
+        if doc.debug >= 1: print("[FoLiA DEBUG] Found external",file=stderr)
         return External(doc, source=source, include=include)
 
     def xml(self, attribs = None,elements = None, skipchildren = False):
@@ -5473,11 +5467,11 @@ class WordReference(AbstractElement):
         assert Class is WordReference or issubclass(Class, WordReference)
         #special handling for word references
         id = node.attrib['id']
-        if doc.debug >= 1: print("[PyNLPl FoLiA DEBUG] Found word reference",file=stderr)
+        if doc.debug >= 1: print("[FoLiA DEBUG] Found word reference",file=stderr)
         try:
             return doc[id]
         except KeyError:
-            if doc.debug >= 1: print("[PyNLPl FoLiA DEBUG] ...Unresolvable!",file=stderr)
+            if doc.debug >= 1: print("[FoLiA DEBUG] ...Unresolvable!",file=stderr)
             return WordReference(doc, id=id)
 
     @classmethod
@@ -6586,13 +6580,6 @@ class Document(object):
         Argument:
             filename (str): The file to load
         """
-        #if LXE and self.mode != Mode.XPATH:
-        #    #workaround for xml:id problem (disabled)
-        #    #f = open(filename)
-        #    #s = f.read().replace(' xml:id=', ' id=')
-        #    #f.close()
-        #    self.tree = ElementTree.parse(filename)
-        #else:
         self.tree = xmltreefromfile(filename)
         self.parsexml(self.tree.getroot())
         if self.mode != Mode.XPATH:
@@ -6839,7 +6826,7 @@ class Document(object):
         #else:
         attribs['version'] = FOLIAVERSION
 
-        attribs['generator'] = 'pynlpl.formats.folia-v' + LIBVERSION
+        attribs['generator'] = 'foliapy-v' + LIBVERSION
 
         metadataattribs = {}
         metadataattribs['{' + NSFOLIA + '}type'] = self.metadatatype
@@ -6875,7 +6862,7 @@ class Document(object):
             jsondoc['version'] = self.version
         else:
             jsondoc['version'] = FOLIAVERSION
-        jsondoc['generator'] = 'pynlpl.formats.folia-v' + LIBVERSION
+        jsondoc['generator'] = 'foliapy-v' + LIBVERSION
 
         for text in self.data:
             jsondoc['children'].append(text.json())
@@ -6921,7 +6908,7 @@ class Document(object):
     def parsexmldeclarations(self, node):
         """Internal method to parse XML declarations"""
         if self.debug >= 1:
-            print("[PyNLPl FoLiA DEBUG] Processing Annotation Declarations",file=stderr)
+            print("[FoLiA DEBUG] Processing Annotation Declarations",file=stderr)
         self.declareprocessed = True
         for subnode in node: #pylint: disable=too-many-nested-blocks
             if not isinstance(subnode.tag, str): continue
@@ -7016,7 +7003,7 @@ class Document(object):
 
                 if 'external' in subnode.attrib and subnode.attrib['external']:
                     if self.debug >= 1:
-                        print("[PyNLPl FoLiA DEBUG] Loading external document: " + subnode.attrib['external'],file=stderr)
+                        print("[FoLiA DEBUG] Loading external document: " + subnode.attrib['external'],file=stderr)
                     if not type in self.standoffdocs:
                         self.standoffdocs[type] = {}
                     self.standoffdocs[type][set] = {}
@@ -7056,7 +7043,7 @@ class Document(object):
                     standoffdoc.parentdoc = self
 
                 if self.debug >= 1:
-                    print("[PyNLPl FoLiA DEBUG] Found declared annotation " + subnode.tag + ". Defaults: " + repr(defaults),file=stderr)
+                    print("[FoLiA DEBUG] Found declared annotation " + subnode.tag + ". Defaults: " + repr(defaults),file=stderr)
 
 
 
@@ -7065,10 +7052,7 @@ class Document(object):
         """OBSOLETE"""
         ns = {'imdi': 'http://www.mpi.nl/IMDI/Schema/IMDI'}
         self.metadatatype = MetaDataType.IMDI
-        if LXE:
-            self.metadata = ElementTree.tostring(node, xml_declaration=False, pretty_print=True, encoding='utf-8')
-        else:
-            self.metadata = ElementTree.tostring(node, encoding='utf-8')
+        self.metadata = ElementTree.tostring(node, xml_declaration=False, pretty_print=True, encoding='utf-8')
         n = node.xpath('imdi:Session/imdi:Title', namespaces=ns)
         if n and n[0].text: self._title = n[0].text
         n = node.xpath('imdi:Session/imdi:Date', namespaces=ns)
@@ -7179,7 +7163,7 @@ class Document(object):
             if processor_new:
                 if 'generator' not in kwargs or not kwargs['generator']:
                     #Add a subprocessor with generator information about this FoLiA library
-                    processor.append(Processor(id=processor.id+'.generator', name="pynlpl.formats.folia", type=ProcessorType.GENERATOR, version=LIBVERSION, folia_version=FOLIAVERSION))
+                    processor.append(Processor(id=processor.id+'.generator', name="foliapy", type=ProcessorType.GENERATOR, version=LIBVERSION, folia_version=FOLIAVERSION))
                 if context:
                     #add processor to existing context in provenance chain
                     context.append(processor)
@@ -7491,7 +7475,7 @@ class Document(object):
         """Internal method.
 
         This is the main XML parser, will invoke class-specific XML parsers."""
-        if (LXE and isinstance(node,ElementTree._ElementTree)) or (not LXE and isinstance(node, ElementTree.ElementTree)): #pylint: disable=protected-access
+        if isinstance(node,ElementTree._ElementTree): #pylint: disable=protected-access
             node = node.getroot()
         elif isstring(node):
             node = xmltreefromstring(node).getroot()
@@ -7499,7 +7483,7 @@ class Document(object):
         if node.tag.startswith('{' + NSFOLIA + '}'):
             foliatag = node.tag[nslen:]
             if foliatag == "FoLiA":
-                if self.debug >= 1: print("[PyNLPl FoLiA DEBUG] Found FoLiA document",file=stderr)
+                if self.debug >= 1: print("[FoLiA DEBUG] Found FoLiA document",file=stderr)
                 try:
                     self.id = node.attrib['{http://www.w3.org/XML/1998/namespace}id']
                 except KeyError:
@@ -7513,7 +7497,7 @@ class Document(object):
                 if 'version' in node.attrib:
                     self.version = node.attrib['version']
                     if checkversion(self.version) > 0:
-                        print("WARNING!!! Document uses a newer version of FoLiA than this library! (" + self.version + " vs " + FOLIAVERSION + "). Any possible subsequent failures in parsing or processing may probably be attributed to this. Upgrade pynlpl to remedy this.",file=sys.stderr)
+                        print("WARNING!!! Document uses a newer version of FoLiA than this library! (" + self.version + " vs " + FOLIAVERSION + "). Any possible subsequent failures in parsing or processing may probably be attributed to this. Upgrade foliapy to remedy this.",file=sys.stderr)
                 else:
                     self.version = None
                 if 'document_version' in node.attrib:
@@ -7530,7 +7514,7 @@ class Document(object):
                     if subnode.tag == '{' + NSFOLIA + '}metadata':
                         self.parsemetadata(subnode)
                     elif (subnode.tag == '{' + NSFOLIA + '}text' or subnode.tag == '{' + NSFOLIA + '}speech') and self.mode == Mode.MEMORY:
-                        if self.debug >= 1: print("[PyNLPl FoLiA DEBUG] Found Text",file=stderr)
+                        if self.debug >= 1: print("[FoLiA DEBUG] Found Text",file=stderr)
                         e = self.parsexml(subnode)
                         if e is not None:
                             self.data.append(e)
@@ -7541,7 +7525,7 @@ class Document(object):
                 Class = XML2CLASS[foliatag]
                 return Class.parsexml(node,self)
         elif node.tag == '{' + NSDCOI + '}DCOI':
-            if self.debug >= 1: print("[PyNLPl FoLiA DEBUG] Found DCOI document",file=stderr)
+            if self.debug >= 1: print("[FoLiA DEBUG] Found DCOI document",file=stderr)
             self.autodeclare = True
             try:
                 self.id = node.attrib['{http://www.w3.org/XML/1998/namespace}id']
@@ -7558,7 +7542,7 @@ class Document(object):
                     self.metadatatype = MetaDataType.IMDI
                     self.setimdi(subnode)
                 elif subnode.tag == '{' + NSDCOI + '}text':
-                    if self.debug >= 1: print("[PyNLPl FoLiA DEBUG] Found Text",file=stderr)
+                    if self.debug >= 1: print("[FoLiA DEBUG] Found Text",file=stderr)
                     e = self.parsexml(subnode)
                     if e is not None:
                         self.data.append( e )
@@ -7593,7 +7577,7 @@ class Document(object):
         Returns:
             bool
         """
-        if self.debug: print("[PyNLPl FoLiA DEBUG] Processing pending validations (if any)",file=stderr)
+        if self.debug: print("[FoLiA DEBUG] Processing pending validations (if any)",file=stderr)
 
         if warnonly is None and self and self.version:
             warnonly = (checkversion(self.version, '1.5.0') < 0) #warn only for documents older than FoLiA v1.5
@@ -7601,7 +7585,7 @@ class Document(object):
             while self.offsetvalidationbuffer:
                 structureelement, textclass = self.offsetvalidationbuffer.pop()
 
-                if self.debug: print("[PyNLPl FoLiA DEBUG] Performing offset validation on " + repr(structureelement) + " textclass " + textclass,file=stderr)
+                if self.debug: print("[FoLiA DEBUG] Performing offset validation on " + repr(structureelement) + " textclass " + textclass,file=stderr)
 
                 #validate offsets
                 tc = structureelement.textcontent(textclass)
@@ -7730,7 +7714,7 @@ class Document(object):
 
     def __eq__(self, other):
         if len(self.data) != len(other.data):
-            if self.debug: print("[PyNLPl FoLiA DEBUG] Equality check - Documents have unequal amount of children",file=stderr)
+            if self.debug: print("[FoLiA DEBUG] Equality check - Documents have unequal amount of children",file=stderr)
             return False
         for e,e2 in zip(self.data,other.data):
             if e != e2:
@@ -7952,13 +7936,10 @@ def relaxng(filename=None):
             f = io.open(filename,'w',encoding='utf-8')
         else:
             f = io.open(filename,'wb')
-        if LXE:
-            if sys.version < '3':
-                f.write( ElementTree.tostring(relaxng(),pretty_print=True).replace("</define>","</define>\n\n") )
-            else:
-                f.write( ElementTree.tostring(relaxng(),pretty_print=True).replace(b"</define>",b"</define>\n\n") )
+        if sys.version < '3':
+            f.write( ElementTree.tostring(relaxng(),pretty_print=True).replace("</define>","</define>\n\n") )
         else:
-            f.write( ElementTree.tostring(relaxng()).replace("</define>","</define>\n\n") )
+            f.write( ElementTree.tostring(relaxng(),pretty_print=True).replace(b"</define>",b"</define>\n\n") )
         f.close()
 
     return grammar
@@ -8026,7 +8007,7 @@ def findwords(doc, worditerator, *args, **kwargs):
 
         #we're not commited to a particular size, expand to various ones
         for size in range(len(variablewildcards), maxgapsize+1):
-            for distribution in  pynlpl.algorithms.sum_to_n(size, len(variablewildcards)): #gap distributions, (amount) of 'True' wildcards
+            for distribution in sum_to_n(size, len(variablewildcards)): #gap distributions, (amount) of 'True' wildcards
                 patterns = []
                 for pattern in args:
                     if pattern.variablesize():

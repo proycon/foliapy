@@ -3,9 +3,10 @@
 
 
 #---------------------------------------------------------------
-# PyNLPl - Test Units for FoLiA
-#   by Maarten van Gompel, ILK, Universiteit van Tilburg
-#   http://ilk.uvt.nl/~mvgompel
+# FoLiA Library - Test Units
+#   by Maarten van Gompel
+#   Centre for Language and Speech Technology
+#   Radboud University Nijmegen
 #   proycon AT anaproy DOT nl
 #
 #   Licensed under GPLv3
@@ -53,10 +54,7 @@ if sys.version < '3':
     from StringIO import StringIO
 else:
     from io import StringIO, BytesIO
-if folia.LXE:
-    from lxml import etree as ElementTree
-else:
-    import xml.etree.cElementTree as ElementTree
+from lxml import etree as ElementTree
 
 
 def xmlcheck(xml,expect):
@@ -701,7 +699,7 @@ class Test2Sanity(unittest.TestCase):
     </p>
     </div>
 </text>
-</FoLiA>""".format(version=folia.FOLIAVERSION, generator='pynlpl.formats.folia-v' + folia.LIBVERSION)
+</FoLiA>""".format(version=folia.FOLIAVERSION, generator='foliapy-v' + folia.LIBVERSION)
         doc = folia.Document(string=xml)
         self.assertEqual( doc['head.1.s.1.w.1'].pos() , 'NN(blah)')
         self.assertEqual( doc['head.1.s.1.w.1'].annotation(folia.PosAnnotation).feat('head') , 'NN')
@@ -733,7 +731,7 @@ class Test2Sanity(unittest.TestCase):
     </p>
     </div>
 </text>
-</FoLiA>""".format(version=folia.FOLIAVERSION, generator='pynlpl.formats.folia-v' + folia.LIBVERSION)
+</FoLiA>""".format(version=folia.FOLIAVERSION, generator='foliapy-v' + folia.LIBVERSION)
         doc = folia.Document(string=xml)
         self.assertEqual( doc['p.1.s.1.w.1'].pos() , 'NN(a,b,c)')
         self.assertEqual( doc['p.1.s.1.w.1'].annotation(folia.PosAnnotation).feat('x') , ['a','b','c'] )
@@ -951,7 +949,7 @@ class Test2Sanity(unittest.TestCase):
 </annotations>
 </metadata>
 <text xml:id="test.text" />
-</FoLiA>""".format(version=folia.FOLIAVERSION, generator='pynlpl.formats.folia-v' + folia.LIBVERSION)
+</FoLiA>""".format(version=folia.FOLIAVERSION, generator='foliapy-v' + folia.LIBVERSION)
         doc = folia.Document(string=xml)
         self.assertEqual( doc.metadatatype, folia.MetaDataType.CMDI )
         self.assertEqual( doc.metadata.url, 'test.cmdi.xml' )
@@ -966,7 +964,7 @@ class Test2Sanity(unittest.TestCase):
 </annotations>
 </metadata>
 <text xml:id="test.text" />
-</FoLiA>""".format(version=folia.FOLIAVERSION, generator='pynlpl.formats.folia-v' + folia.LIBVERSION)
+</FoLiA>""".format(version=folia.FOLIAVERSION, generator='foliapy-v' + folia.LIBVERSION)
         doc = folia.Document(string=xml)
         self.assertEqual( doc.metadatatype, folia.MetaDataType.IMDI )
         self.assertEqual( doc.metadata.url , 'test.imdi.xml' )
@@ -990,7 +988,7 @@ class Test2Sanity(unittest.TestCase):
   </foreign-data>
 </metadata>
 <text xml:id="test.text" />
-</FoLiA>""".format(version=folia.FOLIAVERSION, generator='pynlpl.formats.folia-v' + folia.LIBVERSION)
+</FoLiA>""".format(version=folia.FOLIAVERSION, generator='foliapy-v' + folia.LIBVERSION)
         doc = folia.Document(string=xml)
         self.assertEqual( doc.metadatatype, "dc" )
         self.assertEqual( doc.metadata.node.xpath('//dc:creator', namespaces={'dc':'http://purl.org/dc/elements/1.1/'})[0].text , 'proycon' )
@@ -1017,7 +1015,7 @@ class Test2Sanity(unittest.TestCase):
   </foreign-data>
 </metadata>
 <text xml:id="test.text" />
-</FoLiA>""".format(version=folia.FOLIAVERSION, generator='pynlpl.formats.folia-v' + folia.LIBVERSION)
+</FoLiA>""".format(version=folia.FOLIAVERSION, generator='foliapy-v' + folia.LIBVERSION)
         doc = folia.Document(string=xml)
         self.assertEqual( doc.metadatatype, "dc" )
         self.assertEqual( doc.metadata.node.xpath('//dc:creator', namespaces={'dc':'http://purl.org/dc/elements/1.1/'})[0].text , 'proycon' )
@@ -1040,7 +1038,7 @@ class Test2Sanity(unittest.TestCase):
     </imdi:METATRANSCRIPT>
   </metadata>
   <text xml:id="test.text"/>
-</FoLiA>""".format(version=folia.FOLIAVERSION, generator='pynlpl.formats.folia-v' + folia.LIBVERSION)
+</FoLiA>""".format(version=folia.FOLIAVERSION, generator='foliapy-v' + folia.LIBVERSION)
         doc = folia.Document(string=xml)
         self.assertEqual( doc.metadatatype, "imdi" )
         self.assertEqual( doc.metadata.node.xpath('//imdi:Title', namespaces={'imdi':'http://www.mpi.nl/IMDI/Schema/IMDI'})[0].text , 'Een imdi file' )
@@ -1057,7 +1055,7 @@ class Test2Sanity(unittest.TestCase):
   <text xml:id="example.text.1">
     <gap class="X" />
   </text>
-</FoLiA>""".format(version=folia.FOLIAVERSION, generator='pynlpl.formats.folia-v' + folia.LIBVERSION)
+</FoLiA>""".format(version=folia.FOLIAVERSION, generator='foliapy-v' + folia.LIBVERSION)
         doc = folia.Document(string=xml)
         self.assertEqual( next(doc['example.text.1'].select(folia.Gap)).set, 'gap-set' )
 
@@ -1074,7 +1072,7 @@ class Test2Sanity(unittest.TestCase):
   <text xml:id="example.text.1">
     <gap class="X" annotator="proycon" annotatortype="manual" />
   </text>
-</FoLiA>""".format(version=folia.FOLIAVERSION, generator='pynlpl.formats.folia-v' + folia.LIBVERSION)
+</FoLiA>""".format(version=folia.FOLIAVERSION, generator='foliapy-v' + folia.LIBVERSION)
         doc = folia.Document(string=xml)
         self.assertEqual( next(doc['example.text.1'].select(folia.Gap)).set, 'gap-set' )
         self.assertEqual( next(doc['example.text.1'].select(folia.Gap)).annotator, 'proycon' )
@@ -1092,7 +1090,7 @@ class Test2Sanity(unittest.TestCase):
   <text xml:id="example.text.1">
     <gap class="X" set="extended-gap-set" />
   </text>
-</FoLiA>""".format(version=folia.FOLIAVERSION, generator='pynlpl.formats.folia-v' + folia.LIBVERSION)
+</FoLiA>""".format(version=folia.FOLIAVERSION, generator='foliapy-v' + folia.LIBVERSION)
         with self.assertRaises( folia.ParseError) as cm:
             folia.Document(string=xml)
         self.assertEqual(cm.exception.cause.__class__, ValueError)
@@ -1112,7 +1110,7 @@ class Test2Sanity(unittest.TestCase):
     <gap class="X" set="gap-set"/>
     <gap class="Y" set="extended-gap-set"/>
   </text>
-</FoLiA>""".format(version=folia.FOLIAVERSION, generator='pynlpl.formats.folia-v' + folia.LIBVERSION)
+</FoLiA>""".format(version=folia.FOLIAVERSION, generator='foliapy-v' + folia.LIBVERSION)
         doc = folia.Document(string=xml)
         self.assertEqual( next(doc['example.text.1'].select(folia.Gap)).set, 'gap-set' )
         self.assertEqual( list(doc['example.text.1'].select(folia.Gap))[1].set, 'extended-gap-set' )
@@ -1131,7 +1129,7 @@ class Test2Sanity(unittest.TestCase):
     <gap class="X" set="gap-set"/>
     <gap class="Y" />
   </text>
-</FoLiA>""".format(version=folia.FOLIAVERSION, generator='pynlpl.formats.folia-v' + folia.LIBVERSION)
+</FoLiA>""".format(version=folia.FOLIAVERSION, generator='foliapy-v' + folia.LIBVERSION)
         with self.assertRaises( folia.ParseError) as cm:
             folia.Document(string=xml)
         self.assertEqual(cm.exception.cause.__class__, ValueError)
@@ -1154,7 +1152,7 @@ class Test2Sanity(unittest.TestCase):
     <gap class="X" set="gap-set"/>
     <gap class="Y" set="gip-set"/>
   </text>
-</FoLiA>""".format(version=folia.FOLIAVERSION, generator='pynlpl.formats.folia-v' + folia.LIBVERSION)
+</FoLiA>""".format(version=folia.FOLIAVERSION, generator='foliapy-v' + folia.LIBVERSION)
         with self.assertRaises( folia.ParseError) as cm:
             folia.Document(string=xml)
         self.assertEqual(cm.exception.cause.__class__, ValueError)
@@ -1172,7 +1170,7 @@ class Test2Sanity(unittest.TestCase):
   <text xml:id="example.text.1">
     <gap class="X" set="gap-set"/>
   </text>
-</FoLiA>""".format(version=folia.FOLIAVERSION, generator='pynlpl.formats.folia-v' + folia.LIBVERSION)
+</FoLiA>""".format(version=folia.FOLIAVERSION, generator='foliapy-v' + folia.LIBVERSION)
 
         doc = folia.Document(string=xml)
         self.assertEqual( doc.defaultset(folia.AnnotationType.GAP), 'gap-set' )
@@ -1190,7 +1188,7 @@ class Test2Sanity(unittest.TestCase):
   <text xml:id="example.text.1">
     <gap class="X" set="extended-gap-set" />
   </text>
-</FoLiA>""".format(version=folia.FOLIAVERSION, generator='pynlpl.formats.folia-v' + folia.LIBVERSION)
+</FoLiA>""".format(version=folia.FOLIAVERSION, generator='foliapy-v' + folia.LIBVERSION)
         with self.assertRaises( folia.ParseError) as cm:
             folia.Document(string=xml)
         self.assertEqual(cm.exception.cause.__class__, ValueError)
@@ -1206,7 +1204,7 @@ class Test2Sanity(unittest.TestCase):
   <text xml:id="example.text.1">
     <gap />
   </text>
-</FoLiA>""".format(version=folia.FOLIAVERSION, generator='pynlpl.formats.folia-v' + folia.LIBVERSION)
+</FoLiA>""".format(version=folia.FOLIAVERSION, generator='foliapy-v' + folia.LIBVERSION)
         folia.Document(string=xml)
 
 
@@ -1222,7 +1220,7 @@ class Test2Sanity(unittest.TestCase):
   <text xml:id="example.text.1">
     <gap class="X"  />
   </text>
-</FoLiA>""".format(version=folia.FOLIAVERSION, generator='pynlpl.formats.folia-v' + folia.LIBVERSION)
+</FoLiA>""".format(version=folia.FOLIAVERSION, generator='foliapy-v' + folia.LIBVERSION)
         doc = folia.Document(string=xml)
         self.assertEqual( next(doc['example.text.1'].select(folia.Gap)).set, 'undefined' )
 
@@ -1239,7 +1237,7 @@ class Test2Sanity(unittest.TestCase):
   <text xml:id="example.text.1">
     <gap />
   </text>
-</FoLiA>""".format(version=folia.FOLIAVERSION, generator='pynlpl.formats.folia-v' + folia.LIBVERSION)
+</FoLiA>""".format(version=folia.FOLIAVERSION, generator='foliapy-v' + folia.LIBVERSION)
         doc = folia.Document(string=xml)
         self.assertRaises(folia.NoDefaultError, doc.defaultannotator, folia.AnnotationType.GAP)
 
@@ -1257,7 +1255,7 @@ class Test2Sanity(unittest.TestCase):
   <text xml:id="example.text.1">
     <gap class="X" set="gap1-set"/>
   </text>
-</FoLiA>""".format(version=folia.FOLIAVERSION, generator='pynlpl.formats.folia-v' + folia.LIBVERSION)
+</FoLiA>""".format(version=folia.FOLIAVERSION, generator='foliapy-v' + folia.LIBVERSION)
         doc = folia.Document(string=xml)
         self.assertEqual( doc.defaultannotator(folia.AnnotationType.GAP,"gap1-set"), "sloot" )
         doc.declare(folia.AnnotationType.GAP, "gap1-set", annotator='proycon' ) #slightly different behaviour from libfolia: here this overrides the earlier default
@@ -1289,7 +1287,7 @@ class Test2Sanity(unittest.TestCase):
   <text xml:id="example.text.1">
     <gap class="X" />
   </text>
-</FoLiA>""".format(version=folia.FOLIAVERSION, generator='pynlpl.formats.folia-v' + folia.LIBVERSION)
+</FoLiA>""".format(version=folia.FOLIAVERSION, generator='foliapy-v' + folia.LIBVERSION)
         doc = folia.Document(string=xml)
         text = doc["example.text.1"]
         doc.declare(folia.AnnotationType.GAP, "other-set", annotator='proycon' )
@@ -1314,7 +1312,7 @@ class Test2Sanity(unittest.TestCase):
   <text xml:id="example.text.1">
     <gap class="X" />
   </text>
-</FoLiA>""".format(version=folia.FOLIAVERSION, generator='pynlpl.formats.folia-v' + folia.LIBVERSION)
+</FoLiA>""".format(version=folia.FOLIAVERSION, generator='foliapy-v' + folia.LIBVERSION)
         doc = folia.Document(string=xml)
         self.assertEqual( doc.defaultannotatortype(folia.AnnotationType.GAP, 'gap-set'),  folia.AnnotatorType.AUTO)
         text = doc["example.text.1"]
@@ -1347,7 +1345,7 @@ class Test2Sanity(unittest.TestCase):
   <text xml:id="example.text.1">
     <gap class="X" />
   </text>
-</FoLiA>""".format(version=folia.FOLIAVERSION, generator='pynlpl.formats.folia-v' + folia.LIBVERSION)
+</FoLiA>""".format(version=folia.FOLIAVERSION, generator='foliapy-v' + folia.LIBVERSION)
         doc = folia.Document(string=xml)
         self.assertEqual( doc.defaultdatetime(folia.AnnotationType.GAP, 'gap-set'),  folia.parse_datetime('2011-12-15T19:00') )
 
@@ -1363,7 +1361,7 @@ class Test2Sanity(unittest.TestCase):
   </metadata>
   <text xml:id="example.text.1">
   </text>
-</FoLiA>""".format(version=folia.FOLIAVERSION, generator='pynlpl.formats.folia-v' + folia.LIBVERSION)
+</FoLiA>""".format(version=folia.FOLIAVERSION, generator='foliapy-v' + folia.LIBVERSION)
         doc = folia.Document(string=xml)
         doc.declare(folia.AnnotationType.ENTITY, "https://github.com/proycon/folia/blob/master/setdefinitions/namedentities.foliaset.ttl", annotator='proycon' )
 
@@ -1381,7 +1379,7 @@ class Test2Sanity(unittest.TestCase):
     <gap class="X" />
     <gap class="Y" datetime="2012-06-18T17:50"/>
   </text>
-</FoLiA>""".format(version=folia.FOLIAVERSION, generator='pynlpl.formats.folia-v' + folia.LIBVERSION)
+</FoLiA>""".format(version=folia.FOLIAVERSION, generator='foliapy-v' + folia.LIBVERSION)
 
         doc = folia.Document(string=xml)
         doc.declare(folia.AnnotationType.GAP, "nog zon ingewikkelde en veels te lange declaratie", alias='gap-set2' )
@@ -1431,7 +1429,7 @@ class Test2Sanity(unittest.TestCase):
         </w>
     </s>
   </text>
-</FoLiA>""".format(version=folia.FOLIAVERSION, generator='pynlpl.formats.folia-v' + folia.LIBVERSION)
+</FoLiA>""".format(version=folia.FOLIAVERSION, generator='foliapy-v' + folia.LIBVERSION)
         doc = folia.Document(string=xml)
         self.assertTrue( len(list(doc['example.text.1.s.1'].words())) == 1 ) #second word is in alien namespace, not read
         self.assertRaises( KeyError,  doc.__getitem__, 'example.text.1.s.1.alienword') #doesn't exist
@@ -1459,7 +1457,7 @@ class Test2Sanity(unittest.TestCase):
         </w>
     </utt>
   </speech>
-</FoLiA>""".format(version=folia.FOLIAVERSION, generator='pynlpl.formats.folia-v' + folia.LIBVERSION)
+</FoLiA>""".format(version=folia.FOLIAVERSION, generator='foliapy-v' + folia.LIBVERSION)
         doc = folia.Document(string=xml)
         self.assertTrue( isinstance(doc.data[0], folia.Speech) )
         self.assertTrue( isinstance(doc['example.speech.utt.1'], folia.Utterance) )
@@ -1490,7 +1488,7 @@ class Test2Sanity(unittest.TestCase):
         </w>
     </utt>
   </speech>
-</FoLiA>""".format(version=folia.FOLIAVERSION, generator='pynlpl.formats.folia-v' + folia.LIBVERSION)
+</FoLiA>""".format(version=folia.FOLIAVERSION, generator='foliapy-v' + folia.LIBVERSION)
         doc = folia.Document(string=xml)
         self.assertTrue( isinstance(doc.data[0], folia.Speech) )
         self.assertTrue( isinstance(doc['example.speech.utt.1'], folia.Utterance) )
@@ -1562,7 +1560,7 @@ class Test2Sanity(unittest.TestCase):
 	</complexalignments>
     </p>
 </text>
-</FoLiA>""".format(version=folia.FOLIAVERSION, generator='pynlpl.formats.folia-v' + folia.LIBVERSION)
+</FoLiA>""".format(version=folia.FOLIAVERSION, generator='foliapy-v' + folia.LIBVERSION)
         doc = folia.Document(string=xml)
         self.assertTrue(doc.xml() is not None) #serialisation check
 
@@ -1593,7 +1591,7 @@ class Test2Sanity(unittest.TestCase):
     <submetadata xml:id="test.metadata" src="test.cmdi.xml" type="cmdi" />
 </metadata>
 <text xml:id="test.text" metadata="test.metadata" />
-</FoLiA>""".format(version=folia.FOLIAVERSION, generator='pynlpl.formats.folia-v' + folia.LIBVERSION)
+</FoLiA>""".format(version=folia.FOLIAVERSION, generator='foliapy-v' + folia.LIBVERSION)
         doc = folia.Document(string=xml)
         self.assertEqual( doc.submetadatatype['test.metadata'], 'cmdi')
         self.assertTrue( isinstance(doc['test.text'].getmetadata(), folia.ExternalMetaData) )
@@ -1621,7 +1619,7 @@ class Test2Sanity(unittest.TestCase):
     </submetadata>
 </metadata>
 <text xml:id="test.text" metadata="test.metadata" />
-</FoLiA>""".format(version=folia.FOLIAVERSION, generator='pynlpl.formats.folia-v' + folia.LIBVERSION)
+</FoLiA>""".format(version=folia.FOLIAVERSION, generator='foliapy-v' + folia.LIBVERSION)
         doc = folia.Document(string=xml)
         self.assertEqual( doc.submetadatatype['test.metadata'], 'dc')
         self.assertTrue( isinstance(doc['test.text'].getmetadata(), folia.ForeignData) )
@@ -1637,7 +1635,7 @@ class Test2Sanity(unittest.TestCase):
   <text xml:id="example.text.1">
    <t><!-- Comment -->This is the real text</t>
   </text>
-</FoLiA>""".format(version=folia.FOLIAVERSION, generator='pynlpl.formats.folia-v' + folia.LIBVERSION)
+</FoLiA>""".format(version=folia.FOLIAVERSION, generator='foliapy-v' + folia.LIBVERSION)
         doc = folia.Document(string=xml)
         self.assertEqual(doc['example.text.1'].text(),"This is the real text")
 
@@ -1652,7 +1650,7 @@ class Test2Sanity(unittest.TestCase):
   <text xml:id="example.text.1">
    <t>This is the real text<!-- Comment --></t>
   </text>
-</FoLiA>""".format(version=folia.FOLIAVERSION, generator='pynlpl.formats.folia-v' + folia.LIBVERSION)
+</FoLiA>""".format(version=folia.FOLIAVERSION, generator='foliapy-v' + folia.LIBVERSION)
         doc = folia.Document(string=xml)
         self.assertEqual(doc['example.text.1'].text(),"This is the real text")
 
@@ -1667,7 +1665,7 @@ class Test2Sanity(unittest.TestCase):
   <text xml:id="example.text.1">
    <t>This is the real text<comment annotator="pkampschreur" annotatortype="manual" datetime="2017-11-01T20:55:50">Overbodig</comment></t>
   </text>
-</FoLiA>""".format(version=folia.FOLIAVERSION, generator='pynlpl.formats.folia-v' + folia.LIBVERSION)
+</FoLiA>""".format(version=folia.FOLIAVERSION, generator='foliapy-v' + folia.LIBVERSION)
         doc = folia.Document(string=xml)
         self.assertEqual(doc['example.text.1'].text(),"This is the real text")
 
@@ -2700,7 +2698,7 @@ class Test9Validation(unittest.TestCase):
       </s>
     </p>
   </text>
-</FoLiA>""".format(version=folia.FOLIAVERSION, generator='pynlpl.formats.folia-v' + folia.LIBVERSION)
+</FoLiA>""".format(version=folia.FOLIAVERSION, generator='foliapy-v' + folia.LIBVERSION)
         self.assertRaises( folia.InconsistentText, folia.Document, string=xml, textvalidation=True) #exception
 
 
@@ -2723,7 +2721,7 @@ class Test9Validation(unittest.TestCase):
       </s>
     </p>
   </text>
-</FoLiA>""".format(version=folia.FOLIAVERSION, generator='pynlpl.formats.folia-v' + folia.LIBVERSION)
+</FoLiA>""".format(version=folia.FOLIAVERSION, generator='foliapy-v' + folia.LIBVERSION)
         self.assertRaises( folia.InconsistentText, folia.Document, string=xml, textvalidation=True) #exception
 
 
@@ -2752,7 +2750,7 @@ het    ook   ?
       </s>
     </p>
   </text>
-</FoLiA>""".format(version=folia.FOLIAVERSION, generator='pynlpl.formats.folia-v' + folia.LIBVERSION)
+</FoLiA>""".format(version=folia.FOLIAVERSION, generator='foliapy-v' + folia.LIBVERSION)
         folia.Document(file=os.path.join(FOLIAPATH,'examples/textvalidation.1.5.0.folia.xml'), textvalidation=True)
 
     def test006_multiple_textclasses(self):
@@ -2778,7 +2776,7 @@ het    ook   ?
       </s>
     </p>
   </text>
-</FoLiA>""".format(version=folia.FOLIAVERSION, generator='pynlpl.formats.folia-v' + folia.LIBVERSION)
+</FoLiA>""".format(version=folia.FOLIAVERSION, generator='foliapy-v' + folia.LIBVERSION)
         folia.Document(string=xml, textvalidation=True)
 
     def test007_textcheck_no_morphemes(self):
@@ -2824,7 +2822,7 @@ het    ook   ?
         </morphology>
       </w>
   </text>
-</FoLiA>""".format(version=folia.FOLIAVERSION, generator='pynlpl.formats.folia-v' + folia.LIBVERSION)
+</FoLiA>""".format(version=folia.FOLIAVERSION, generator='foliapy-v' + folia.LIBVERSION)
         folia.Document(string=xml, textvalidation=True)
 
 
@@ -2903,7 +2901,7 @@ het    ook   ?
       </s>
     </p>
   </text>
-</FoLiA>""".format(version=folia.FOLIAVERSION, generator='pynlpl.formats.folia-v' + folia.LIBVERSION)
+</FoLiA>""".format(version=folia.FOLIAVERSION, generator='foliapy-v' + folia.LIBVERSION)
         doc = folia.Document(string=xml, textvalidation=True)
         self.assertEqual( doc['example.p.1.s.1.w.19'].textcontent().getreference(), doc['example.p.1.s.1'] ) #testing resolving implicit reference
 
@@ -2984,7 +2982,7 @@ het    ook   ?
       </s>
     </p>
   </text>
-</FoLiA>""".format(version=folia.FOLIAVERSION, generator='pynlpl.formats.folia-v' + folia.LIBVERSION)
+</FoLiA>""".format(version=folia.FOLIAVERSION, generator='foliapy-v' + folia.LIBVERSION)
         self.assertRaises( folia.UnresolvableTextContent, folia.Document, string=xml, textvalidation=True) #exception
 
     def test010_offset_reference(self):
@@ -3062,7 +3060,7 @@ het    ook   ?
       </s>
     </p>
   </text>
-</FoLiA>""".format(version=folia.FOLIAVERSION, generator='pynlpl.formats.folia-v' + folia.LIBVERSION)
+</FoLiA>""".format(version=folia.FOLIAVERSION, generator='foliapy-v' + folia.LIBVERSION)
         doc = folia.Document(string=xml, textvalidation=True)
         self.assertEqual( doc['example.p.1.s.1.w.19'].textcontent().getreference(), doc['example.p.1'] ) #testing resolving explicit reference
 
@@ -3142,7 +3140,7 @@ het    ook   ?
       </s>
     </p>
   </text>
-</FoLiA>""".format(version=folia.FOLIAVERSION, generator='pynlpl.formats.folia-v' + folia.LIBVERSION)
+</FoLiA>""".format(version=folia.FOLIAVERSION, generator='foliapy-v' + folia.LIBVERSION)
         doc = folia.Document(string=xml, textvalidation=True)
         self.assertEqual( doc['example.p.1.s.1.w.19'].textcontent().getreference(), doc['example.p.1.s.1'] ) #testing resolving implicit reference
 
@@ -3221,7 +3219,7 @@ het    ook   ?
       </s>
     </p>
   </text>
-</FoLiA>""".format(version=folia.FOLIAVERSION, generator='pynlpl.formats.folia-v' + folia.LIBVERSION)
+</FoLiA>""".format(version=folia.FOLIAVERSION, generator='foliapy-v' + folia.LIBVERSION)
         doc = folia.Document(string=xml, textvalidation=True)
         self.assertEqual( doc['example.p.1.s.1.w.19'].textcontent().getreference(), doc['example.p.1.s.1'] ) #testing resolving implicit reference
 
@@ -3246,7 +3244,7 @@ het    ook   ?
       </s>
     </p>
   </text>
-</FoLiA>""".format(version=folia.FOLIAVERSION, generator='pynlpl.formats.folia-v' + folia.LIBVERSION)
+</FoLiA>""".format(version=folia.FOLIAVERSION, generator='foliapy-v' + folia.LIBVERSION)
         doc = folia.Document(string=xml, textvalidation=True)
         self.assertEqual( doc['example.string'].textcontent().getreference(), doc['example.p.1.s.1'] ) #testing resolving implicit reference
 
@@ -3310,7 +3308,7 @@ het    ook   ?
       </s>
     </p>
   </text>
-</FoLiA>""".format(version=folia.FOLIAVERSION, generator='pynlpl.formats.folia-v' + folia.LIBVERSION)
+</FoLiA>""".format(version=folia.FOLIAVERSION, generator='foliapy-v' + folia.LIBVERSION)
         doc = folia.Document(string=xml, textvalidation=True)
 
     def test013b_correction(self):
@@ -3385,7 +3383,7 @@ het    ook   ?
       </s>
     </p>
   </text>
-</FoLiA>""".format(version=folia.FOLIAVERSION, generator='pynlpl.formats.folia-v' + folia.LIBVERSION)
+</FoLiA>""".format(version=folia.FOLIAVERSION, generator='foliapy-v' + folia.LIBVERSION)
         doc = folia.Document(string=xml, textvalidation=True)
 
     def test013c_correction(self):
@@ -3471,7 +3469,7 @@ het    ook   ?
       </s>
     </p>
   </text>
-</FoLiA>""".format(version=folia.FOLIAVERSION, generator='pynlpl.formats.folia-v' + folia.LIBVERSION)
+</FoLiA>""".format(version=folia.FOLIAVERSION, generator='foliapy-v' + folia.LIBVERSION)
         doc = folia.Document(string=xml, textvalidation=True)
 
     def test013d_correction(self):
@@ -3557,7 +3555,7 @@ het    ook   ?
       </s>
     </p>
   </text>
-</FoLiA>""".format(version=folia.FOLIAVERSION, generator='pynlpl.formats.folia-v' + folia.LIBVERSION)
+</FoLiA>""".format(version=folia.FOLIAVERSION, generator='foliapy-v' + folia.LIBVERSION)
         doc = folia.Document(string=xml, textvalidation=True)
 
     def test013e_correction(self):
@@ -3674,7 +3672,7 @@ het    ook   ?
       </s>
     </p>
   </text>
-</FoLiA>""".format(version=folia.FOLIAVERSION, generator='pynlpl.formats.folia-v' + folia.LIBVERSION)
+</FoLiA>""".format(version=folia.FOLIAVERSION, generator='foliapy-v' + folia.LIBVERSION)
         doc = folia.Document(string=xml, textvalidation=True)
 
     def test013f_correction(self):
@@ -3925,7 +3923,7 @@ het    ook   ?
           </s>
         </p>
     </text>
-</FoLiA>""".format(version=folia.FOLIAVERSION, generator='pynlpl.formats.folia-v' + folia.LIBVERSION)
+</FoLiA>""".format(version=folia.FOLIAVERSION, generator='foliapy-v' + folia.LIBVERSION)
         doc = folia.Document(string=xml, textvalidation=True)
 
 
@@ -3943,7 +3941,7 @@ het    ook   ?
          </t>
       </s>
     </text>
-</FoLiA>""".format(version=folia.FOLIAVERSION, generator='pynlpl.formats.folia-v' + folia.LIBVERSION)
+</FoLiA>""".format(version=folia.FOLIAVERSION, generator='foliapy-v' + folia.LIBVERSION)
         doc = folia.Document(string=xml, textvalidation=True)
         self.assertEqual( doc['test.s'].text(), "Dit\n         is een rare test.\n         ")
 
@@ -3952,7 +3950,7 @@ with io.open(os.path.join(FOLIAPATH, 'examples/full-legacy.1.5.folia.xml'), 'r',
     LEGACYEXAMPLE = foliaexample_f.read()
 
 #We cheat, by setting the generator and version attributes to match the library, so xmldiff doesn't complain when we compare against this reference
-LEGACYEXAMPLE = re.sub(r' version="[^"]*" generator="[^"]*"', ' version="' + folia.FOLIAVERSION + '" generator="pynlpl.formats.folia-v' + folia.LIBVERSION + '"', LEGACYEXAMPLE, re.MULTILINE)
+LEGACYEXAMPLE = re.sub(r' version="[^"]*" generator="[^"]*"', ' version="' + folia.FOLIAVERSION + '" generator="foliapy-v' + folia.LIBVERSION + '"', LEGACYEXAMPLE, re.MULTILINE)
 
 #Another cheat, alien namespace attributes are ignored by the folia library, strip them so xmldiff doesn't complain
 LEGACYEXAMPLE = re.sub(r' xmlns:alien="[^"]*" alien:attrib="[^"]*"', '', LEGACYEXAMPLE, re.MULTILINE)
