@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
 #----------------------------------------------------------------
-# PyNLPl - FoLiA Set Definition Module
+# FoLiA Set Definition Module
 #   by Maarten van Gompel
 #   Centre for Language Studies
 #   Radboud University Nijmegen
 #
 #   https://proycon.github.io/folia
-#   httsp://github.com/proycon/pynlpl
+#   httsp://github.com/proycon/foliapy
 #   proycon AT anaproy DOT nl
 #
 #   Module for reading, editing and writing FoLiA XML
