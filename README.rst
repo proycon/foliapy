@@ -26,7 +26,7 @@ FoLiA development is funded in the scope of the larger CLARIN-NL project and its
 
 The following modules are available:
 
-* ``folia.main`` - The main module
+* ``folia.main`` - The main library
 * ``folia.setdefinition`` - A module for FoLiA Set Definitions
 * ``folia.fql`` - Support for the FoLiA Query Language (FQL)
 
