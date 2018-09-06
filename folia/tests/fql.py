@@ -3,7 +3,7 @@
 
 
 #---------------------------------------------------------------
-# PyNLPl - Test Units for FoLiA Query Language
+# FoLiA Library - Test Units for FoLiA Query Language
 #   by Maarten van Gompel, Radboud University Nijmegen
 #   proycon AT anaproy DOT nl
 #
@@ -15,7 +15,7 @@ from __future__ import print_function
 from __future__ import unicode_literals
 from __future__ import division
 from __future__ import absolute_import
-from pynlpl.common import u, isstring
+from folia.helpers import u, isstring
 import sys
 if sys.version < '3':
     from codecs import getwriter
@@ -29,7 +29,13 @@ import sys
 import os
 import unittest
 import io
-from pynlpl.formats import fql, folia, cql
+from folia import fql
+import folia.main as folia
+try:
+    from pynlpl.formats import cql
+    HAVE_CQL = True
+except ImportError:
+    HAVE_CQL = False
 
 Q1 = 'SELECT pos WHERE class = "n" FOR w WHERE text = "house" AND class != "punct" RETURN focus'
 Q2 = 'ADD w WITH text "house" (ADD pos WITH class "n") FOR ID sentence'
@@ -833,99 +839,100 @@ class Test3Evaluation(unittest.TestCase):
 
 
 
-class Test4CQL(unittest.TestCase):
-    def setUp(self):
-        self.doc = folia.Document(string=FOLIAEXAMPLE)
+if HAVE_CQL:
+    class Test4CQL(unittest.TestCase):
+        def setUp(self):
+            self.doc = folia.Document(string=FOLIAEXAMPLE)
 
-    def test01_context(self):
-        q = fql.Query(cql.cql2fql(Qcql_context))
-        results = q(self.doc)
-        self.assertTrue( len(results) > 0 )
-        for result in results:
-            self.assertIsInstance(result, fql.SpanSet)
-            #print("RESULT: ", [w.text() for w in result])
-            self.assertEqual(len(result), 3)
-            self.assertIsInstance(result[0], folia.Word)
-            self.assertIsInstance(result[1], folia.Word)
-            self.assertIsInstance(result[2], folia.Word)
-            self.assertEqual(result[0].text(), "de")
-            self.assertEqual(result[1].pos()[:4], "ADJ(")
-            self.assertEqual(result[2].pos()[:2], "N(")
+        def test01_context(self):
+            q = fql.Query(cql.cql2fql(Qcql_context))
+            results = q(self.doc)
+            self.assertTrue( len(results) > 0 )
+            for result in results:
+                self.assertIsInstance(result, fql.SpanSet)
+                #print("RESULT: ", [w.text() for w in result])
+                self.assertEqual(len(result), 3)
+                self.assertIsInstance(result[0], folia.Word)
+                self.assertIsInstance(result[1], folia.Word)
+                self.assertIsInstance(result[2], folia.Word)
+                self.assertEqual(result[0].text(), "de")
+                self.assertEqual(result[1].pos()[:4], "ADJ(")
+                self.assertEqual(result[2].pos()[:2], "N(")
 
-    def test02_context(self):
-        q = fql.Query(cql.cql2fql(Qcql_context2))
-        results = q(self.doc)
-        self.assertTrue( len(results) > 0 )
+        def test02_context(self):
+            q = fql.Query(cql.cql2fql(Qcql_context2))
+            results = q(self.doc)
+            self.assertTrue( len(results) > 0 )
 
-        textresults = []
-        for result in results:
-            self.assertIsInstance(result, fql.SpanSet)
-            textresults.append(  tuple([w.text() for w in result]) )
+            textresults = []
+            for result in results:
+                self.assertIsInstance(result, fql.SpanSet)
+                textresults.append(  tuple([w.text() for w in result]) )
 
-        self.assertTrue( ('het','alfabet') in textresults )
-        self.assertTrue( ('vierkante','haken') in textresults )
-        self.assertTrue( ('plaats',) in textresults )
-        self.assertTrue( ('het','originele','handschrift') in textresults )
-        self.assertTrue( ('Een','volle','lijn') in textresults )
+            self.assertTrue( ('het','alfabet') in textresults )
+            self.assertTrue( ('vierkante','haken') in textresults )
+            self.assertTrue( ('plaats',) in textresults )
+            self.assertTrue( ('het','originele','handschrift') in textresults )
+            self.assertTrue( ('Een','volle','lijn') in textresults )
 
-    def test03_context(self):
-        q = fql.Query(cql.cql2fql(Qcql_context3))
-        results = q(self.doc)
-        self.assertEqual( len(results), 2 )
+        def test03_context(self):
+            q = fql.Query(cql.cql2fql(Qcql_context3))
+            results = q(self.doc)
+            self.assertEqual( len(results), 2 )
 
-        textresults = []
-        for result in results:
-            self.assertIsInstance(result, fql.SpanSet)
-            self.assertEqual(len(result), 2)
-            textresults.append(  tuple([w.text() for w in result]) )
+            textresults = []
+            for result in results:
+                self.assertIsInstance(result, fql.SpanSet)
+                self.assertEqual(len(result), 2)
+                textresults.append(  tuple([w.text() for w in result]) )
 
-        #print(textresults,file=sys.stderr)
+            #print(textresults,file=sys.stderr)
 
-        self.assertTrue( ('naam','stemma') in textresults )
-        self.assertTrue( ('stemma','codicum') in textresults )
+            self.assertTrue( ('naam','stemma') in textresults )
+            self.assertTrue( ('stemma','codicum') in textresults )
 
-    def test04_context(self):
-        q = fql.Query(cql.cql2fql(Qcql_context4))
-        results = q(self.doc)
-        self.assertEqual( len(results),2  )
+        def test04_context(self):
+            q = fql.Query(cql.cql2fql(Qcql_context4))
+            results = q(self.doc)
+            self.assertEqual( len(results),2  )
 
-        textresults = []
-        for result in results:
-            self.assertIsInstance(result, fql.SpanSet)
-            textresults.append(  tuple([w.text() for w in result]) )
+            textresults = []
+            for result in results:
+                self.assertIsInstance(result, fql.SpanSet)
+                textresults.append(  tuple([w.text() for w in result]) )
 
-        #print(textresults,file=sys.stderr)
+            #print(textresults,file=sys.stderr)
 
-        self.assertTrue( ('genummerd','en','gedateerd') in textresults )
-        self.assertTrue( ('opgenomen','en','worden','weergegeven') in textresults )
+            self.assertTrue( ('genummerd','en','gedateerd') in textresults )
+            self.assertTrue( ('opgenomen','en','worden','weergegeven') in textresults )
 
-    def test05_context(self):
-        q = fql.Query(cql.cql2fql(Qcql_context5))
-        results = q(self.doc)
-        self.assertTrue( len(results) > 0 )
+        def test05_context(self):
+            q = fql.Query(cql.cql2fql(Qcql_context5))
+            results = q(self.doc)
+            self.assertTrue( len(results) > 0 )
 
-        textresults = []
-        for result in results:
-            self.assertIsInstance(result, fql.SpanSet)
-            textresults.append(  tuple([w.text() for w in result]) )
+            textresults = []
+            for result in results:
+                self.assertIsInstance(result, fql.SpanSet)
+                textresults.append(  tuple([w.text() for w in result]) )
 
-        #print(textresults,file=sys.stderr)
+            #print(textresults,file=sys.stderr)
 
-        self.assertTrue( ('en','gedateerd','zodat') in textresults )
-        self.assertTrue( ('en','worden','weergegeven','door') in textresults )
-        self.assertTrue( ('zodat','ze') in textresults )
-        self.assertTrue( ('en','worden','tussen') in textresults )
-        self.assertTrue( ('terweil','een') in textresults )
+            self.assertTrue( ('en','gedateerd','zodat') in textresults )
+            self.assertTrue( ('en','worden','weergegeven','door') in textresults )
+            self.assertTrue( ('zodat','ze') in textresults )
+            self.assertTrue( ('en','worden','tussen') in textresults )
+            self.assertTrue( ('terweil','een') in textresults )
 
-    def test06_context(self):
-        q = fql.Query(cql.cql2fql(Qcql_context6))
-        results = q(self.doc)
-        self.assertTrue( len(results) > 0 )
+        def test06_context(self):
+            q = fql.Query(cql.cql2fql(Qcql_context6))
+            results = q(self.doc)
+            self.assertTrue( len(results) > 0 )
 
-        for result in results:
-            self.assertIsInstance(result, fql.SpanSet)
-            self.assertEqual(len(result), 1)
-            self.assertTrue(result[0].pos()[:2] == "VZ" or result[0].pos()[:2] == "VG" )
+            for result in results:
+                self.assertIsInstance(result, fql.SpanSet)
+                self.assertEqual(len(result), 1)
+                self.assertTrue(result[0].pos()[:2] == "VZ" or result[0].pos()[:2] == "VG" )
 
 class Test4Evaluation(unittest.TestCase):
     """Higher-order corrections  (corrections on corrections)"""
@@ -993,20 +1000,20 @@ class Test4Evaluation(unittest.TestCase):
         self.assertEqual(results[0][1].text(), "on")
         self.assertEqual(results[0][2].text(), "weer")
 
-if os.path.exists('../../FoLiA'):
-    FOLIAPATH = '../../FoLiA/'
-elif os.path.exists('../FoLiA'):
-    FOLIAPATH = '../FoLiA/'
+if os.path.exists("folia-repo"):
+    FOLIAPATH = "folia-repo"
+elif os.path.exists("../folia-repo"):
+    FOLIAPATH = "../folia-repo"
+elif os.path.exists("../../folia-repo"):
+    FOLIAPATH = "../../folia-repo"
 else:
-    FOLIAPATH = 'FoLiA'
-    print("Downloading FoLiA",file=sys.stderr)
-    os.system("git clone https://github.com/proycon/folia.git FoLiA")
+    raise Exception("FoLiA repository not found, did you run git submodule init and are you in the test directory?")
 
-f = io.open(FOLIAPATH + '/test/example.xml', 'r',encoding='utf-8')
+f = io.open(os.path.join(FOLIAPATH, 'examples/full-legacy.1.5.folia.xml'), 'r',encoding='utf-8')
 FOLIAEXAMPLE = f.read()
 f.close()
 
-f = io.open(FOLIAPATH + '/test/correctionexample.xml', 'r',encoding='utf-8')
+f = io.open(os.path.join(FOLIAPATH, 'examples/corrections.0.12.folia.xml'), 'r',encoding='utf-8')
 FOLIACORRECTIONEXAMPLE = f.read()
 f.close()
 

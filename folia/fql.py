@@ -21,13 +21,13 @@ from __future__ import unicode_literals
 from __future__ import division
 from __future__ import absolute_import
 
-from pynlpl.formats import folia
 from copy import copy
 import json
 import re
 import sys
 import random
 import datetime
+import folia.main as folia
 
 OPERATORS = ('=','==','!=','>','<','<=','>=','CONTAINS','NOTCONTAINS','MATCHES','NOTMATCHES')
 MASK_NORMAL = 0
