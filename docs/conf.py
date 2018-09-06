@@ -40,8 +40,8 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = u'PyNLPl'
-copyright = u'2016, Maarten van Gompel'
+project = u'FoLiA'
+copyright = u'2018, Maarten van Gompel'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -175,7 +175,7 @@ latex_paper_size = 'a4'
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author, documentclass [howto/manual]).
 latex_documents = [
-  ('index', 'pynlpl.tex', u'PyNLPl Documentation',
+  ('index', 'foliapy.tex', u'FoLiA Python Library Documentation',
    u'Maarten van Gompel', 'manual'),
 ]
 
