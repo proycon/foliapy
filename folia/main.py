@@ -860,10 +860,16 @@ class AbstractElement(object):
         #overriding getattr so we can get defaults here rather than needing a copy on each element, saves memory
         if attr in ('set','cls','processor', 'confidence','datetime','n','href','src','speaker','begintime','endtime','xlinktype','xlinktitle','xlinklabel','xlinkrole','xlinkshow','label', 'textclass', 'metadata'):
             return None
-        elif attr == 'annotator' and hasattr(self, 'processor'):
-            return self.processor.name
-        elif attr == 'annotatortype' and hasattr(self, 'processor'):
-            return self.processor.type
+        elif attr == 'annotator':
+            if hasattr(self, 'processor') and self.processor:
+                return self.processor.name
+            else:
+                return None
+        elif attr == 'annotatortype':
+            if hasattr(self, 'processor') and self.processor:
+                return self.processor.type
+            else:
+                return None
         else:
             return super(AbstractElement, self).__getattribute__(attr)
 
@@ -6956,8 +6962,8 @@ class Document(object):
 
                 if type not in self.annotators:
                     self.annotators[type] = OrderedDict()
-                    if set not in self.annotators[type]:
-                        self.annotators[type][set] = []
+                if set not in self.annotators[type]:
+                    self.annotators[type][set] = []
 
                 for annotatornode in subnode:
                     if annotatornode.tag == '{' + NSFOLIA + '}annotator':
@@ -7134,8 +7140,8 @@ class Document(object):
             self.annotationdefaults[annotationtype] = {}
         if annotationtype not in self.annotators:
             self.annotators[annotationtype] = OrderedDict()
-            if set not in self.annotators[annotationtype]:
-                self.annotators[annotationtype][set] = []
+        if set not in self.annotators[annotationtype]:
+            self.annotators[annotationtype][set] = []
         if 'alias' in kwargs:
             if annotationtype in self.set_alias and set in self.set_alias[annotationtype] and self.set_alias[annotationtype][set] != kwargs['alias']:
                 raise ValueError("Redeclaring set " + set + " with another alias ('"+kwargs['alias']+"') is not allowed!")
@@ -7183,8 +7189,9 @@ class Document(object):
             return_processors.append(processor)
             context = processor
 
+
         #Set defaults
-        if len(self.annotator[annotationtype][set]) == 1:
+        if len(self.annotators[annotationtype][set]) == 1:
             self.annotationdefaults[annotationtype][set] = {'processor': processor.id}
             return processor #returns the last one
         elif not args:
