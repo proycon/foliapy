@@ -114,6 +114,7 @@ class AnnotatorType:
 
 class ProcessorType(AnnotatorType): #superset of AnnotatorType
     GENERATOR = "generator"
+    DATASOURCE = "datasource"
 
 #foliaspec:attributes
 #Defines all common FoLiA attributes (as part of the Attrib enumeration)
@@ -199,14 +200,18 @@ class Annotator:
     def __call__(self):
         return self.doc.provenance[self.processor_id]
 
+    def __str__(self):
+        return self().name
+
 class Processor:
-    def __init__(self, name, type=ProcessorType.AUTO, id=None, version=None, document_version=None, folia_version=None, command=None, host=None, user=None, begindatetime=None, enddatetime=None, parent=None):
+    def __init__(self, name, type=ProcessorType.AUTO, id=None, version=None, document_version=None, folia_version=None, command=None, host=None, user=None, begindatetime=None, enddatetime=None, resourcelink=None, parent=None):
         self.name = name
         if id is None:
             self.id = "proc." + self.name.lower() + "."  + ("%08x" % random.getrandbits(16)) #assign ID with random elements if none provided
         else:
             self.id = id
-        assert type in (ProcessorType.MANUAL, ProcessorType.AUTO, ProcessorType.GENERATOR) #superset of AnnotatorType
+        if type not in (ProcessorType.MANUAL, ProcessorType.AUTO, ProcessorType.GENERATOR, ProcessorType.DATASOURCE): #superset of AnnotatorType
+            raise ParseError("Invalid processor type: " + str(type))
         self.type = type
         self.version = version
         self.folia_version = folia_version
@@ -218,6 +223,7 @@ class Processor:
         self.enddatetime = enddatetime
         self.processors = []
         self.metadata = NativeMetaData()
+        self.resourcelink = resourcelink
         self.parent = parent
 
     def append(self, processor):
@@ -228,15 +234,16 @@ class Processor:
     @classmethod
     def parsexml(Class, node): #pylint: disable=bad-classmethod-argument
         if node.tag == '{' + NSFOLIA + '}processor':
-            processor = Processor(id=node.attrib['{http://www.w3.org/XML/1998/namespace}id'], name=node.attrib['name'], version=node.attrib.get('version',None), document_version=node.attrib.get('document_version', None), folia_version=node.attrib.get('folia_version', None), command=node.attrib.get('command', None),host=node.attrib.get('host', None),user=node.attrib.get('user', None),begindatetime=node.attrib.get('begindatetime', None) ,enddatetime=node.attrib.get('enddatetime', None))
+            processor = Processor(node.attrib['name'],id=node.attrib['{http://www.w3.org/XML/1998/namespace}id'],  type=node.attrib.get('type', ProcessorType.AUTO), version=node.attrib.get('version',None), document_version=node.attrib.get('document_version', None), folia_version=node.attrib.get('folia_version', None), command=node.attrib.get('command', None),host=node.attrib.get('host', None),user=node.attrib.get('user', None),begindatetime=node.attrib.get('begindatetime', None) ,enddatetime=node.attrib.get('enddatetime', None), resourcelink=node.attrib.get('resourcelink', None))
             for subnode in node:
-                if subnode.tag == '{' + NSFOLIA + '}processor':
-                    processor.processors.append(Processor.parsexml(subnode))
-                elif subnode.tag == '{' + NSFOLIA + '}meta':
-                    if subnode.text:
-                        processor.metadata[subnode.attrib['id']] = subnode.text
-                else:
-                    raise ParseError("Unexpected element in Processor: " + subnode.tag)
+                if not isinstance(subnode, ElementTree._Comment): #pylint: disable=protected-access
+                    if subnode.tag == '{' + NSFOLIA + '}processor':
+                        processor.processors.append(Processor.parsexml(subnode))
+                    elif subnode.tag == '{' + NSFOLIA + '}meta':
+                        if subnode.text:
+                            processor.metadata[subnode.attrib['id']] = subnode.text
+                    else:
+                        raise ParseError("Unexpected element in Processor: " + subnode.tag)
             return processor
         raise ValueError("Invalid node passed" + node.tag)
 
@@ -244,7 +251,7 @@ class Processor:
         E = ElementMaker(namespace=NSFOLIA,nsmap={None: NSFOLIA, 'xml' : "http://www.w3.org/XML/1998/namespace"})
         attribs = {}
         attribs['{http://www.w3.org/XML/1998/namespace}id'] = self.id
-        for key in ('name','type', 'version','document_version', 'folia_version','command','host','user','begindatetime','enddatetime'):
+        for key in ('name','type', 'version','document_version', 'folia_version','command','host','user','begindatetime','enddatetime', 'resourcelink'):
             if hasattr(self,key) and getattr(self,key) is not None:
                 attribs[key] = getattr(self, key)
         elements = []
@@ -260,7 +267,13 @@ class Processor:
         for processor in self.processors:
             if processor.id == id:
                 return processor
-        return KeyError(id)
+            else:
+                #recursive
+                try:
+                    return processor[id]
+                except KeyError:
+                    pass
+        raise KeyError(id)
 
     def __len__(self):
         return len(self.processors)
@@ -289,24 +302,29 @@ class Provenance:
         return processor
 
     def __getitem__(self, id):
-        if isinstance(id, Processor): id = id.id
+        if isinstance(id, Processor): id = id.id #let's not be too picky about whether we get an ID or a Processor instance
         for processor in self.processors:
             if processor.id == id:
                 return processor
             else:
                 #recurse into subprocessors
                 try:
-                    subprocessor = processor[id]
+                    return processor[id]
                 except KeyError:
                     pass
-        return KeyError(id)
+        raise KeyError("No such processor: " + str(id))
 
 
     def __exists__(self, id):
-        if isinstance(id, Processor): id = processor.id
+        if isinstance(id, Processor): id = id.id
         for processor in self.processors:
             if processor.id == id:
                 return True
+            else:
+                try:
+                    return processor[id]
+                except KeyError:
+                    pass
         return False
 
     def __len__(self):
@@ -454,10 +472,18 @@ def parsecommonarguments(object, doc, annotationtype, required, allowed, **kwarg
             object.processor = kwargs['processor']
         else:
             object.processor = doc.provenance[kwargs['processor']]
+        #Both processor and annotator are specified! This is valid only if the annotator equals the processor name!
+        if 'annotator' in kwargs and kwargs.annotator:
+            if kwargs['annotator'] != object.processor.name:
+                raise ValueError("Annotator attribute " + kwargs['annotator'] + " does not equal processor name (" + object.processor.name + ")")
+        if 'annotatortype' in kwargs and kwargs.annotator:
+            if kwargs['annotatortype'] != object.processor.type:
+                raise ValueError("Annotatortype attribute " + kwargs['annotatortype'] + " does not equal processor type (" + object.processor.type + ")")
+        del kwargs['processor']
     elif doc and annotationtype in doc.annotators and object.set in doc.annotators[annotationtype] and len(doc.annotators[annotationtype][object.set]) == 1:
         #assign the default processor
-        object.processor = doc.annotators[annotationtype][object.set]()
-        del kwargs['annotator']
+        for processor in doc.getprocessors(annotationtype, object.set): #should only iterate over one!
+            object.processor = processor
 
     if object.processor is None:
         #old behavour without provenance (FoLiA <= 1.5)
@@ -6910,6 +6936,7 @@ class Document(object):
         self.declareprocessed = True
         for subnode in node: #pylint: disable=too-many-nested-blocks
             if not isinstance(subnode.tag, str): continue
+            if isinstance(subnode, ElementTree._Comment): continue #don't trip over comments #pylint: disable=protected-access
             if subnode.tag[:25] == '{' + NSFOLIA + '}' and subnode.tag[-11:] == '-annotation':
                 prefix = subnode.tag[25:][:-11]
                 type = None
@@ -6951,10 +6978,11 @@ class Document(object):
                     self.annotators[type][set] = []
 
                 for annotatornode in subnode:
-                    if annotatornode.tag == '{' + NSFOLIA + '}annotator':
-                        self.annotators[type][set].append(Annotator(annotatornode.attrib['processor'], self))
-                    else:
-                        raise ParseError("Expected <annotator>, got " + annotatornode.tag)
+                    if not isinstance(annotatornode, ElementTree._Comment): #don't trip over comments #pylint: disable=protected-access
+                        if annotatornode.tag == '{' + NSFOLIA + '}annotator':
+                            self.annotators[type][set].append(Annotator(annotatornode.attrib['processor'], self))
+                        else:
+                            raise ParseError("Expected <annotator>, got " + annotatornode.tag)
 
                 #Set defaults
                 if type not in self.annotationdefaults:
@@ -6962,8 +6990,8 @@ class Document(object):
                 defaults = {}
                 if len(self.annotators[type][set]) == 1:
                     #There is only one annotator (FoLiA >= v1.6), it will be the default
-                    processor = self.annotators[type][set]()
-                    defaults['processor'] = processor
+                    for annotator in self.getannotators(type, set): #should only iterate over one!
+                        defaults['processor'] = annotator.processor_id
                 elif len(self.annotators[type][set]) >= 1:
                     #There are multiple annotators (FoLiA >= v1.6), there will be no defaults
                     self.annotationdefaults[type][set] = {} #no defaults
@@ -7224,6 +7252,14 @@ class Document(object):
         except IndexError:
             raise NoDefaultError
 
+    def getannotators(self, annotationtype, annotationset):
+        if inspect.isclass(annotationtype) or isinstance(annotationtype,AbstractElement): annotationtype = annotationtype.ANNOTATIONTYPE
+        for annotator in self.annotators[annotationtype][annotationset]:
+            yield annotator
+
+    def getprocessors(self, annotationtype, annotationset):
+        for annotator in self.getannotators(annotationtype, annotationset):
+            yield annotator() #calling the annotator returns a Processor
 
     def defaultannotator(self, annotationtype, set=None):
         """Obtain the default annotator for the specified annotation type and set.
@@ -7428,7 +7464,8 @@ class Document(object):
     def parsexmlprovenance(self, node):
         for subnode in node:
             if subnode.tag == '{' + NSFOLIA + '}processor':
-                self.provenance.add(Processor(subnode.attrib['{http://www.w3.org/XML/1998/namespace}id'], subnode.attrib['name'], subnode.attrib.get('version',None), subnode.attrib.get('folia_version', None), subnode.attrib.get('generator', None), subnode.attrib.get('command', None),subnode.attrib.get('host', None),subnode.attrib.get('user', None),subnode.attrib.get('begindatetime', None) ,subnode.attrib.get('enddatetime', None)))
+                processor = Processor.parsexml(subnode)
+                self.provenance.append(processor)
 
 
     def parsesubmetadata(self, node):

@@ -83,7 +83,7 @@ def xmlcheck(xml,expect):
     return passed
 
 
-class Test1Read(unittest.TestCase):
+class Test01Read(unittest.TestCase):
 
     def test1_readfromfile(self):
         """Reading from file"""
@@ -155,7 +155,7 @@ class Test1Read(unittest.TestCase):
         self.assertTrue(isinstance(doc,folia.Document))
         self.assertEqual(len(list(doc.words())),1465)
 
-class Test2Sanity(unittest.TestCase):
+class Test02Sanity(unittest.TestCase):
 
     def setUp(self):
         self.doc = folia.Document(string=LEGACYEXAMPLE, textvalidation=True)
@@ -1669,7 +1669,7 @@ class Test2Sanity(unittest.TestCase):
         doc = folia.Document(string=xml)
         self.assertEqual(doc['example.text.1'].text(),"This is the real text")
 
-class Test4Edit(unittest.TestCase):
+class Test04Edit(unittest.TestCase):
 
     def setUp(self):
         self.doc = folia.Document(string=LEGACYEXAMPLE, textvalidation=True)
@@ -2215,7 +2215,7 @@ class Test4Edit(unittest.TestCase):
     #    self.assertEqual( w.annotation(folia.Correction).new[0] ,'stippellijn' )
     #    self.assertEqual( w.text(), 'stippellijn')
 
-class Test4Create(unittest.TestCase):
+class Test04Create(unittest.TestCase):
     def test001_create(self):
         """Creating a FoLiA Document from scratch"""
         self.doc = folia.Document(id='example')
@@ -2239,7 +2239,7 @@ class Test4Create(unittest.TestCase):
 
         self.assertEqual( len(self.doc.index[self.doc.id + '.s.1']), 5)
 
-class Test5Correction(unittest.TestCase):
+class Test05Correction(unittest.TestCase):
     def setUp(self):
         self.doc = folia.Document(id='example', textvalidation=True)
         self.doc.declare(folia.AnnotationType.TOKEN, set='adhocset',annotator='proycon')
@@ -2423,7 +2423,7 @@ class Test5Correction(unittest.TestCase):
 
 
 
-class Test6Query(unittest.TestCase):
+class Test06Query(unittest.TestCase):
     def setUp(self):
         self.doc = folia.Document(string=LEGACYEXAMPLE, textvalidation=True)
 
@@ -2574,7 +2574,7 @@ class Test6Query(unittest.TestCase):
 
 
 
-class Test9Reader(unittest.TestCase):
+class Test09Reader(unittest.TestCase):
     def setUp(self):
         self.reader = folia.Reader(os.path.join(TMPDIR,"foliatest.xml"), folia.Word)
 
@@ -2638,7 +2638,7 @@ class Test9Reader(unittest.TestCase):
         matches = list(self.reader.findwords( folia.Pattern('bli','bla','blu', matchannotation=folia.SenseAnnotation) ))
         self.assertEqual( len(matches), 0 )
 
-class Test7XpathQuery(unittest.TestCase):
+class Test07XpathQuery(unittest.TestCase):
     def test050_findwords_xpath(self):
         """Xpath Querying - Collect all words (including non-authoritative)"""
         count = 0
@@ -2656,7 +2656,7 @@ class Test7XpathQuery(unittest.TestCase):
         self.assertEqual(count, 190)
 
 
-class Test8Validation(unittest.TestCase):
+class Test08Validation(unittest.TestCase):
     def test000_relaxng(self):
         """Validation - RelaxNG schema generation"""
         folia.relaxng()
@@ -2670,7 +2670,7 @@ class Test8Validation(unittest.TestCase):
         doc = folia.Document(file=os.path.join(TMPDIR,'foliatest.xml'), loadsetdefinitions=True)
         assert isinstance( doc.setdefinitions["http://raw.github.com/proycon/folia/master/setdefinitions/namedentities.foliaset.xml"], folia.SetDefinition)
 
-class Test9Validation(unittest.TestCase):
+class Test09Validation(unittest.TestCase):
     def test001_deepvalidation(self):
         """Validation - Deep Validation"""
         folia.Document(file=os.path.join(FOLIAPATH,'examples/frog-deep.1.3.2.folia.xml'), deepvalidation=True, textvalidation=True, allowadhocsets=True)
@@ -3944,6 +3944,34 @@ het    ook   ?
 </FoLiA>""".format(version=folia.FOLIAVERSION, generator='foliapy-v' + folia.LIBVERSION)
         doc = folia.Document(string=xml, textvalidation=True)
         self.assertEqual( doc['test.s'].text(), "Dit\n         is een rare test.\n         ")
+
+class Test10Provenance(unittest.TestCase):
+    def test001_sanity(self):
+        """Provenance - Parse and sanity check"""
+        doc = folia.Document(file=os.path.join(FOLIAPATH,'examples/provenance.2.0.0.folia.xml'), textvalidation=True, allowadhocsets=True)
+        self.assertIsInstance(doc.provenance, folia.Provenance)
+        self.assertEqual(doc.provenance['p0'].name, 'ucto')
+        self.assertEqual(doc.provenance['p0.1'].name, 'libfolia')
+        self.assertEqual(doc.provenance['p1'].name, 'frog')
+        self.assertEqual(doc.provenance['p1'].type, folia.ProcessorType.AUTO)
+        self.assertEqual(doc.provenance['p1'].version, "0.16")
+        self.assertEqual(doc.provenance['p1.0'].name, 'libfolia')
+        self.assertEqual(doc.provenance['p1.0'].type, folia.ProcessorType.GENERATOR)
+        self.assertEqual(doc.provenance['p1.0'].name, 'libfolia')
+        self.assertEqual(doc.provenance['p2.1'].name, 'proycon')
+        self.assertEqual(doc.provenance['p2.1'].type, folia.ProcessorType.MANUAL)
+        annotators = list(doc.getannotators(folia.PosAnnotation, "http://ilk.uvt.nl/folia/sets/frog-mbpos-cgn" ))
+        self.assertEqual(len(annotators),  3)
+        #basically the same thing as above, but resolved to Processor instances:
+        processors = list(doc.getprocessors(folia.PosAnnotation, "http://ilk.uvt.nl/folia/sets/frog-mbpos-cgn" ))
+        self.assertEqual(len(processors),  3)
+        #let's see if we got the right ones:
+        self.assertEqual(processors[0].id, "p1.1")
+        self.assertEqual(processors[0].name, "mbpos")
+        self.assertEqual(processors[0].type, folia.ProcessorType.AUTO)
+        self.assertEqual(processors[1].name, "proycon")
+        self.assertEqual(processors[1].type, folia.ProcessorType.MANUAL)
+
 
 
 with io.open(os.path.join(FOLIAPATH, 'examples/full-legacy.1.5.folia.xml'), 'r',encoding='utf-8') as foliaexample_f:
