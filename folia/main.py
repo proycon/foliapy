@@ -60,16 +60,13 @@ else:
 
 from folia.helpers import u, isstring, sum_to_n
 from folia.foliaset import SetDefinition, DeepValidationError
+from folia import LIBVERSION
 
 
 
 #foliaspec:version:FOLIAVERSION
 #The FoLiA version
-FOLIAVERSION = "1.6.0"
-
-LIBVERSION = FOLIAVERSION + '.89' #== FoLiA version + library revision
-
-#0.9.1.31 is the first version with Python 3 support
+FOLIAVERSION = "2.0.0"
 
 #foliaspec:namespace:NSFOLIA
 #The FoLiA XML namespace
@@ -2586,16 +2583,17 @@ class AbstractElement(object):
         elif Attrib.ID in cls.OPTIONAL_ATTRIBS:
             attribs.append( E.optional( E.attribute(E.data(type='ID',datatypeLibrary='http://www.w3.org/2001/XMLSchema-datatypes'), name='id', ns="http://www.w3.org/XML/1998/namespace") ) )
         if Attrib.CLASS in cls.REQUIRED_ATTRIBS:
-            #Set is a tough one, we can't require it as it may be defined in the declaration: we make it optional and need schematron to resolve this later
             attribs.append( E.attribute(E.data(type='string',datatypeLibrary='http://www.w3.org/2001/XMLSchema-datatypes'),name='class') )
             attribs.append( E.optional( E.attribute( E.data(type='string',datatypeLibrary='http://www.w3.org/2001/XMLSchema-datatypes'),name='set' ) ) )
         elif Attrib.CLASS in cls.OPTIONAL_ATTRIBS:
             attribs.append( E.optional( E.attribute(E.data(type='string',datatypeLibrary='http://www.w3.org/2001/XMLSchema-datatypes'),name='class') ) )
             attribs.append( E.optional( E.attribute(E.data(type='string',datatypeLibrary='http://www.w3.org/2001/XMLSchema-datatypes'), name='set' ) ) )
         if Attrib.ANNOTATOR in cls.REQUIRED_ATTRIBS or Attrib.ANNOTATOR in cls.OPTIONAL_ATTRIBS:
-            #Similarly tough
+            #FoLiA without provenance
             attribs.append( E.optional( E.attribute(E.data(type='string',datatypeLibrary='http://www.w3.org/2001/XMLSchema-datatypes'), name='annotator') ) )
             attribs.append( E.optional( E.attribute(name='annotatortype') ) )
+            #FoLiA >2.0 provenance
+            attribs.append( E.optional( E.attribute(E.data(type='IDREF',datatypeLibrary='http://www.w3.org/2001/XMLSchema-datatypes'), name='processor') ) )
         if Attrib.CONFIDENCE in cls.REQUIRED_ATTRIBS:
             attribs.append(  E.attribute(E.data(type='double',datatypeLibrary='http://www.w3.org/2001/XMLSchema-datatypes'), name='confidence') )
         elif Attrib.CONFIDENCE in cls.OPTIONAL_ATTRIBS:
@@ -7849,7 +7847,15 @@ def relaxng_declarations():
     E = ElementMaker(namespace="http://relaxng.org/ns/structure/1.0",nsmap={None:'http://relaxng.org/ns/structure/1.0' , 'folia': NSFOLIA, 'xml' : "http://www.w3.org/XML/1998/namespace"})
     for key in vars(AnnotationType).keys():
         if key[0] != '_':
-            yield E.element( E.optional( E.attribute(name='set')) , E.optional(E.attribute(name='annotator')) , E.optional( E.attribute(name='annotatortype') ) , E.optional( E.attribute(name='datetime') )  , name=key.lower() + '-annotation')
+            yield E.element(
+                E.optional( E.attribute(E.data(type='string',datatypeLibrary='http://www.w3.org/2001/XMLSchema-datatypes'), name='set') ),
+                E.optional( E.attribute(E.data(type='string',datatypeLibrary='http://www.w3.org/2001/XMLSchema-datatypes'), name='annotator') ), #pre-provenance, FoLiA <2.0
+                E.optional( E.attribute(E.data(type='string',datatypeLibrary='http://www.w3.org/2001/XMLSchema-datatypes'), name='annotatortype') ), #pre-provenance, FoLiA <2.0
+                E.optional( E.attribute(E.data(type='dateTime',datatypeLibrary='http://www.w3.org/2001/XMLSchema-datatypes'), name='datetime') ), #pre-provenance, FoLiA <2.0
+                E.zeroOrMore(
+                    E.element(E.attribute(E.data(type='IDREF',datatypeLibrary='http://www.w3.org/2001/XMLSchema-datatypes'), name="processor"), name="annotator")
+                ),
+            name=key.lower() + '-annotation')
 
 
 def relaxng(filename=None):
@@ -7861,6 +7867,8 @@ def relaxng(filename=None):
     Returns:
         lxml.ElementTree: The schema
     """
+    #TODO: Generate documentation INSIDE the RelaxNG (I did something similar for CLAM XML) (relates to #43)
+    #TODO: Add data types #27
     E = ElementMaker(namespace="http://relaxng.org/ns/structure/1.0",nsmap={None:'http://relaxng.org/ns/structure/1.0' , 'folia': NSFOLIA, 'xml' : "http://www.w3.org/XML/1998/namespace"})
     grammar = E.grammar( E.start( E.element( #FoLiA
                 E.attribute(name='id',ns="http://www.w3.org/XML/1998/namespace"),
@@ -7870,6 +7878,7 @@ def relaxng(filename=None):
                     E.optional(E.attribute(name='type')),
                     E.optional(E.attribute(name='src')),
                     E.element( E.zeroOrMore( E.choice( *relaxng_declarations() ) ) ,name='annotations'),
+                    E.optional(E.element( E.zeroOrMore( E.ref(name="processor")) ,name='provenance')),
                     E.zeroOrMore(
                         E.element(E.attribute(name='id'), E.text(), name='meta'),
                     ),
@@ -7913,8 +7922,29 @@ def relaxng(filename=None):
             E.define( E.attribute(E.anyName()), name="any_attribute"),
             #Definition for allowing alien-namespace attributes on any element
             E.define( E.zeroOrMore(E.attribute(E.anyName(getattr(E,'except')(E.nsName(),E.nsName(ns=""),E.nsName(ns="http://www.w3.org/XML/1998/namespace"),E.nsName(ns="http://www.w3.org/1999/xlink"))))), name="allow_foreign_attributes"),
+            #Definition for processors (provenance)
+            E.define(
+                E.element(
+                    E.attribute(E.data(type='ID',datatypeLibrary='http://www.w3.org/2001/XMLSchema-datatypes'), name='id',ns="http://www.w3.org/XML/1998/namespace"),
+                    E.optional(E.attribute(E.data(type='string',datatypeLibrary='http://www.w3.org/2001/XMLSchema-datatypes'), name='name')),
+                    E.optional(E.attribute(E.data(type='string',datatypeLibrary='http://www.w3.org/2001/XMLSchema-datatypes'), name='type')),
+                    E.optional(E.attribute(E.data(type='string',datatypeLibrary='http://www.w3.org/2001/XMLSchema-datatypes'), name='version')),
+                    E.optional(E.attribute(E.data(type='string',datatypeLibrary='http://www.w3.org/2001/XMLSchema-datatypes'), name='document_version')),
+                    E.optional(E.attribute(E.data(type='string',datatypeLibrary='http://www.w3.org/2001/XMLSchema-datatypes'), name='command')),
+                    E.optional(E.attribute(E.data(type='string',datatypeLibrary='http://www.w3.org/2001/XMLSchema-datatypes'), name='host')),
+                    E.optional(E.attribute(E.data(type='string',datatypeLibrary='http://www.w3.org/2001/XMLSchema-datatypes'), name='user')),
+                    E.optional(E.attribute(E.data(type='string',datatypeLibrary='http://www.w3.org/2001/XMLSchema-datatypes'), name='folia_version')),
+                    E.optional(E.attribute(E.data(type='dateTime',datatypeLibrary='http://www.w3.org/2001/XMLSchema-datatypes'), name='begindatetime')),
+                    E.optional(E.attribute(E.data(type='dateTime',datatypeLibrary='http://www.w3.org/2001/XMLSchema-datatypes'), name='enddatetime')),
+                    E.interleave(
+                        E.zeroOrMore(E.element(E.attribute(name='id'), E.text(), name='meta')),
+                        E.zeroOrMore(E.ref(name="processor")),
+                    )
+                , name="processor")
+            , name="processor", ns=NSFOLIA),
+            #grammar keyword args:
             datatypeLibrary="http://www.w3.org/2001/XMLSchema-datatypes",
-            )
+            ) #end grammar, rest will be appended dynamically below
 
     done = {}
     for c in globals().values():
