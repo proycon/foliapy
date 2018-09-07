@@ -17,10 +17,6 @@
 
 #pylint: disable=redefined-builtin,trailing-whitespace,superfluous-parens,bad-classmethod-argument,wrong-import-order,wrong-import-position,ungrouped-imports
 
-from __future__ import print_function
-from __future__ import unicode_literals
-from __future__ import division
-from __future__ import absolute_import
 
 import sys
 
@@ -43,20 +39,10 @@ import random
 from lxml import etree as ElementTree
 from lxml.builder import ElementMaker
 
-if sys.version < '3':
-    from StringIO import StringIO #pylint: disable=import-error,wrong-import-order
-    from urllib import urlopen #pylint: disable=no-name-in-module,wrong-import-order
-else:
-    from io import StringIO,  BytesIO #pylint: disable=wrong-import-order,ungrouped-imports
-    from urllib.request import urlopen #pylint: disable=E0611,wrong-import-order,ungrouped-imports
-
-if sys.version < '3':
-    from codecs import getwriter #pylint: disable=wrong-import-order,ungrouped-imports
-    stderr = getwriter('utf-8')(sys.stderr)
-    stdout = getwriter('utf-8')(sys.stdout)
-else:
-    stderr = sys.stderr
-    stdout = sys.stdout
+from io import StringIO,  BytesIO #pylint: disable=wrong-import-order,ungrouped-imports
+from urllib.request import urlopen #pylint: disable=E0611,wrong-import-order,ungrouped-imports
+stderr = sys.stderr
+stdout = sys.stdout
 
 from folia.helpers import u, isstring, sum_to_n
 from folia.foliaset import SetDefinition, DeepValidationError
@@ -714,22 +700,12 @@ def parse_datetime(s): #source: http://stackoverflow.com/questions/2211362/how-t
 
 def xmltreefromstring(s):
     """Internal function, deals with different Python versions, unicode strings versus bytes, and with the leak bug in lxml"""
-    if sys.version < '3':
-        #Python 2
-        if isinstance(s,unicode): #pylint: disable=undefined-variable
-            s = s.encode('utf-8')
-        try:
-            return ElementTree.parse(StringIO(s), ElementTree.XMLParser(collect_ids=False))
-        except TypeError:
-            return ElementTree.parse(StringIO(s), ElementTree.XMLParser()) #older lxml, may leak!!!!
-    else:
-        #Python 3
-        if isinstance(s,str):
-            s = s.encode('utf-8')
-        try:
-            return ElementTree.parse(BytesIO(s), ElementTree.XMLParser(collect_ids=False))
-        except TypeError:
-            return ElementTree.parse(BytesIO(s), ElementTree.XMLParser()) #older lxml, may leak!!!!
+    if isinstance(s,str):
+        s = s.encode('utf-8')
+    try:
+        return ElementTree.parse(BytesIO(s), ElementTree.XMLParser(collect_ids=False))
+    except TypeError:
+        return ElementTree.parse(BytesIO(s), ElementTree.XMLParser()) #older lxml, may leak!!!!
 
 def xmltreefromfile(filename):
     """Internal function to read an XML file"""
@@ -740,27 +716,7 @@ def xmltreefromfile(filename):
 
 def makeelement(E, tagname, **kwargs):
     """Internal function"""
-    if sys.version < '3':
-        try:
-            kwargs2 = {}
-            for k,v in kwargs.items():
-                kwargs2[k.encode('utf-8')] = v.encode('utf-8')
-                #return E._makeelement(tagname.encode('utf-8'), **{ k.encode('utf-8'): v.encode('utf-8') for k,v in kwargs.items() } )   #In one go fails on some older Python 2.6s
-            return E._makeelement(tagname.encode('utf-8'), **kwargs2 ) #pylint: disable=protected-access
-        except ValueError as e:
-            try:
-                #older versions of lxml may misbehave, compensate:
-                e =  E._makeelement(tagname.encode('utf-8')) #pylint: disable=protected-access
-                for k,v in kwargs.items():
-                    e.attrib[k.encode('utf-8')] = v
-                return e
-            except ValueError:
-                print(e,file=stderr)
-                print("tagname=",tagname,file=stderr)
-                print("kwargs=",kwargs,file=stderr)
-                raise e
-    else:
-        return E._makeelement(tagname,**kwargs) #pylint: disable=protected-access
+    return E._makeelement(tagname,**kwargs) #pylint: disable=protected-access
 
 
 def commonancestors(Class, *args):
@@ -1838,7 +1794,7 @@ class AbstractElement(object):
             raise Exception("Too many arguments specified. Only possible when first argument is a class and not an instance")
 
         #Do the actual appending
-        if not Class and (isinstance(child,str) or (sys.version < '3' and isinstance(child,unicode))) and TextContent in self.ACCEPTED_DATA: #pylint: disable=undefined-variable
+        if not Class and isinstance(child,str) and TextContent in self.ACCEPTED_DATA: #pylint: disable=undefined-variable
             #you can pass strings directly (just for convenience), will be made into textcontent automatically.
             child = TextContent(self.doc, child )
             self.data.insert(index, child)
@@ -2229,7 +2185,7 @@ class AbstractElement(object):
 
         if elements: #extra elements
             for e2 in elements:
-                if isinstance(e2, str) or (sys.version < '3' and isinstance(e2, unicode)):
+                if isinstance(e2, str):
                     if e.text is None:
                         e.text = e2
                     else:
@@ -2309,12 +2265,8 @@ class AbstractElement(object):
         Returns:
             str: a string with XML representation for this element and all its children"""
         s = ElementTree.tostring(self.xml(), xml_declaration=False, pretty_print=pretty_print, encoding='utf-8')
-        if sys.version < '3':
-            if isinstance(s, str):
-                s = unicode(s,'utf-8') #pylint: disable=undefined-variable
-        else:
-            if isinstance(s,bytes):
-                s = str(s,'utf-8')
+        if isinstance(s,bytes):
+            s = str(s,'utf-8')
 
         s = s.replace('ns0:','') #ugly patch to get rid of namespace prefix
         s = s.replace(':ns0','')
@@ -2926,10 +2878,7 @@ class Description(AbstractElement):
             elif isstring(kwargs['value']):
                 self.value = u(kwargs['value'])
             else:
-                if sys.version < '3':
-                    raise Exception("value= parameter must be unicode or str instance, got " + str(type(kwargs['value'])))
-                else:
-                    raise Exception("value= parameter must be str instance, got " + str(type(kwargs['value'])))
+                raise Exception("value= parameter must be str instance, got " + str(type(kwargs['value'])))
             del kwargs['value']
         else:
             raise Exception("Description expects value= parameter")
@@ -2978,10 +2927,7 @@ class Comment(AbstractElement):
             elif isstring(kwargs['value']):
                 self.value = u(kwargs['value'])
             else:
-                if sys.version < '3':
-                    raise Exception("value= parameter must be unicode or str instance, got " + str(type(kwargs['value'])))
-                else:
-                    raise Exception("value= parameter must be str instance, got " + str(type(kwargs['value'])))
+                raise Exception("value= parameter must be str instance, got " + str(type(kwargs['value'])))
             del kwargs['value']
         else:
             raise Exception("Comment expects value= parameter")
@@ -6360,10 +6306,7 @@ class NativeMetaData(object):
 
     def __setitem__(self, key, value):
         exists = key in self.data
-        if sys.version < '3':
-            self.data[key] = unicode(value)
-        else:
-            self.data[key] = str(value)
+        self.data[key] = str(value)
         if not exists: self.order.append(key)
 
     def __iter__(self):
@@ -7134,7 +7077,7 @@ class Document(object):
 
 
         """
-        if (sys.version > '3' and not isinstance(set,str)) or (sys.version < '3' and not isinstance(set,(str,unicode))):
+        if not isinstance(set,str):
             raise ValueError("Set parameter for declare() must be a string")
 
         if inspect.isclass(annotationtype):
@@ -7724,12 +7667,8 @@ class Document(object):
     def xmlstring(self):
         """Return the XML representation of the document as a string."""
         s = ElementTree.tostring(self.xml(), xml_declaration=True, pretty_print=True, encoding='utf-8')
-        if sys.version < '3':
-            if isinstance(s, str):
-                s = unicode(s,'utf-8') #pylint: disable=undefined-variable
-        else:
-            if isinstance(s,bytes):
-                s = str(s,'utf-8')
+        if isinstance(s,bytes):
+            s = str(s,'utf-8')
 
         s = s.replace('ns0:','') #ugly patch to get rid of namespace prefix
         s = s.replace(':ns0','')
@@ -7999,14 +7938,8 @@ def relaxng(filename=None):
     #for e in relaxng_imdi():
     #    grammar.append(e)
     if filename:
-        if sys.version < '3':
-            f = io.open(filename,'w',encoding='utf-8')
-        else:
-            f = io.open(filename,'wb')
-        if sys.version < '3':
-            f.write( ElementTree.tostring(relaxng(),pretty_print=True).replace("</define>","</define>\n\n") )
-        else:
-            f.write( ElementTree.tostring(relaxng(),pretty_print=True).replace(b"</define>",b"</define>\n\n") )
+        f = io.open(filename,'wb')
+        f.write( ElementTree.tostring(relaxng(),pretty_print=True).replace(b"</define>",b"</define>\n\n") )
         f.close()
 
     return grammar
