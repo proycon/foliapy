@@ -14,7 +14,6 @@ dist: trusty
 python:
     - "3.4"
     - "3.6"
-    - "3.7"
 before_install:
   - sudo apt-get update -qq
   - sudo apt-get install -y xmldiff
