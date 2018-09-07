@@ -3946,7 +3946,7 @@ het    ook   ?
         self.assertEqual( doc['test.s'].text(), "Dit\n         is een rare test.\n         ")
 
 class Test10Provenance(unittest.TestCase):
-    def test001_sanity(self):
+    def test001_metadatasanity(self):
         """Provenance - Parse and sanity check"""
         doc = folia.Document(file=os.path.join(FOLIAPATH,'examples/provenance.2.0.0.folia.xml'), textvalidation=True, allowadhocsets=True)
         self.assertIsInstance(doc.provenance, folia.Provenance)
@@ -3971,6 +3971,34 @@ class Test10Provenance(unittest.TestCase):
         self.assertEqual(processors[0].type, folia.ProcessorType.AUTO)
         self.assertEqual(processors[1].name, "proycon")
         self.assertEqual(processors[1].type, folia.ProcessorType.MANUAL)
+
+    def test002_annotationsanity(self):
+        """Provenance - Annotation sanity check"""
+        doc = folia.Document(file=os.path.join(FOLIAPATH,'examples/provenance.2.0.0.folia.xml'), textvalidation=True, allowadhocsets=True)
+        word = doc['untitled.p.1.s.1.w.1']
+        self.assertEqual(word.annotation(folia.PosAnnotation).processor.id , "p1.1")
+        self.assertEqual(word.annotation(folia.PosAnnotation).processor.name , "mbpos")
+        self.assertEqual(word.annotation(folia.PosAnnotation).processor.type , folia.AnnotatorType.AUTO)
+        #The old annotator attribute can also still be used and refers to the processor name (for backward API compatibility)
+        self.assertEqual(word.annotation(folia.PosAnnotation).annotator, "mbpos")
+        #The old annotatortype attribute can also still be used and refers to the processor type:
+        self.assertEqual(word.annotation(folia.PosAnnotation).annotatortype , folia.AnnotatorType.AUTO)
+
+        word = doc['untitled.p.1.s.1.w.2']
+        self.assertEqual(word.annotation(folia.PosAnnotation).processor.id , "p2.1")
+        self.assertEqual(word.annotation(folia.PosAnnotation).processor.name , "proycon")
+        self.assertEqual(word.annotation(folia.PosAnnotation).processor.type , folia.AnnotatorType.MANUAL)
+        self.assertEqual(word.annotation(folia.PosAnnotation).annotator, "proycon")
+
+    def test003_default(self):
+        """Provenance - Checking default/implicit processor/annotator"""
+        doc = folia.Document(file=os.path.join(FOLIAPATH,'examples/provenance.2.0.0.folia.xml'), textvalidation=True, allowadhocsets=True)
+        word = doc['untitled.p.1.s.1.w.2']
+        self.assertEqual(word.annotation(folia.LemmaAnnotation).processor.id , "p1.2")
+        self.assertEqual(word.annotation(folia.LemmaAnnotation).processor.name , "mblem")
+        self.assertEqual(word.annotation(folia.LemmaAnnotation).processor.type , folia.AnnotatorType.AUTO)
+        #The old annotator attribute can also still be used and refers to the processor name:
+        self.assertEqual(word.annotation(folia.LemmaAnnotation).annotator, "mblem")
 
 
 

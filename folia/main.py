@@ -283,7 +283,7 @@ class Processor:
             yield processor
 
     def __bool__(self):
-        return bool(len(self.processors))
+        return True
 
     def last(self):
         if len(self.processors) > 0:
@@ -878,12 +878,12 @@ class AbstractElement(object):
         if attr in ('set','cls','processor', 'confidence','datetime','n','href','src','speaker','begintime','endtime','xlinktype','xlinktitle','xlinklabel','xlinkrole','xlinkshow','label', 'textclass', 'metadata'):
             return None
         elif attr == 'annotator':
-            if hasattr(self, 'processor') and self.processor:
+            if self.processor:
                 return self.processor.name
             else:
                 return None
         elif attr == 'annotatortype':
-            if hasattr(self, 'processor') and self.processor:
+            if self.processor:
                 return self.processor.type
             else:
                 return None
