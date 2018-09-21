@@ -2451,7 +2451,7 @@ class AbstractElement(object):
                     if e is child:
                         #we found the current item, next item will be the one to return
                         returnnext = True
-                    elif returnnext and e.auth and not isinstance(e,AbstractAnnotationLayer) and (not structural or (structural and (not isinstance(e,(AbstractTokenAnnotation,TextContent)) ) )):
+                    elif returnnext and e.auth and not isinstance(e,AbstractAnnotationLayer) and (not structural or (structural and (not isinstance(e,(AbstractInlineAnnotation,TextContent)) ) )):
                         if structural and isinstance(e,Correction):
                             if not list(e.select(AbstractStructureElement)): #skip-over non-structural correction
                                 continue
@@ -2865,7 +2865,7 @@ class AbstractElement(object):
             e = e.parent
         return None
 
-class Description(AbstractElement):
+class Description(AbstractHigherOrderAnnotation):
     """Description is an element that can be used to associate a description with almost any other FoLiA element"""
 
     def __init__(self,doc, *args, **kwargs):
@@ -2914,7 +2914,7 @@ class Description(AbstractElement):
         return super(Description,Class).parsexml(node, doc, **kwargs)
 
 
-class Comment(AbstractElement):
+class Comment(AbstractHigherOrderAnnotation):
     """Comment is an element that can be used to associate a comment with almost any other FoLiA element"""
 
     def __init__(self,doc, *args, **kwargs):
@@ -3118,7 +3118,7 @@ class AllowCorrections(object):
 
 
 
-class AllowTokenAnnotation(AllowCorrections):
+class AllowInlineAnnotation(AllowCorrections):
     """Elements that allow token annotation (including extended annotation) must inherit from this class"""
 
 
@@ -3143,7 +3143,7 @@ class AllowTokenAnnotation(AllowCorrections):
             :meth:`AbstractElement.select`
 
         Raises:
-            :meth:`AllowTokenAnnotation.annotations`
+            :meth:`AllowInlineAnnotation.annotations`
             :class:`NoSuchAnnotation` if no such annotation exists
         """
         found = False
@@ -3156,7 +3156,7 @@ class AllowTokenAnnotation(AllowCorrections):
     def hasannotation(self,Class,set=None):
         """Returns an integer indicating whether such as annotation exists, and if so, how many.
 
-        See :meth:`AllowTokenAnnotation.annotations`` for a description of the parameters."""
+        See :meth:`AllowInlineAnnotation.annotations`` for a description of the parameters."""
         return sum( 1 for _ in self.select(Class,set,True,default_ignore_annotations))
 
     def annotation(self, type, set=None):
@@ -3176,7 +3176,7 @@ class AllowTokenAnnotation(AllowCorrections):
             sense = word.annotation(folia.Sense, 'http://some/path/cornetto').cls
 
         See also:
-            :meth:`AllowTokenAnnotation.annotations`
+            :meth:`AllowInlineAnnotation.annotations`
             :meth:`AbstractElement.select`
 
         Raises:
@@ -3294,7 +3294,7 @@ class AllowGenerateID(object):
         return id
 
 
-class AbstractStructureElement(AbstractElement, AllowTokenAnnotation, AllowGenerateID):
+class AbstractStructureElement(AbstractElement, AllowInlineAnnotation, AllowGenerateID):
     """Abstract element, all structure elements inherit from this class. Never instantiated directly."""
 
 
@@ -3384,19 +3384,21 @@ class AbstractStructureElement(AbstractElement, AllowTokenAnnotation, AllowGener
         return super(AbstractStructureElement, self).__eq__(other)
 
 
-class AbstractTokenAnnotation(AbstractElement, AllowGenerateID):
+class AbstractInlineAnnotation(AbstractElement, AllowGenerateID):
     """Abstract element, all token annotation elements are derived from this class"""
 
 
     def append(self, child, *args, **kwargs):
         """See ``AbstractElement.append()``"""
-        e = super(AbstractTokenAnnotation,self).append(child, *args, **kwargs)
+        e = super(AbstractInlineAnnotation,self).append(child, *args, **kwargs)
         self._setmaxid(e)
         return e
 
-class AbstractExtendedTokenAnnotation(AbstractTokenAnnotation):
+class AbstractExtendedInlineAnnotation(AbstractInlineAnnotation):
     pass
 
+class AbstractHigherOrderAnnotation(AbstractElement):
+    pass
 
 class AbstractTextMarkup(AbstractElement):
     """Abstract class for text markup elements, elements that appear with the :class:`TextContent` (``t``) element.
@@ -3533,8 +3535,11 @@ class TextMarkupError(AbstractTextMarkup):
 class TextMarkupStyle(AbstractTextMarkup):
     """Markup element to style text content (:class:`TextContent`), e.g. make text bold, italics, underlined, coloured, etc.."""
 
+class AbstractContentAnnotation(AbstractElement):
+    """Abstract element for content annotation (TextContent and PhonContent)"""
+    pass
 
-class TextContent(AbstractElement):
+class TextContent(AbstractContentAnnotation):
     """Text content element (``t``), holds text to be associated with whatever element the text content element is a child of.
 
     Text content elements
@@ -3755,7 +3760,7 @@ class TextContent(AbstractElement):
                     found.add(c.cls)
 
 
-class PhonContent(AbstractElement):
+class PhonContent(AbstractContentAnnotation):
     """Phonetic content element (``ph``), holds a phonetic representation to be associated with whatever element the phonetic content element is a child of.
 
     Phonetic content elements behave much like text content elements.
@@ -3964,7 +3969,7 @@ class PhonContent(AbstractElement):
         extraattribs.append( E.optional(E.attribute(name='ref' )))
         return super(PhonContent, cls).relaxng(includechildren, extraattribs, extraelements)
 
-class Content(AbstractElement):     #used for raw content, subelement for Gap
+class Content(AbstractHigherOrderAnnotation):     #used for raw content, subelement for Gap
     """A container element that takes raw content, used by :class:`Gap`"""
 
     def __init__(self,doc, *args, **kwargs):
@@ -4409,13 +4414,13 @@ class ValueFeature(Feature):
     """Value feature, to be used within :class:`Metric`"""
     pass
 
-class Metric(AbstractElement):
+class Metric(AbstractHigherOrderAnnotation):
     """Metric elements provide a key/value pair to allow the annotation of any kind of metric with any kind of annotation element.
 
     It is used for example for statistical measures to be added to elements as annotation."""
     pass
 
-class AbstractSubtokenAnnotation(AbstractElement, AllowGenerateID):
+class AbstractSubtokenAnnotation(AbstractStructureElement, AllowGenerateID):
     """Abstract element, all subtoken annotation elements are derived from this class"""
     pass
 
@@ -4705,7 +4710,7 @@ class AbstractAnnotationLayer(AbstractElement, AllowGenerateID, AllowCorrections
 
 
 
-class String(AbstractElement, AllowTokenAnnotation):
+class String(AbstractElement, AllowInlineAnnotation):
     """String"""
     pass
 
@@ -4914,7 +4919,7 @@ class Alignment(AbstractElement):
         return super(Alignment,cls).relaxng(includechildren, extraattribs, extraelements)
 
 
-class ErrorDetection(AbstractExtendedTokenAnnotation):
+class ErrorDetection(AbstractExtendedInlineAnnotation):
     """The ErrorDetection element is used to signal the presence of errors in a structural element."""
     pass
 
@@ -5018,7 +5023,7 @@ class Current(AbstractCorrectionChild):
     def correct(self, **kwargs):
         return self.parent.correct(**kwargs)
 
-class Correction(AbstractElement, AllowGenerateID):
+class Correction(AbstractHigherOrderAnnotation, AllowGenerateID):
     """
     Corrections are one of the most complex annotation types in FoLiA. Corrections
     can be applied not just over text, but over any type of structure annotation,
@@ -5296,7 +5301,7 @@ class Correction(AbstractElement, AllowGenerateID):
 
 
 
-class Alternative(AbstractElement, AllowTokenAnnotation, AllowGenerateID):
+class Alternative(AbstractHigherOrderAnnotation, AllowInlineAnnotation, AllowGenerateID):
     """Element grouping alternative token annotation(s).
 
     Multiple alternative elements may occur, each denoting a different alternative. Elements grouped inside an alternative block are considered dependent.
@@ -5319,7 +5324,7 @@ class Alternative(AbstractElement, AllowTokenAnnotation, AllowGenerateID):
 
 
 
-class AlternativeLayers(AbstractElement):
+class AlternativeLayers(AbstractHigherOrderAnnotation):
     """Element grouping alternative subtoken annotation(s). Multiple altlayers elements may occur, each denoting a different alternative. Elements grouped inside an alternative block are considered dependent."""
 
     def deepvalidation(self):
@@ -5327,7 +5332,7 @@ class AlternativeLayers(AbstractElement):
 
 
 
-class External(AbstractElement):
+class External(AbstractHigherOrderAnnotation):
 
     def __init__(self, doc, *args, **kwargs): #pylint: disable=super-init-not-called
         #Special constructor, not calling super constructor
@@ -5553,7 +5558,7 @@ class Statement(AbstractSpanAnnotation):
 class Observation(AbstractSpanAnnotation):
     """Observation."""
 
-class ComplexAlignment(AbstractElement):
+class ComplexAlignment(AbstractHigherOrderAnnotation):
     """Complex Alignment"""
 
     #same as for AbstractSpanAnnotation, which this technically is not (hence copy)
@@ -5573,7 +5578,7 @@ class ComplexAlignment(AbstractElement):
 class FunctionFeature(Feature):
     """Function feature, to be used with :class:`Morpheme`"""
 
-class Morpheme(AbstractStructureElement):
+class Morpheme(AbstractSubtokenAnnotation):
     """Morpheme element, represents one morpheme in morphological analysis, subtoken annotation element to be used in :class:`MorphologyLayer`"""
 
     def findspans(self, type,set=None):
@@ -5596,7 +5601,7 @@ class Morpheme(AbstractStructureElement):
         return True
 
 
-class Phoneme(AbstractStructureElement):
+class Phoneme(AbstractSubtokenAnnotation):
     """Phone element, represents one phone in phonetic analysis, subtoken annotation element to be used in :class:`PhonologyLayer`"""
 
     def findspans(self, type,set=None): #TODO: this is a copy of the methods in Morpheme in Word, abstract into separate class and inherit
@@ -5669,23 +5674,23 @@ class ComplexAlignmentLayer(AbstractAnnotationLayer):
 class HeadFeature(Feature):
     """Head feature, to be used within :class:`PosAnnotation`"""
 
-class PosAnnotation(AbstractTokenAnnotation):
+class PosAnnotation(AbstractInlineAnnotation):
     """Part-of-Speech annotation:  a token annotation element"""
 
-class LemmaAnnotation(AbstractTokenAnnotation):
+class LemmaAnnotation(AbstractInlineAnnotation):
     """Lemma annotation:  a token annotation element"""
 
-class LangAnnotation(AbstractExtendedTokenAnnotation):
+class LangAnnotation(AbstractExtendedInlineAnnotation):
     """Language annotation:  an extended token annotation element"""
 
-#class PhonAnnotation(AbstractTokenAnnotation): #DEPRECATED in v0.9
+#class PhonAnnotation(AbstractInlineAnnotation): #DEPRECATED in v0.9
 #    """Phonetic annotation:  a token annotation element"""
 #    ANNOTATIONTYPE = AnnotationType.PHON
 #    ACCEPTED_DATA = (Feature,Description, Metric)
 #    XMLTAG = 'phon'
 
 
-class DomainAnnotation(AbstractExtendedTokenAnnotation):
+class DomainAnnotation(AbstractExtendedInlineAnnotation):
     """Domain annotation:  an extended token annotation element"""
 
 class SynsetFeature(Feature):
@@ -5734,10 +5739,10 @@ class TimingLayer(AbstractAnnotationLayer):
     """Timing layer: Annotation layer for :class:`TimeSegment` span annotation elements. """
 
 
-class SenseAnnotation(AbstractTokenAnnotation):
+class SenseAnnotation(AbstractInlineAnnotation):
     """Sense annotation: a token annotation element"""
 
-class SubjectivityAnnotation(AbstractTokenAnnotation):
+class SubjectivityAnnotation(AbstractInlineAnnotation):
     """Subjectivity annotation/Sentiment analysis: a token annotation element"""
 
 
@@ -5943,7 +5948,7 @@ class Sentence(AbstractStructureElement):
                 #recurse? if the child is hidden in another element (part for instance?)
                 return child.gettextdelimiter(retaintokenisation) #if a sentence ends in a word with space=no, then we don't delimit either
             #TODO: what about corrections?
-            elif isinstance(child, (AbstractAnnotationLayer, AbstractTokenAnnotation) ):
+            elif isinstance(child, (AbstractAnnotationLayer, AbstractInlineAnnotation) ):
                 continue #this never counts as the last element (issue #41), continue...
             else:
                 break
@@ -6037,7 +6042,7 @@ class Text(AbstractStructureElement):
     # (both SPEAKABLE and PRINTABLE)
 
 
-class ForeignData(AbstractElement):
+class ForeignData(AbstractHigherOrderAnnotation):
     """The ForeignData element encapsulated data that is not in FoLiA but in a different format.
 
     Such data must use a different XML namespace and will be preserved as-is, that is the ``lxml.etree.Element`` instance is retained unmodified. No further interpretation takes place.
@@ -8413,12 +8418,12 @@ AbstractAnnotationLayer.PRINTABLE = False
 AbstractAnnotationLayer.SETONLY = True
 AbstractAnnotationLayer.SPEAKABLE = False
 #------ AbstractCorrectionChild -------
-AbstractCorrectionChild.ACCEPTED_DATA = (AbstractSpanAnnotation, AbstractStructureElement, AbstractTokenAnnotation, Comment, Correction, Description, ForeignData, Metric, PhonContent, String, TextContent,)
+AbstractCorrectionChild.ACCEPTED_DATA = (AbstractSpanAnnotation, AbstractStructureElement, AbstractInlineAnnotation, Comment, Correction, Description, ForeignData, Metric, PhonContent, String, TextContent,)
 AbstractCorrectionChild.OPTIONAL_ATTRIBS = (Attrib.ID, Attrib.ANNOTATOR, Attrib.CONFIDENCE, Attrib.DATETIME, Attrib.N,)
 AbstractCorrectionChild.PRINTABLE = True
 AbstractCorrectionChild.SPEAKABLE = True
 AbstractCorrectionChild.TEXTDELIMITER = None
-#------ AbstractExtendedTokenAnnotation -------
+#------ AbstractExtendedInlineAnnotation -------
 #------ AbstractSpanAnnotation -------
 AbstractSpanAnnotation.ACCEPTED_DATA = (AlignReference, Alignment, Comment, Description, ForeignData, Metric,)
 AbstractSpanAnnotation.OPTIONAL_ATTRIBS = (Attrib.ID, Attrib.CLASS, Attrib.ANNOTATOR, Attrib.N, Attrib.CONFIDENCE, Attrib.DATETIME, Attrib.SRC, Attrib.BEGINTIME, Attrib.ENDTIME, Attrib.SPEAKER, Attrib.TEXTCLASS, Attrib.METADATA,)
@@ -8443,11 +8448,11 @@ AbstractTextMarkup.PRINTABLE = True
 AbstractTextMarkup.TEXTCONTAINER = True
 AbstractTextMarkup.TEXTDELIMITER = ""
 AbstractTextMarkup.XLINK = True
-#------ AbstractTokenAnnotation -------
-AbstractTokenAnnotation.ACCEPTED_DATA = (Comment, Description, Feature, ForeignData, Metric,)
-AbstractTokenAnnotation.OCCURRENCES_PER_SET = 1
-AbstractTokenAnnotation.OPTIONAL_ATTRIBS = (Attrib.ID, Attrib.CLASS, Attrib.ANNOTATOR, Attrib.N, Attrib.CONFIDENCE, Attrib.DATETIME, Attrib.SRC, Attrib.BEGINTIME, Attrib.ENDTIME, Attrib.SPEAKER, Attrib.TEXTCLASS, Attrib.METADATA,)
-AbstractTokenAnnotation.REQUIRED_ATTRIBS = (Attrib.CLASS,)
+#------ AbstractInlineAnnotation -------
+AbstractInlineAnnotation.ACCEPTED_DATA = (Comment, Description, Feature, ForeignData, Metric,)
+AbstractInlineAnnotation.OCCURRENCES_PER_SET = 1
+AbstractInlineAnnotation.OPTIONAL_ATTRIBS = (Attrib.ID, Attrib.CLASS, Attrib.ANNOTATOR, Attrib.N, Attrib.CONFIDENCE, Attrib.DATETIME, Attrib.SRC, Attrib.BEGINTIME, Attrib.ENDTIME, Attrib.SPEAKER, Attrib.TEXTCLASS, Attrib.METADATA,)
+AbstractInlineAnnotation.REQUIRED_ATTRIBS = (Attrib.CLASS,)
 #------ ActorFeature -------
 ActorFeature.SUBSET = "actor"
 ActorFeature.XMLTAG = None
@@ -8464,7 +8469,7 @@ Alignment.SPEAKABLE = False
 Alignment.XLINK = True
 Alignment.XMLTAG = "alignment"
 #------ Alternative -------
-Alternative.ACCEPTED_DATA = (AbstractTokenAnnotation, Comment, Correction, Description, ForeignData, MorphologyLayer, PhonologyLayer,)
+Alternative.ACCEPTED_DATA = (AbstractInlineAnnotation, Comment, Correction, Description, ForeignData, MorphologyLayer, PhonologyLayer,)
 Alternative.AUTH = False
 Alternative.LABEL = "Alternative"
 Alternative.OPTIONAL_ATTRIBS = (Attrib.ID, Attrib.CLASS, Attrib.ANNOTATOR, Attrib.N, Attrib.CONFIDENCE, Attrib.DATETIME, Attrib.SRC, Attrib.BEGINTIME, Attrib.ENDTIME, Attrib.SPEAKER, Attrib.METADATA,)
@@ -8485,12 +8490,12 @@ AlternativeLayers.XMLTAG = "altlayers"
 BegindatetimeFeature.SUBSET = "begindatetime"
 BegindatetimeFeature.XMLTAG = None
 #------ Caption -------
-Caption.ACCEPTED_DATA = (AbstractAnnotationLayer, AbstractExtendedTokenAnnotation, Alignment, Alternative, AlternativeLayers, Comment, Correction, Description, Feature, ForeignData, Gap, Linebreak, Metric, Part, PhonContent, Reference, Sentence, String, TextContent, Whitespace,)
+Caption.ACCEPTED_DATA = (AbstractAnnotationLayer, AbstractExtendedInlineAnnotation, Alignment, Alternative, AlternativeLayers, Comment, Correction, Description, Feature, ForeignData, Gap, Linebreak, Metric, Part, PhonContent, Reference, Sentence, String, TextContent, Whitespace,)
 Caption.LABEL = "Caption"
 Caption.OCCURRENCES = 1
 Caption.XMLTAG = "caption"
 #------ Cell -------
-Cell.ACCEPTED_DATA = (AbstractAnnotationLayer, AbstractExtendedTokenAnnotation, Alignment, Alternative, AlternativeLayers, Comment, Correction, Description, Entry, Event, Example, Feature, ForeignData, Gap, Head, Linebreak, Metric, Note, Paragraph, Part, Reference, Sentence, String, TextContent, Whitespace, Word,)
+Cell.ACCEPTED_DATA = (AbstractAnnotationLayer, AbstractExtendedInlineAnnotation, Alignment, Alternative, AlternativeLayers, Comment, Correction, Description, Entry, Event, Example, Feature, ForeignData, Gap, Head, Linebreak, Metric, Note, Paragraph, Part, Reference, Sentence, String, TextContent, Whitespace, Word,)
 Cell.LABEL = "Cell"
 Cell.TEXTDELIMITER = " | "
 Cell.XMLTAG = "cell"
@@ -8558,7 +8563,7 @@ Current.OCCURRENCES = 1
 Current.OPTIONAL_ATTRIBS = None
 Current.XMLTAG = "current"
 #------ Definition -------
-Definition.ACCEPTED_DATA = (AbstractAnnotationLayer, AbstractExtendedTokenAnnotation, Alignment, Alternative, AlternativeLayers, Comment, Correction, Description, Feature, Figure, ForeignData, Linebreak, List, Metric, Paragraph, Part, PhonContent, Reference, Sentence, String, Table, TextContent, Utterance, Whitespace, Word,)
+Definition.ACCEPTED_DATA = (AbstractAnnotationLayer, AbstractExtendedInlineAnnotation, Alignment, Alternative, AlternativeLayers, Comment, Correction, Description, Feature, Figure, ForeignData, Linebreak, List, Metric, Paragraph, Part, PhonContent, Reference, Sentence, String, Table, TextContent, Utterance, Whitespace, Word,)
 Definition.ANNOTATIONTYPE = AnnotationType.DEFINITION
 Definition.LABEL = "Definition"
 Definition.XMLTAG = "def"
@@ -8583,7 +8588,7 @@ Description.OCCURRENCES = 1
 Description.OPTIONAL_ATTRIBS = (Attrib.ID, Attrib.ANNOTATOR, Attrib.CONFIDENCE, Attrib.DATETIME, Attrib.N, Attrib.METADATA,)
 Description.XMLTAG = "desc"
 #------ Division -------
-Division.ACCEPTED_DATA = (AbstractAnnotationLayer, AbstractExtendedTokenAnnotation, Alignment, Alternative, AlternativeLayers, Comment, Correction, Description, Division, Entry, Event, Example, Feature, Figure, ForeignData, Gap, Head, Linebreak, List, Metric, Note, Paragraph, Part, PhonContent, Quote, Reference, Sentence, Table, TextContent, Utterance, Whitespace,)
+Division.ACCEPTED_DATA = (AbstractAnnotationLayer, AbstractExtendedInlineAnnotation, Alignment, Alternative, AlternativeLayers, Comment, Correction, Description, Division, Entry, Event, Example, Feature, Figure, ForeignData, Gap, Head, Linebreak, List, Metric, Note, Paragraph, Part, PhonContent, Quote, Reference, Sentence, Table, TextContent, Utterance, Whitespace,)
 Division.ANNOTATIONTYPE = AnnotationType.DIVISION
 Division.LABEL = "Division"
 Division.TEXTDELIMITER = "\n\n\n"
@@ -8617,12 +8622,12 @@ ErrorDetection.LABEL = "Error Detection"
 ErrorDetection.OCCURRENCES_PER_SET = 0
 ErrorDetection.XMLTAG = "errordetection"
 #------ Event -------
-Event.ACCEPTED_DATA = (AbstractAnnotationLayer, AbstractExtendedTokenAnnotation, ActorFeature, Alignment, Alternative, AlternativeLayers, BegindatetimeFeature, Comment, Correction, Description, Division, EnddatetimeFeature, Entry, Event, Example, Feature, Figure, ForeignData, Gap, Head, Linebreak, List, Metric, Note, Paragraph, Part, PhonContent, Quote, Reference, Sentence, String, Table, TextContent, Utterance, Whitespace, Word,)
+Event.ACCEPTED_DATA = (AbstractAnnotationLayer, AbstractExtendedInlineAnnotation, ActorFeature, Alignment, Alternative, AlternativeLayers, BegindatetimeFeature, Comment, Correction, Description, Division, EnddatetimeFeature, Entry, Event, Example, Feature, Figure, ForeignData, Gap, Head, Linebreak, List, Metric, Note, Paragraph, Part, PhonContent, Quote, Reference, Sentence, String, Table, TextContent, Utterance, Whitespace, Word,)
 Event.ANNOTATIONTYPE = AnnotationType.EVENT
 Event.LABEL = "Event"
 Event.XMLTAG = "event"
 #------ Example -------
-Example.ACCEPTED_DATA = (AbstractAnnotationLayer, AbstractExtendedTokenAnnotation, Alignment, Alternative, AlternativeLayers, Comment, Correction, Description, Feature, Figure, ForeignData, Linebreak, List, Metric, Paragraph, Part, PhonContent, Reference, Sentence, String, Table, TextContent, Utterance, Whitespace, Word,)
+Example.ACCEPTED_DATA = (AbstractAnnotationLayer, AbstractExtendedInlineAnnotation, Alignment, Alternative, AlternativeLayers, Comment, Correction, Description, Feature, Figure, ForeignData, Linebreak, List, Metric, Paragraph, Part, PhonContent, Reference, Sentence, String, Table, TextContent, Utterance, Whitespace, Word,)
 Example.ANNOTATIONTYPE = AnnotationType.EXAMPLE
 Example.LABEL = "Example"
 Example.XMLTAG = "ex"
@@ -8657,7 +8662,7 @@ Gap.LABEL = "Gap"
 Gap.OPTIONAL_ATTRIBS = (Attrib.ID, Attrib.CLASS, Attrib.ANNOTATOR, Attrib.N, Attrib.DATETIME, Attrib.SRC, Attrib.BEGINTIME, Attrib.ENDTIME, Attrib.METADATA,)
 Gap.XMLTAG = "gap"
 #------ Head -------
-Head.ACCEPTED_DATA = (AbstractAnnotationLayer, AbstractExtendedTokenAnnotation, Alignment, Alternative, AlternativeLayers, Comment, Correction, Description, Event, Feature, ForeignData, Gap, Linebreak, Metric, Part, PhonContent, Reference, Sentence, String, TextContent, Whitespace, Word,)
+Head.ACCEPTED_DATA = (AbstractAnnotationLayer, AbstractExtendedInlineAnnotation, Alignment, Alternative, AlternativeLayers, Comment, Correction, Description, Event, Feature, ForeignData, Gap, Linebreak, Metric, Part, PhonContent, Reference, Sentence, String, TextContent, Whitespace, Word,)
 Head.LABEL = "Head"
 Head.OCCURRENCES = 1
 Head.TEXTDELIMITER = "\n\n"
@@ -8670,7 +8675,7 @@ Headspan.LABEL = "Head"
 Headspan.OCCURRENCES = 1
 Headspan.XMLTAG = "hd"
 #------ Label -------
-Label.ACCEPTED_DATA = (AbstractAnnotationLayer, AbstractExtendedTokenAnnotation, Alignment, Alternative, AlternativeLayers, Comment, Correction, Description, Feature, ForeignData, Linebreak, Metric, Part, PhonContent, Reference, String, TextContent, Whitespace, Word,)
+Label.ACCEPTED_DATA = (AbstractAnnotationLayer, AbstractExtendedInlineAnnotation, Alignment, Alternative, AlternativeLayers, Comment, Correction, Description, Feature, ForeignData, Linebreak, Metric, Part, PhonContent, Reference, String, TextContent, Whitespace, Word,)
 Label.LABEL = "Label"
 Label.XMLTAG = "label"
 #------ LangAnnotation -------
@@ -8691,13 +8696,13 @@ Linebreak.TEXTDELIMITER = ""
 Linebreak.XLINK = True
 Linebreak.XMLTAG = "br"
 #------ List -------
-List.ACCEPTED_DATA = (AbstractAnnotationLayer, AbstractExtendedTokenAnnotation, Alignment, Alternative, AlternativeLayers, Caption, Comment, Correction, Description, Event, Feature, ForeignData, ListItem, Metric, Note, Part, PhonContent, Reference, String, TextContent,)
+List.ACCEPTED_DATA = (AbstractAnnotationLayer, AbstractExtendedInlineAnnotation, Alignment, Alternative, AlternativeLayers, Caption, Comment, Correction, Description, Event, Feature, ForeignData, ListItem, Metric, Note, Part, PhonContent, Reference, String, TextContent,)
 List.ANNOTATIONTYPE = AnnotationType.LIST
 List.LABEL = "List"
 List.TEXTDELIMITER = "\n\n"
 List.XMLTAG = "list"
 #------ ListItem -------
-ListItem.ACCEPTED_DATA = (AbstractAnnotationLayer, AbstractExtendedTokenAnnotation, Alignment, Alternative, AlternativeLayers, Comment, Correction, Description, Event, Feature, ForeignData, Gap, Label, Linebreak, List, Metric, Note, Paragraph, Part, PhonContent, Reference, Sentence, String, TextContent, Whitespace, Word,)
+ListItem.ACCEPTED_DATA = (AbstractAnnotationLayer, AbstractExtendedInlineAnnotation, Alignment, Alternative, AlternativeLayers, Comment, Correction, Description, Event, Feature, ForeignData, Gap, Label, Linebreak, List, Metric, Note, Paragraph, Part, PhonContent, Reference, Sentence, String, TextContent, Whitespace, Word,)
 ListItem.LABEL = "List Item"
 ListItem.TEXTDELIMITER = "\n"
 ListItem.XMLTAG = "item"
@@ -8711,7 +8716,7 @@ Metric.XMLTAG = "metric"
 ModalityFeature.SUBSET = "modality"
 ModalityFeature.XMLTAG = None
 #------ Morpheme -------
-Morpheme.ACCEPTED_DATA = (AbstractAnnotationLayer, AbstractTokenAnnotation, Alignment, Alternative, AlternativeLayers, Comment, Correction, Description, Feature, ForeignData, FunctionFeature, Metric, Morpheme, Part, PhonContent, String, TextContent,)
+Morpheme.ACCEPTED_DATA = (AbstractAnnotationLayer, AbstractInlineAnnotation, Alignment, Alternative, AlternativeLayers, Comment, Correction, Description, Feature, ForeignData, FunctionFeature, Metric, Morpheme, Part, PhonContent, String, TextContent,)
 Morpheme.ANNOTATIONTYPE = AnnotationType.MORPHOLOGICAL
 Morpheme.LABEL = "Morpheme"
 Morpheme.TEXTDELIMITER = ""
@@ -8726,7 +8731,7 @@ New.OCCURRENCES = 1
 New.OPTIONAL_ATTRIBS = None
 New.XMLTAG = "new"
 #------ Note -------
-Note.ACCEPTED_DATA = (AbstractAnnotationLayer, AbstractExtendedTokenAnnotation, Alignment, Alternative, AlternativeLayers, Comment, Correction, Description, Example, Feature, Figure, ForeignData, Head, Linebreak, List, Metric, Paragraph, Part, PhonContent, Reference, Sentence, String, Table, TextContent, Utterance, Whitespace, Word,)
+Note.ACCEPTED_DATA = (AbstractAnnotationLayer, AbstractExtendedInlineAnnotation, Alignment, Alternative, AlternativeLayers, Comment, Correction, Description, Example, Feature, Figure, ForeignData, Head, Linebreak, List, Metric, Paragraph, Part, PhonContent, Reference, Sentence, String, Table, TextContent, Utterance, Whitespace, Word,)
 Note.ANNOTATIONTYPE = AnnotationType.NOTE
 Note.LABEL = "Note"
 Note.XMLTAG = "note"
@@ -8746,13 +8751,13 @@ Original.OCCURRENCES = 1
 Original.OPTIONAL_ATTRIBS = None
 Original.XMLTAG = "original"
 #------ Paragraph -------
-Paragraph.ACCEPTED_DATA = (AbstractAnnotationLayer, AbstractExtendedTokenAnnotation, Alignment, Alternative, AlternativeLayers, Comment, Correction, Description, Entry, Event, Example, Feature, Figure, ForeignData, Gap, Head, Linebreak, List, Metric, Note, Part, PhonContent, Quote, Reference, Sentence, String, TextContent, Whitespace, Word,)
+Paragraph.ACCEPTED_DATA = (AbstractAnnotationLayer, AbstractExtendedInlineAnnotation, Alignment, Alternative, AlternativeLayers, Comment, Correction, Description, Entry, Event, Example, Feature, Figure, ForeignData, Gap, Head, Linebreak, List, Metric, Note, Part, PhonContent, Quote, Reference, Sentence, String, TextContent, Whitespace, Word,)
 Paragraph.ANNOTATIONTYPE = AnnotationType.PARAGRAPH
 Paragraph.LABEL = "Paragraph"
 Paragraph.TEXTDELIMITER = "\n\n"
 Paragraph.XMLTAG = "p"
 #------ Part -------
-Part.ACCEPTED_DATA = (AbstractAnnotationLayer, AbstractExtendedTokenAnnotation, AbstractStructureElement, Alignment, Alternative, AlternativeLayers, Comment, Correction, Description, Feature, ForeignData, Metric, Part, PhonContent, TextContent,)
+Part.ACCEPTED_DATA = (AbstractAnnotationLayer, AbstractExtendedInlineAnnotation, AbstractStructureElement, Alignment, Alternative, AlternativeLayers, Comment, Correction, Description, Feature, ForeignData, Metric, Part, PhonContent, TextContent,)
 Part.ANNOTATIONTYPE = AnnotationType.PART
 Part.LABEL = "Part"
 Part.TEXTDELIMITER = None
@@ -8768,7 +8773,7 @@ PhonContent.PRINTABLE = False
 PhonContent.SPEAKABLE = True
 PhonContent.XMLTAG = "ph"
 #------ Phoneme -------
-Phoneme.ACCEPTED_DATA = (AbstractAnnotationLayer, AbstractTokenAnnotation, Alignment, Alternative, AlternativeLayers, Comment, Correction, Description, Feature, ForeignData, FunctionFeature, Metric, Part, PhonContent, Phoneme, String, TextContent,)
+Phoneme.ACCEPTED_DATA = (AbstractAnnotationLayer, AbstractInlineAnnotation, Alignment, Alternative, AlternativeLayers, Comment, Correction, Description, Feature, ForeignData, FunctionFeature, Metric, Part, PhonContent, Phoneme, String, TextContent,)
 Phoneme.ANNOTATIONTYPE = AnnotationType.PHONOLOGICAL
 Phoneme.LABEL = "Phoneme"
 Phoneme.TEXTDELIMITER = ""
@@ -8805,7 +8810,7 @@ Relation.LABEL = "Relation"
 Relation.OCCURRENCES = 1
 Relation.XMLTAG = "relation"
 #------ Row -------
-Row.ACCEPTED_DATA = (AbstractAnnotationLayer, AbstractExtendedTokenAnnotation, Alignment, Alternative, AlternativeLayers, Cell, Comment, Correction, Description, Feature, ForeignData, Metric, Part,)
+Row.ACCEPTED_DATA = (AbstractAnnotationLayer, AbstractExtendedInlineAnnotation, Alignment, Alternative, AlternativeLayers, Cell, Comment, Correction, Description, Feature, ForeignData, Metric, Part,)
 Row.LABEL = "Table Row"
 Row.TEXTDELIMITER = "\n"
 Row.XMLTAG = "row"
@@ -8827,7 +8832,7 @@ SenseAnnotation.LABEL = "Semantic Sense"
 SenseAnnotation.OCCURRENCES_PER_SET = 0
 SenseAnnotation.XMLTAG = "sense"
 #------ Sentence -------
-Sentence.ACCEPTED_DATA = (AbstractAnnotationLayer, AbstractExtendedTokenAnnotation, Alignment, Alternative, AlternativeLayers, Comment, Correction, Description, Entry, Event, Example, Feature, ForeignData, Gap, Linebreak, Metric, Note, Part, PhonContent, Quote, Reference, String, TextContent, Whitespace, Word,)
+Sentence.ACCEPTED_DATA = (AbstractAnnotationLayer, AbstractExtendedInlineAnnotation, Alignment, Alternative, AlternativeLayers, Comment, Correction, Description, Entry, Event, Example, Feature, ForeignData, Gap, Linebreak, Metric, Note, Part, PhonContent, Quote, Reference, String, TextContent, Whitespace, Word,)
 Sentence.ANNOTATIONTYPE = AnnotationType.SENTENCE
 Sentence.LABEL = "Sentence"
 Sentence.TEXTDELIMITER = " "
@@ -8847,7 +8852,7 @@ Source.LABEL = "Source"
 Source.OCCURRENCES = 1
 Source.XMLTAG = "source"
 #------ Speech -------
-Speech.ACCEPTED_DATA = (AbstractAnnotationLayer, AbstractExtendedTokenAnnotation, Alignment, Alternative, AlternativeLayers, Comment, Correction, Description, Division, Entry, Event, Example, External, Feature, ForeignData, Gap, List, Metric, Note, Paragraph, Part, PhonContent, Quote, Reference, Sentence, String, TextContent, Utterance, Word,)
+Speech.ACCEPTED_DATA = (AbstractAnnotationLayer, AbstractExtendedInlineAnnotation, Alignment, Alternative, AlternativeLayers, Comment, Correction, Description, Division, Entry, Event, Example, External, Feature, ForeignData, Gap, List, Metric, Note, Paragraph, Part, PhonContent, Quote, Reference, Sentence, String, TextContent, Utterance, Word,)
 Speech.LABEL = "Speech Body"
 Speech.TEXTDELIMITER = "\n\n\n"
 Speech.XMLTAG = "speech"
@@ -8865,7 +8870,7 @@ StatementLayer.XMLTAG = "statements"
 StrengthFeature.SUBSET = "strength"
 StrengthFeature.XMLTAG = None
 #------ String -------
-String.ACCEPTED_DATA = (AbstractExtendedTokenAnnotation, Alignment, Comment, Correction, Description, Feature, ForeignData, Metric, PhonContent, TextContent,)
+String.ACCEPTED_DATA = (AbstractExtendedInlineAnnotation, Alignment, Comment, Correction, Description, Feature, ForeignData, Metric, PhonContent, TextContent,)
 String.ANNOTATIONTYPE = AnnotationType.STRING
 String.LABEL = "String"
 String.OCCURRENCES = 0
@@ -8897,12 +8902,12 @@ SyntaxLayer.ANNOTATIONTYPE = AnnotationType.SYNTAX
 SyntaxLayer.PRIMARYELEMENT = False
 SyntaxLayer.XMLTAG = "syntax"
 #------ Table -------
-Table.ACCEPTED_DATA = (AbstractAnnotationLayer, AbstractExtendedTokenAnnotation, Alignment, Alternative, AlternativeLayers, Comment, Correction, Description, Feature, ForeignData, Metric, Part, Row, TableHead,)
+Table.ACCEPTED_DATA = (AbstractAnnotationLayer, AbstractExtendedInlineAnnotation, Alignment, Alternative, AlternativeLayers, Comment, Correction, Description, Feature, ForeignData, Metric, Part, Row, TableHead,)
 Table.ANNOTATIONTYPE = AnnotationType.TABLE
 Table.LABEL = "Table"
 Table.XMLTAG = "table"
 #------ TableHead -------
-TableHead.ACCEPTED_DATA = (AbstractAnnotationLayer, AbstractExtendedTokenAnnotation, Alignment, Alternative, AlternativeLayers, Comment, Correction, Description, Feature, ForeignData, Metric, Part, Row,)
+TableHead.ACCEPTED_DATA = (AbstractAnnotationLayer, AbstractExtendedInlineAnnotation, Alignment, Alternative, AlternativeLayers, Comment, Correction, Description, Feature, ForeignData, Metric, Part, Row,)
 TableHead.LABEL = "Table Header"
 TableHead.XMLTAG = "tablehead"
 #------ Target -------
@@ -8910,12 +8915,12 @@ Target.LABEL = "Target"
 Target.OCCURRENCES = 1
 Target.XMLTAG = "target"
 #------ Term -------
-Term.ACCEPTED_DATA = (AbstractAnnotationLayer, AbstractExtendedTokenAnnotation, Alignment, Alternative, AlternativeLayers, Comment, Correction, Description, Event, Feature, Figure, ForeignData, Gap, Linebreak, List, Metric, Paragraph, Part, PhonContent, Reference, Sentence, String, Table, TextContent, Utterance, Whitespace, Word,)
+Term.ACCEPTED_DATA = (AbstractAnnotationLayer, AbstractExtendedInlineAnnotation, Alignment, Alternative, AlternativeLayers, Comment, Correction, Description, Event, Feature, Figure, ForeignData, Gap, Linebreak, List, Metric, Paragraph, Part, PhonContent, Reference, Sentence, String, Table, TextContent, Utterance, Whitespace, Word,)
 Term.ANNOTATIONTYPE = AnnotationType.TERM
 Term.LABEL = "Term"
 Term.XMLTAG = "term"
 #------ Text -------
-Text.ACCEPTED_DATA = (AbstractAnnotationLayer, AbstractExtendedTokenAnnotation, Alignment, Alternative, AlternativeLayers, Comment, Correction, Description, Division, Entry, Event, Example, External, Feature, Figure, ForeignData, Gap, Linebreak, List, Metric, Note, Paragraph, Part, PhonContent, Quote, Reference, Sentence, String, Table, TextContent, Whitespace, Word,)
+Text.ACCEPTED_DATA = (AbstractAnnotationLayer, AbstractExtendedInlineAnnotation, Alignment, Alternative, AlternativeLayers, Comment, Correction, Description, Division, Entry, Event, Example, External, Feature, Figure, ForeignData, Gap, Linebreak, List, Metric, Note, Paragraph, Part, PhonContent, Quote, Reference, Sentence, String, Table, TextContent, Whitespace, Word,)
 Text.LABEL = "Text Body"
 Text.TEXTDELIMITER = "\n\n\n"
 Text.XMLTAG = "text"
@@ -8964,7 +8969,7 @@ TimingLayer.ANNOTATIONTYPE = AnnotationType.TIMESEGMENT
 TimingLayer.PRIMARYELEMENT = False
 TimingLayer.XMLTAG = "timing"
 #------ Utterance -------
-Utterance.ACCEPTED_DATA = (AbstractAnnotationLayer, AbstractExtendedTokenAnnotation, Alignment, Alternative, AlternativeLayers, Comment, Correction, Description, Feature, ForeignData, Gap, Metric, Note, Part, PhonContent, Quote, Reference, Sentence, String, TextContent, Word,)
+Utterance.ACCEPTED_DATA = (AbstractAnnotationLayer, AbstractExtendedInlineAnnotation, Alignment, Alternative, AlternativeLayers, Comment, Correction, Description, Feature, ForeignData, Gap, Metric, Note, Part, PhonContent, Quote, Reference, Sentence, String, TextContent, Word,)
 Utterance.ANNOTATIONTYPE = AnnotationType.UTTERANCE
 Utterance.LABEL = "Utterance"
 Utterance.TEXTDELIMITER = " "
@@ -8978,7 +8983,7 @@ Whitespace.LABEL = "Whitespace"
 Whitespace.TEXTDELIMITER = ""
 Whitespace.XMLTAG = "whitespace"
 #------ Word -------
-Word.ACCEPTED_DATA = (AbstractAnnotationLayer, AbstractTokenAnnotation, Alignment, Alternative, AlternativeLayers, Comment, Correction, Description, Feature, ForeignData, Metric, Part, PhonContent, Reference, String, TextContent,)
+Word.ACCEPTED_DATA = (AbstractAnnotationLayer, AbstractInlineAnnotation, Alignment, Alternative, AlternativeLayers, Comment, Correction, Description, Feature, ForeignData, Metric, Part, PhonContent, Reference, String, TextContent,)
 Word.ANNOTATIONTYPE = AnnotationType.TOKEN
 Word.LABEL = "Word/Token"
 Word.OPTIONAL_ATTRIBS = (Attrib.ID, Attrib.CLASS, Attrib.ANNOTATOR, Attrib.N, Attrib.CONFIDENCE, Attrib.DATETIME, Attrib.SRC, Attrib.BEGINTIME, Attrib.ENDTIME, Attrib.SPEAKER, Attrib.TEXTCLASS, Attrib.METADATA,)
