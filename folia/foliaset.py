@@ -43,6 +43,7 @@ NSFOLIA = "http://ilk.uvt.nl/folia"
 
 #foliaspec:setdefinitionnamespace:NSFOLIASETDEFINITION
 NSFOLIASETDEFINITION = "http://folia.science.ru.nl/setdefinition"
+
 NSSKOS = "http://www.w3.org/2004/02/skos/core"
 
 class DeepValidationError(Exception):
