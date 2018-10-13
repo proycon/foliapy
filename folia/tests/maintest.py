@@ -247,7 +247,7 @@ class Test02Sanity(unittest.TestCase):
 
         self.assertEqual( w.annotation(folia.PosAnnotation), next(w.select(folia.PosAnnotation)) ) #w.annotation() selects the single first annotation of that type, select is the generic method to retrieve pretty much everything
         self.assertTrue( isinstance(w.annotation(folia.PosAnnotation), folia.PosAnnotation) )
-        self.assertTrue( issubclass(folia.PosAnnotation, folia.AbstractTokenAnnotation) )
+        self.assertTrue( issubclass(folia.PosAnnotation, folia.AbstractInlineAnnotation) )
 
         self.assertEqual( w.annotation(folia.PosAnnotation).cls, 'N(soort,ev,basis,onz,stan)' ) #cls is used everywhere instead of class, since class is a reserved keyword in python
         self.assertEqual( w.pos(),'N(soort,ev,basis,onz,stan)' ) #w.pos() is just a direct shortcut for getting the class

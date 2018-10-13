@@ -2865,6 +2865,9 @@ class AbstractElement(object):
             e = e.parent
         return None
 
+class AbstractHigherOrderAnnotation(AbstractElement):
+    pass
+
 class Description(AbstractHigherOrderAnnotation):
     """Description is an element that can be used to associate a description with almost any other FoLiA element"""
 
@@ -3397,8 +3400,6 @@ class AbstractInlineAnnotation(AbstractElement, AllowGenerateID):
 class AbstractExtendedInlineAnnotation(AbstractInlineAnnotation):
     pass
 
-class AbstractHigherOrderAnnotation(AbstractElement):
-    pass
 
 class AbstractTextMarkup(AbstractElement):
     """Abstract class for text markup elements, elements that appear with the :class:`TextContent` (``t``) element.
