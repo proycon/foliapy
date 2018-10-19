@@ -4789,7 +4789,7 @@ class Reference(AbstractStructureElement):
     def relaxng(cls, includechildren=True,extraattribs = None, extraelements=None):
         E = ElementMaker(namespace="http://relaxng.org/ns/structure/1.0",nsmap={None:'http://relaxng.org/ns/structure/1.0' , 'folia': "http://ilk.uvt.nl/folia", 'xml' : "http://www.w3.org/XML/1998/namespace",'a':"http://relaxng.org/ns/annotation/0.9" })
         if not extraattribs: extraattribs = []
-        extraattribs.append( E.attribute(name='id')) #id reference
+        extraattribs.append( E.optional(E.attribute(name='id'))) #id reference
         extraattribs.append( E.optional(E.attribute(name='type' )))
         extraattribs.append( E.optional(E.attribute(name='format' )))
         return super(Reference, cls).relaxng(includechildren, extraattribs, extraelements)
