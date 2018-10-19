@@ -19,7 +19,6 @@ from __future__ import print_function, unicode_literals, division, absolute_impo
 import sys
 import os
 import unittest
-import io
 import gzip
 import bz2
 import re
@@ -27,13 +26,8 @@ from datetime import datetime
 import lxml.objectify
 from folia.helpers import u, isstring
 import folia.main as folia
-if sys.version < '3':
-    from codecs import getwriter
-    stderr = getwriter('utf-8')(sys.stderr)
-    stdout = getwriter('utf-8')(sys.stdout)
-else:
-    stderr = sys.stderr
-    stdout = sys.stdout
+stderr = sys.stderr
+stdout = sys.stdout
 
 
 if os.path.exists("folia-repo"):
@@ -50,20 +44,17 @@ if 'TMPDIR' in os.environ:
 else:
     TMPDIR = '/tmp/'
 
-if sys.version < '3':
-    from StringIO import StringIO
-else:
-    from io import StringIO, BytesIO
+from io import StringIO, BytesIO
 from lxml import etree as ElementTree
 
 
 def xmlcheck(xml,expect):
     #obj1 = lxml.objectify.fromstring(expect)
     #expect = lxml.etree.tostring(obj1)
-    f = io.open(os.path.join(TMPDIR, 'foliatest.fragment.expect.xml'),'w',encoding='utf-8')
+    f = open(os.path.join(TMPDIR, 'foliatest.fragment.expect.xml'),'w',encoding='utf-8')
     f.write(expect)
     f.close()
-    f = io.open(os.path.join(TMPDIR , 'foliatest.fragment.out.xml'),'w', encoding='utf-8')
+    f = open(os.path.join(TMPDIR , 'foliatest.fragment.out.xml'),'w', encoding='utf-8')
     f.write(xml)
     f.close()
 
@@ -88,7 +79,7 @@ class Test01Read(unittest.TestCase):
     def test1_readfromfile(self):
         """Reading from file"""
         #write example to file
-        f = io.open(os.path.join(TMPDIR,'foliatest.xml'),'w',encoding='utf-8')
+        f = open(os.path.join(TMPDIR,'foliatest.xml'),'w',encoding='utf-8')
         f.write(LEGACYEXAMPLE)
         f.close()
 
@@ -141,10 +132,7 @@ class Test01Read(unittest.TestCase):
 
     def test3_readfromstring(self):
         """Reading from pre-parsed XML tree (as unicode(Py2)/str(Py3) obj)"""
-        if sys.version < '3':
-            doc = folia.Document(tree=ElementTree.parse(StringIO(LEGACYEXAMPLE.encode('utf-8'))))
-        else:
-            doc = folia.Document(tree=ElementTree.parse(BytesIO(LEGACYEXAMPLE.encode('utf-8'))))
+        doc = folia.Document(tree=ElementTree.parse(BytesIO(LEGACYEXAMPLE.encode('utf-8'))))
         self.assertTrue(isinstance(doc,folia.Document))
 
 
@@ -189,8 +177,6 @@ class Test02Sanity(unittest.TestCase):
         self.assertEqual( w.id , 'WR-P-E-J-0000000001.head.1.s.1.w.1' )
         self.assertEqual( w.text() , "Stemma" )
         self.assertEqual( str(w) , "Stemma" ) #should be unicode object also in Py2!
-        if sys.version < '3':
-            self.assertEqual( unicode(w) , "Stemma" ) #pylint: disable=undefined-variable
 
 
     def test005_last_word(self):
@@ -922,7 +908,7 @@ class Test02Sanity(unittest.TestCase):
 
     def test100a_sanity(self):
         """Sanity Check - A - Checking output file against input (should be equal)"""
-        f = io.open(os.path.join(TMPDIR,'foliatest.xml'),'w',encoding='utf-8')
+        f = open(os.path.join(TMPDIR,'foliatest.xml'),'w',encoding='utf-8')
         f.write(LEGACYEXAMPLE)
         f.close()
         self.doc.save(os.path.join(TMPDIR,'foliatest100.xml'))
@@ -930,7 +916,7 @@ class Test02Sanity(unittest.TestCase):
 
     def test100b_sanity_xmldiff(self):
         """Sanity Check - B - Checking output file against input using xmldiff (should be equal)"""
-        f = io.open(os.path.join(TMPDIR,'foliatest.xml'),'w',encoding='utf-8')
+        f = open(os.path.join(TMPDIR,'foliatest.xml'),'w',encoding='utf-8')
         f.write(LEGACYEXAMPLE)
         f.close()
         #use xmldiff to compare the two:
@@ -4002,7 +3988,7 @@ class Test10Provenance(unittest.TestCase):
 
 
 
-with io.open(os.path.join(FOLIAPATH, 'examples/full-legacy.1.5.folia.xml'), 'r',encoding='utf-8') as foliaexample_f:
+with open(os.path.join(FOLIAPATH, 'examples/full-legacy.1.5.folia.xml'), 'r',encoding='utf-8') as foliaexample_f:
     LEGACYEXAMPLE = foliaexample_f.read()
 
 #We cheat, by setting the generator and version attributes to match the library, so xmldiff doesn't complain when we compare against this reference
