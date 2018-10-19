@@ -7598,7 +7598,7 @@ class Document(object):
         if self.mode == Mode.MEMORY:
             s = 0
             for t in self.data:
-                s +=  sum( 1 for e in t.select(Class,recursive,True ) )
+                s += t.count(Class,set,recursive, ignore)
             return s
 
     def paragraphs(self, index = None):
