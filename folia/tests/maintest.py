@@ -73,6 +73,48 @@ def xmlcheck(xml,expect):
         print("------------------------------------------------------------------------",file=stderr)
     return passed
 
+###################### NEW TESTS ##########################
+
+class Test_E001_Tokens_Structure(unittest.TestCase):
+    """Simple Token & Structure Tests"""
+
+    def setUp(self):
+        self.doc = folia.Document(file=os.path.join(FOLIAPATH,"examples/tokens-structure.2.0.0.folia.xml"))
+
+    def test_sanity_wordcount(self):
+        """Simple Token & Structure - Sanity - Word count"""
+        self.assertEqual( self.doc.count(folia.Word), 8 ) #count only (most efficient)
+        #explicitly obtain:
+        self.assertEqual( len(list(self.doc.words())), 8 ) #shortcut
+        self.assertEqual( len(list(self.doc.select(folia.Word))), 8 )
+
+    def test_sanity_word_ids(self):
+        """Simple Token & Structure - Sanity - Word IDs"""
+        self.assertEqual( [ word.id for word in self.doc.words() ], ["example.p.1.s.1.w.1", "example.p.1.s.1.w.2", "example.p.1.s.1.w.3", "example.p.1.s.2.w.1", "example.p.1.s.2.w.2", "example.p.1.s.2.w.3", "example.p.1.s.2.w.4", "example.p.1.s.2.w.5"] )
+
+
+    def test_sanity_structurecount(self):
+        """Simple Token & Structure - Sanity - Structure Count"""
+        self.assertEqual( self.doc.count(folia.Sentence), 2 ) #count only (most efficient)
+        #explicitly obtain:
+        self.assertEqual( len(list(self.doc.sentences())), 2 ) #shortcut
+        self.assertEqual( len(list(self.doc.select(folia.Sentence))), 2 )
+
+        self.assertEqual( self.doc.count(folia.Paragraph), 1 ) #count only (most efficient)
+        #explicitly obtain:
+        self.assertEqual( len(list(self.doc.paragraphs())), 1 ) #shortcut
+        self.assertEqual( len(list(self.doc.select(folia.Paragraph))), 1 )
+
+
+    def test_sanity_structure_ids(self):
+        """Simple Token & Structure - Sanity - Structure IDs"""
+        self.assertEqual( [ s.id for s in self.doc.sentences() ], ["example.p.1.s.1","example.p.1.s.2" ] )
+        self.assertEqual( [ s.id for s in self.doc.paragraphs() ], ["example.p.1" ] )
+
+
+
+###################### OLD TESTS ##########################
+
 
 class Test01Read(unittest.TestCase):
 
