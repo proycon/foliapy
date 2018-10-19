@@ -81,20 +81,19 @@ class Test_E001_Tokens_Structure(unittest.TestCase):
     def setUp(self):
         self.doc = folia.Document(file=os.path.join(FOLIAPATH,"examples/tokens-structure.2.0.0.folia.xml"))
 
-    def test_sanity_wordcount(self):
-        """Simple Token & Structure - Sanity - Word count"""
+    def test_wordcount(self):
+        """Simple Token & Structure - Word count"""
         self.assertEqual( self.doc.count(folia.Word), 8 ) #count only (most efficient)
         #explicitly obtain:
         self.assertEqual( len(list(self.doc.words())), 8 ) #shortcut
         self.assertEqual( len(list(self.doc.select(folia.Word))), 8 )
 
-    def test_sanity_word_ids(self):
-        """Simple Token & Structure - Sanity - Word IDs"""
+    def test_word_ids(self):
+        """Simple Token & Structure - Word IDs"""
         self.assertEqual( [ word.id for word in self.doc.words() ], ["example.p.1.s.1.w.1", "example.p.1.s.1.w.2", "example.p.1.s.1.w.3", "example.p.1.s.2.w.1", "example.p.1.s.2.w.2", "example.p.1.s.2.w.3", "example.p.1.s.2.w.4", "example.p.1.s.2.w.5"] )
 
-
-    def test_sanity_structurecount(self):
-        """Simple Token & Structure - Sanity - Structure Count"""
+    def test_structurecount(self):
+        """Simple Token & Structure Test - Structure Count"""
         self.assertEqual( self.doc.count(folia.Sentence), 2 ) #count only (most efficient)
         #explicitly obtain:
         self.assertEqual( len(list(self.doc.sentences())), 2 ) #shortcut
@@ -106,12 +105,48 @@ class Test_E001_Tokens_Structure(unittest.TestCase):
         self.assertEqual( len(list(self.doc.select(folia.Paragraph))), 1 )
 
 
-    def test_sanity_structure_ids(self):
-        """Simple Token & Structure - Sanity - Structure IDs"""
+    def test_structure_ids(self):
+        """Simple Token & Structure Test - Structure IDs"""
         self.assertEqual( [ s.id for s in self.doc.sentences() ], ["example.p.1.s.1","example.p.1.s.2" ] )
         self.assertEqual( [ s.id for s in self.doc.paragraphs() ], ["example.p.1" ] )
 
+    def test_first_word(self):
+        """Simple Token & Structure Test - First word"""
+        #grab first word
+        w = self.doc.words(0) # shortcut for doc.words()[0]
+        self.assertTrue( isinstance(w, folia.Word) )
+        self.assertEqual( w.id , 'example.p.1.s.1.w.1' )
+        self.assertEqual( w.text() , "Hello" )
+        self.assertEqual( str(w) , "Hello" )
 
+
+    def test_last_word(self):
+        """Simple Token & Structure Test - Last word"""
+        #grab last word
+        w = self.doc.words(-1) # shortcut for doc.words()[0]
+        self.assertTrue( isinstance(w, folia.Word) )
+        self.assertEqual( w.id , "example.p.1.s.2.w.5" )
+        self.assertEqual( w.text() , "." )
+        self.assertEqual( str(w) , "." )
+
+
+    def test_sentence(self): #Covered by new test E001
+        """Simple Token & Structure Test - Sentence"""
+        #grab second sentence
+        s = self.doc.sentences(1)
+        self.assertTrue( isinstance(s, folia.Sentence) )
+        self.assertEqual( s.id, 'example.p.1.s.2' )
+        self.assertFalse( s.hastext() ) #no explicit text
+        self.assertEqual( str(s), "This is an example." )
+
+    def test_index(self): #Covered by new test E001
+        """Simple Token & Structure Test - Index"""
+        #grab something using the index
+        w = self.doc['example.p.1.s.1.w.1']
+        self.assertTrue( isinstance(w, folia.Word) )
+        self.assertEqual( self.doc['example.p.1.s.1.w.1'] , self.doc.index['example.p.1.s.1.w.1'] )
+        self.assertEqual( w.id , 'example.p.1.s.1.w.1' )
+        self.assertEqual( w.text() , "Hello" )
 
 ###################### OLD TESTS ##########################
 
@@ -195,23 +230,23 @@ class Test02Sanity(unittest.TestCase):
         self.assertEqual( len(self.doc), 1)
         self.assertTrue( isinstance( self.doc[0], folia.Text ))
 
-    def test001_count_paragraphs(self):
+    def test001_count_paragraphs(self): #Covered by new test E001
         """Sanity check - Paragraph count"""
         self.assertEqual( len(list(self.doc.paragraphs())) , 3)
 
-    def test002_count_sentences(self):
+    def test002_count_sentences(self): #Covered by new test E001
         """Sanity check - Sentences count"""
         self.assertEqual( len(list(self.doc.sentences())) , 17)
 
-    def test003a_count_words(self):
+    def test003a_count_words(self): #Covered by new test E001
         """Sanity check - Word count"""
         self.assertEqual( len(list(self.doc.words())) , 190)
 
-    def test003b_iter_words(self):
+    def test003b_iter_words(self): #Covered by new test E001
         """Sanity check - Words"""
         self.assertEqual( [x.id for x in self.doc.words() ], ['WR-P-E-J-0000000001.head.1.s.1.w.1', 'WR-P-E-J-0000000001.p.1.s.1.w.1', 'WR-P-E-J-0000000001.p.1.s.1.w.2', 'WR-P-E-J-0000000001.p.1.s.1.w.3', 'WR-P-E-J-0000000001.p.1.s.1.w.4', 'WR-P-E-J-0000000001.p.1.s.1.w.5', 'WR-P-E-J-0000000001.p.1.s.1.w.6', 'WR-P-E-J-0000000001.p.1.s.1.w.7', 'WR-P-E-J-0000000001.p.1.s.1.w.8', 'WR-P-E-J-0000000001.p.1.s.2.w.1', 'WR-P-E-J-0000000001.p.1.s.2.w.2', 'WR-P-E-J-0000000001.p.1.s.2.w.3', 'WR-P-E-J-0000000001.p.1.s.2.w.4', 'WR-P-E-J-0000000001.p.1.s.2.w.5', 'WR-P-E-J-0000000001.p.1.s.2.w.6', 'WR-P-E-J-0000000001.p.1.s.2.w.7', 'WR-P-E-J-0000000001.p.1.s.2.w.8', 'WR-P-E-J-0000000001.p.1.s.2.w.9', 'WR-P-E-J-0000000001.p.1.s.2.w.10', 'WR-P-E-J-0000000001.p.1.s.2.w.11', 'WR-P-E-J-0000000001.p.1.s.2.w.12', 'WR-P-E-J-0000000001.p.1.s.2.w.13', 'WR-P-E-J-0000000001.p.1.s.2.w.14', 'WR-P-E-J-0000000001.p.1.s.2.w.15', 'WR-P-E-J-0000000001.p.1.s.2.w.16', 'WR-P-E-J-0000000001.p.1.s.2.w.17', 'WR-P-E-J-0000000001.p.1.s.2.w.18', 'WR-P-E-J-0000000001.p.1.s.2.w.19', 'WR-P-E-J-0000000001.p.1.s.2.w.20', 'WR-P-E-J-0000000001.p.1.s.2.w.21', 'WR-P-E-J-0000000001.p.1.s.2.w.22', 'WR-P-E-J-0000000001.p.1.s.2.w.23', 'WR-P-E-J-0000000001.p.1.s.2.w.24-25', 'WR-P-E-J-0000000001.p.1.s.2.w.26', 'WR-P-E-J-0000000001.p.1.s.2.w.27', 'WR-P-E-J-0000000001.p.1.s.2.w.28', 'WR-P-E-J-0000000001.p.1.s.2.w.29', 'WR-P-E-J-0000000001.p.1.s.3.w.1', 'WR-P-E-J-0000000001.p.1.s.3.w.2', 'WR-P-E-J-0000000001.p.1.s.3.w.3', 'WR-P-E-J-0000000001.p.1.s.3.w.4', 'WR-P-E-J-0000000001.p.1.s.3.w.5', 'WR-P-E-J-0000000001.p.1.s.3.w.6', 'WR-P-E-J-0000000001.p.1.s.3.w.7', 'WR-P-E-J-0000000001.p.1.s.3.w.8', 'WR-P-E-J-0000000001.p.1.s.3.w.9', 'WR-P-E-J-0000000001.p.1.s.3.w.10', 'WR-P-E-J-0000000001.p.1.s.3.w.11', 'WR-P-E-J-0000000001.p.1.s.3.w.12', 'WR-P-E-J-0000000001.p.1.s.3.w.13', 'WR-P-E-J-0000000001.p.1.s.3.w.14', 'WR-P-E-J-0000000001.p.1.s.3.w.15', 'WR-P-E-J-0000000001.p.1.s.3.w.16', 'WR-P-E-J-0000000001.p.1.s.3.w.17', 'WR-P-E-J-0000000001.p.1.s.3.w.18', 'WR-P-E-J-0000000001.p.1.s.3.w.19', 'WR-P-E-J-0000000001.p.1.s.3.w.20', 'WR-P-E-J-0000000001.p.1.s.3.w.21', 'WR-P-E-J-0000000001.p.1.s.4.w.1', 'WR-P-E-J-0000000001.p.1.s.4.w.2', 'WR-P-E-J-0000000001.p.1.s.4.w.3', 'WR-P-E-J-0000000001.p.1.s.4.w.4', 'WR-P-E-J-0000000001.p.1.s.4.w.5', 'WR-P-E-J-0000000001.p.1.s.4.w.6', 'WR-P-E-J-0000000001.p.1.s.4.w.7', 'WR-P-E-J-0000000001.p.1.s.4.w.8', 'WR-P-E-J-0000000001.p.1.s.4.w.9', 'WR-P-E-J-0000000001.p.1.s.4.w.10', 'WR-P-E-J-0000000001.p.1.s.5.w.1', 'WR-P-E-J-0000000001.p.1.s.5.w.2', 'WR-P-E-J-0000000001.p.1.s.5.w.3', 'WR-P-E-J-0000000001.p.1.s.5.w.4', 'WR-P-E-J-0000000001.p.1.s.5.w.5', 'WR-P-E-J-0000000001.p.1.s.5.w.6', 'WR-P-E-J-0000000001.p.1.s.5.w.7', 'WR-P-E-J-0000000001.p.1.s.5.w.8', 'WR-P-E-J-0000000001.p.1.s.5.w.9', 'WR-P-E-J-0000000001.p.1.s.5.w.10', 'WR-P-E-J-0000000001.p.1.s.5.w.11', 'WR-P-E-J-0000000001.p.1.s.5.w.12', 'WR-P-E-J-0000000001.p.1.s.5.w.13', 'WR-P-E-J-0000000001.p.1.s.5.w.14', 'WR-P-E-J-0000000001.p.1.s.5.w.15', 'WR-P-E-J-0000000001.p.1.s.5.w.16', 'WR-P-E-J-0000000001.p.1.s.5.w.17', 'WR-P-E-J-0000000001.p.1.s.5.w.18', 'WR-P-E-J-0000000001.p.1.s.5.w.19', 'WR-P-E-J-0000000001.p.1.s.5.w.20', 'WR-P-E-J-0000000001.p.1.s.5.w.21', 'WR-P-E-J-0000000001.p.1.s.6.w.1', 'WR-P-E-J-0000000001.p.1.s.6.w.2', 'WR-P-E-J-0000000001.p.1.s.6.w.3', 'WR-P-E-J-0000000001.p.1.s.6.w.4', 'WR-P-E-J-0000000001.p.1.s.6.w.5', 'WR-P-E-J-0000000001.p.1.s.6.w.6', 'WR-P-E-J-0000000001.p.1.s.6.w.7', 'WR-P-E-J-0000000001.p.1.s.6.w.8', 'WR-P-E-J-0000000001.p.1.s.6.w.9', 'WR-P-E-J-0000000001.p.1.s.6.w.10', 'WR-P-E-J-0000000001.p.1.s.6.w.11', 'WR-P-E-J-0000000001.p.1.s.6.w.12', 'WR-P-E-J-0000000001.p.1.s.6.w.13', 'WR-P-E-J-0000000001.p.1.s.6.w.14', 'WR-P-E-J-0000000001.p.1.s.6.w.15', 'WR-P-E-J-0000000001.p.1.s.6.w.16', 'WR-P-E-J-0000000001.p.1.s.6.w.17', 'WR-P-E-J-0000000001.p.1.s.6.w.18', 'WR-P-E-J-0000000001.p.1.s.6.w.19', 'WR-P-E-J-0000000001.p.1.s.6.w.20', 'WR-P-E-J-0000000001.p.1.s.6.w.21', 'WR-P-E-J-0000000001.p.1.s.6.w.22', 'WR-P-E-J-0000000001.p.1.s.6.w.23', 'WR-P-E-J-0000000001.p.1.s.6.w.24', 'WR-P-E-J-0000000001.p.1.s.6.w.25', 'WR-P-E-J-0000000001.p.1.s.6.w.26', 'WR-P-E-J-0000000001.p.1.s.6.w.27', 'WR-P-E-J-0000000001.p.1.s.6.w.28', 'WR-P-E-J-0000000001.p.1.s.6.w.29', 'WR-P-E-J-0000000001.p.1.s.6.w.30', 'WR-P-E-J-0000000001.p.1.s.6.w.31', 'WR-P-E-J-0000000001.p.1.s.6.w.32', 'WR-P-E-J-0000000001.p.1.s.6.w.33', 'WR-P-E-J-0000000001.p.1.s.6.w.34', 'WR-P-E-J-0000000001.p.1.s.7.w.1', 'WR-P-E-J-0000000001.p.1.s.7.w.2', 'WR-P-E-J-0000000001.p.1.s.7.w.3', 'WR-P-E-J-0000000001.p.1.s.7.w.4', 'WR-P-E-J-0000000001.p.1.s.7.w.5', 'WR-P-E-J-0000000001.p.1.s.7.w.6', 'WR-P-E-J-0000000001.p.1.s.7.w.7', 'WR-P-E-J-0000000001.p.1.s.7.w.8', 'WR-P-E-J-0000000001.p.1.s.7.w.9', 'WR-P-E-J-0000000001.p.1.s.7.w.10', 'WR-P-E-J-0000000001.p.1.s.8.w.1', 'WR-P-E-J-0000000001.p.1.s.8.w.2', 'WR-P-E-J-0000000001.p.1.s.8.w.3', 'WR-P-E-J-0000000001.p.1.s.8.w.4', 'WR-P-E-J-0000000001.p.1.s.8.w.5', 'WR-P-E-J-0000000001.p.1.s.8.w.6', 'WR-P-E-J-0000000001.p.1.s.8.w.7', 'WR-P-E-J-0000000001.p.1.s.8.w.8', 'WR-P-E-J-0000000001.p.1.s.8.w.9', 'WR-P-E-J-0000000001.p.1.s.8.w.10', 'WR-P-E-J-0000000001.p.1.s.8.w.11', 'WR-P-E-J-0000000001.p.1.s.8.w.12', 'WR-P-E-J-0000000001.p.1.s.8.w.13', 'WR-P-E-J-0000000001.p.1.s.8.w.14', 'WR-P-E-J-0000000001.p.1.s.8.w.15', 'WR-P-E-J-0000000001.p.1.s.8.w.16', 'WR-P-E-J-0000000001.p.1.s.8.w.17', 'entry.1.term.1.w.1', 'sandbox.list.1.listitem.1.s.1.w.1', 'sandbox.list.1.listitem.1.s.1.w.2', 'sandbox.list.1.listitem.2.s.1.w.1', 'sandbox.list.1.listitem.2.s.1.w.2', 'sandbox.figure.1.caption.s.1.w.1', 'sandbox.figure.1.caption.s.1.w.2', 'WR-P-E-J-0000000001.sandbox.2.s.1.w.1', 'WR-P-E-J-0000000001.sandbox.2.s.1.w.2', 'WR-P-E-J-0000000001.sandbox.2.s.1.w.3', 'WR-P-E-J-0000000001.sandbox.2.s.1.w.4', 'WR-P-E-J-0000000001.sandbox.2.s.1.w.5', 'WR-P-E-J-0000000001.sandbox.2.s.1.w.6', 'WR-P-E-J-0000000001.sandbox.2.s.2.w.1', 'WR-P-E-J-0000000001.sandbox.2.s.2.w.2', 'WR-P-E-J-0000000001.sandbox.2.s.2.w.3', 'WR-P-E-J-0000000001.sandbox.2.s.2.w.4', 'WR-P-E-J-0000000001.sandbox.2.s.2.w.5', 'WR-P-E-J-0000000001.sandbox.2.s.2.w.6', 'WR-P-E-J-0000000001.sandbox.2.s.2.w.7', 'WR-P-E-J-0000000001.sandbox.2.s.2.w.8', 'WR-P-E-J-0000000001.sandbox.2.s.3.w.1', 'WR-P-E-J-0000000001.sandbox.2.s.3.w.2', 'WR-P-E-J-0000000001.sandbox.2.s.3.w.3', 'WR-P-E-J-0000000001.sandbox.2.s.3.w.4', 'WR-P-E-J-0000000001.sandbox.2.s.3.w.6', 'example.table.1.w.1', 'example.table.1.w.2', 'example.table.1.w.3', 'example.table.1.w.4', 'example.table.1.w.5', 'example.table.1.w.6', 'example.table.1.w.7', 'example.table.1.w.8', 'example.table.1.w.9', 'example.table.1.w.10', 'example.table.1.w.11', 'example.table.1.w.12', 'example.table.1.w.13', 'example.table.1.w.14'] )
 
-    def test004_first_word(self):
+    def test004_first_word(self): #Covered by new test E001
         """Sanity check - First word"""
         #grab first word
         w = self.doc.words(0) # shortcut for doc.words()[0]
@@ -221,7 +256,7 @@ class Test02Sanity(unittest.TestCase):
         self.assertEqual( str(w) , "Stemma" ) #should be unicode object also in Py2!
 
 
-    def test005_last_word(self):
+    def test005_last_word(self): #Covered by new test E001
         """Sanity check - Last word"""
         #grab last word
         w = self.doc.words(-1) # shortcut for doc.words()[0]
@@ -230,7 +265,7 @@ class Test02Sanity(unittest.TestCase):
         self.assertEqual( w.text() , "University" )
         self.assertEqual( str(w) , "University" )
 
-    def test006_second_sentence(self):
+    def test006_second_sentence(self): #Covered by new test E001
         """Sanity check - Sentence"""
         #grab second sentence
         s = self.doc.sentences(1)
@@ -249,7 +284,7 @@ class Test02Sanity(unittest.TestCase):
         self.assertEqual( s.text('current',True), "De andere handschriften krijgen ook een letter die verband kan houden met hun plaats van oorsprong óf plaats van bewaring .") #not detokenised
         self.assertEqual( s.toktext(), "De andere handschriften krijgen ook een letter die verband kan houden met hun plaats van oorsprong óf plaats van bewaring .") #just an alias for the above
 
-    def test007_index(self):
+    def test007_index(self): #Covered by new test E001
         """Sanity check - Index"""
         #grab something using the index
         w = self.doc['WR-P-E-J-0000000001.p.1.s.2.w.7']
