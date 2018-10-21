@@ -443,7 +443,7 @@ def parsecommonarguments(object, doc, annotationtype, required, allowed, **kwarg
 
     if object.cls and not object.set:
         if doc and doc.autodeclare:
-            if not (annotationtype, 'undefined') in doc.annotations:
+            if (annotationtype, 'undefined') not in doc.annotations:
                 doc.annotations.append( (annotationtype, 'undefined') )
                 doc.annotationdefaults[annotationtype] = {'undefined': {} }
             object.set = 'undefined'
@@ -6380,6 +6380,7 @@ class Document(object):
             preparsexmlcallback (function):  Callback for a function taking one argument (``node``, an lxml node). Will be called whenever an XML element is parsed into FoLiA. The function should return an instance inherited from folia.AbstractElement, or None to abort parsing this element (and all its children)
             parsexmlcallback (function):  Callback for a function taking one argument (``element``, a FoLiA element). Will be called whenever an XML element is parsed into FoLiA. The function should return an instance inherited from folia.AbstractElement, or None to abort adding this element (and all its children)
             version (str): force a particular FoLiA version (use with caution)
+            declare (list): Declare the specifies annotation types: may include annotationtypes or annotationtype, set tuples.
             debug (bool): Boolean to enable/disable debug
         """
 
@@ -6536,6 +6537,16 @@ class Document(object):
         if self.mode != Mode.XPATH:
             #XML Tree is now obsolete (only needed when partially loaded for xpath queries), free memory
             self.tree = None
+
+        if 'declare' in kwargs:
+            for item in kwargs['declare']:
+                if isinstance(item, (list,tuple)):
+                    self.declare(item[0], item[1])
+                else:
+                    self.declare(item)
+        else:
+            #declare text by default (set declare=[] if you don't want this)
+            self.declare(AnnotationType.TEXT)
 
     #def __del__(self):
     #    del self.index
@@ -7036,7 +7047,7 @@ class Document(object):
         n = node.xpath('//imdi:Languages/imdi:Language/imdi:ID', namespaces=ns)
         if n and n[0].text: self._language = n[0].text
 
-    def declare(self, annotationtype, set, *args, **kwargs):
+    def declare(self, annotationtype, set=None, *args, **kwargs):
         """Declare new annotation types, sets or annotators to be used in the document.
 
            This typically done by associating an annotationtype and set with a processor, the processor
@@ -7080,6 +7091,8 @@ class Document(object):
 
 
         """
+        if set is None:
+            set = "undefined"
         if not isinstance(set,str):
             raise ValueError("Set parameter for declare() must be a string")
 

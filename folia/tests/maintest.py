@@ -51,12 +51,12 @@ from lxml import etree as ElementTree
 def xmlcheck(xml,expect):
     #obj1 = lxml.objectify.fromstring(expect)
     #expect = lxml.etree.tostring(obj1)
-    #expect = re.sub(r' version="[^"]*" generator="[^"]*"', ' version="' + folia.FOLIAVERSION + '" generator="foliapy-v' + folia.LIBVERSION + '"', expect, re.MULTILINE)
     f = open(os.path.join(TMPDIR, 'foliatest.fragment.expect.xml'),'w',encoding='utf-8')
-    f.write(expect)
+    f.write(re.sub(r' version="[^"]*" generator="[^"]*"', ' version="' + folia.FOLIAVERSION + '" generator="foliapy-v' + folia.LIBVERSION + '"', expect, re.MULTILINE))
     f.close()
     f = open(os.path.join(TMPDIR , 'foliatest.fragment.out.xml'),'w', encoding='utf-8')
-    f.write(xml)
+    #jf.write(xml)
+    f.write(re.sub(r' version="[^"]*" generator="[^"]*"', ' version="' + folia.FOLIAVERSION + '" generator="foliapy-v' + folia.LIBVERSION + '"', xml, re.MULTILINE))
     f.close()
 
     retcode = os.system('xmldiff -c ' + os.path.join(TMPDIR, 'foliatest.fragment.expect.xml') + ' ' + os.path.join(TMPDIR,'foliatest.fragment.out.xml'))
@@ -747,7 +747,7 @@ class Test02Sanity(unittest.TestCase):
     def test037a_feat(self):
         """Sanity Check - Feature test (including shortcut)"""
         xml = """<?xml version="1.0" encoding="UTF-8"?>
-<FoLiA xmlns="http://ilk.uvt.nl/folia" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="test" version="{version}" generator="{generator}">
+<FoLiA xmlns="http://ilk.uvt.nl/folia" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="test" version="1.5.0" generator="{generator}">
 <metadata src="test.cmdi.xml" type="cmdi">
 <annotations>
     <pos-annotation set="test"/>
@@ -785,7 +785,7 @@ class Test02Sanity(unittest.TestCase):
     def test037b_multiclassfeat(self):
         """Sanity Check - Multiclass feature"""
         xml = """<?xml version="1.0" encoding="UTF-8"?>
-<FoLiA xmlns="http://ilk.uvt.nl/folia" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="test" version="{version}" generator="{generator}">
+<FoLiA xmlns="http://ilk.uvt.nl/folia" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="test" version="1.5.0" generator="{generator}">
 <metadata src="test.cmdi.xml" type="cmdi">
 <annotations>
     <pos-annotation set="test"/>
@@ -1018,7 +1018,7 @@ class Test02Sanity(unittest.TestCase):
     def test101a_metadataextref(self):
         """Sanity Check - Metadata external reference (CMDI)"""
         xml = """<?xml version="1.0" encoding="UTF-8"?>
-<FoLiA xmlns="http://ilk.uvt.nl/folia" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="test" version="{version}" generator="{generator}">
+<FoLiA xmlns="http://ilk.uvt.nl/folia" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="test" version="1.5.0" generator="{generator}">
 <metadata src="test.cmdi.xml" type="cmdi">
 <annotations>
     <event-annotation set="test"/>
@@ -1033,7 +1033,7 @@ class Test02Sanity(unittest.TestCase):
     def test101b_metadataextref2(self):
         """Sanity Check - Metadata external reference (IMDI)"""
         xml = """<?xml version="1.0" encoding="UTF-8"?>
-<FoLiA xmlns="http://ilk.uvt.nl/folia" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="test" version="{version}" generator="{generator}">
+<FoLiA xmlns="http://ilk.uvt.nl/folia" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="test" version="1.5.0" generator="{generator}">
 <metadata src="test.imdi.xml" type="imdi">
 <annotations>
     <event-annotation set="test"/>
@@ -1048,7 +1048,7 @@ class Test02Sanity(unittest.TestCase):
     def test101c_metadatainternal(self):
         """Sanity Check - Metadata internal (foreign data) (Dublin Core)"""
         xml = """<?xml version="1.0" encoding="UTF-8"?>
-<FoLiA xmlns="http://ilk.uvt.nl/folia" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="test" version="{version}" generator="{generator}">
+<FoLiA xmlns="http://ilk.uvt.nl/folia" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="test" version="1.5.0" generator="{generator}">
 <metadata type="dc">
   <annotations>
   </annotations>
@@ -1073,7 +1073,7 @@ class Test02Sanity(unittest.TestCase):
     def test101d_metadatainternal(self):
         """Sanity Check - Metadata internal (double)"""
         xml = """<?xml version="1.0" encoding="UTF-8"?>
-<FoLiA xmlns="http://ilk.uvt.nl/folia" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="test" version="{version}" generator="{generator}">
+<FoLiA xmlns="http://ilk.uvt.nl/folia" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="test" version="1.5.0" generator="{generator}">
 <metadata type="dc">
   <annotations>
   </annotations>
@@ -1101,7 +1101,7 @@ class Test02Sanity(unittest.TestCase):
         """Sanity Check - Legacy inline IMDI metadata"""
         #adapted from foliatests/tests/folia.imdi.xml
         xml = """<?xml version="1.0" encoding="UTF-8"?>
-<FoLiA xmlns="http://ilk.uvt.nl/folia" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="test" version="{version}" generator="{generator}">
+<FoLiA xmlns="http://ilk.uvt.nl/folia" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="test" version="1.5.0" generator="{generator}">
   <metadata type="imdi">
     <annotations>
       <event-annotation set="test"/>
@@ -1122,7 +1122,7 @@ class Test02Sanity(unittest.TestCase):
     def test102a_declarations(self):
         """Sanity Check - Declarations - Default set"""
         xml = """<?xml version="1.0"?>\n
-<FoLiA xmlns="http://ilk.uvt.nl/folia" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="test" version="{version}" generator="{generator}">
+<FoLiA xmlns="http://ilk.uvt.nl/folia" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="test" version="1.5.0" generator="{generator}">
   <metadata type="native">
     <annotations>
       <gap-annotation annotator="sloot" set="gap-set"/>
@@ -1139,7 +1139,7 @@ class Test02Sanity(unittest.TestCase):
     def test102a2_declarations(self):
         """Sanity Check - Declarations - Default set, no further defaults"""
         xml = """<?xml version="1.0"?>\n
-<FoLiA xmlns="http://ilk.uvt.nl/folia" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="test" version="{version}" generator="{generator}">
+<FoLiA xmlns="http://ilk.uvt.nl/folia" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="test" version="1.5.0" generator="{generator}">
   <metadata type="native">
     <annotations>
       <gap-annotation set="gap-set"/>
@@ -1157,7 +1157,7 @@ class Test02Sanity(unittest.TestCase):
     def test102b_declarations(self):
         """Sanity Check - Declarations - Set mismatching """
         xml = """<?xml version="1.0"?>\n
-<FoLiA xmlns="http://ilk.uvt.nl/folia" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="test" version="{version}" generator="{generator}">
+<FoLiA xmlns="http://ilk.uvt.nl/folia" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="test" version="1.5.0" generator="{generator}">
   <metadata type="native">
     <annotations>
       <gap-annotation annotator="sloot" set="gap-set"/>
@@ -1175,7 +1175,7 @@ class Test02Sanity(unittest.TestCase):
     def test102c_declarations(self):
         """Sanity Check - Declarations - Multiple sets for the same annotation type"""
         xml = """<?xml version="1.0"?>\n
-<FoLiA xmlns="http://ilk.uvt.nl/folia" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="test" version="{version}" generator="{generator}">
+<FoLiA xmlns="http://ilk.uvt.nl/folia" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="test" version="1.5.0" generator="{generator}">
   <metadata type="native">
     <annotations>
       <gap-annotation annotator="sloot" set="extended-gap-set"/>
@@ -1194,7 +1194,7 @@ class Test02Sanity(unittest.TestCase):
     def test102d1_declarations(self):
         """Sanity Check - Declarations - Multiple sets for the same annotation type (testing failure)"""
         xml = """<?xml version="1.0"?>\n
-<FoLiA xmlns="http://ilk.uvt.nl/folia" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="test" version="{version}" generator="{generator}">
+<FoLiA xmlns="http://ilk.uvt.nl/folia" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="test" version="1.5.0" generator="{generator}">
   <metadata type="native">
     <annotations>
       <gap-annotation annotator="sloot" set="extended-gap-set"/>
@@ -1217,7 +1217,7 @@ class Test02Sanity(unittest.TestCase):
     def test102d2_declarations(self):
         """Sanity Check - Declarations - Multiple sets for the same annotation type (testing failure)"""
         xml = """<?xml version="1.0"?>\n
-<FoLiA xmlns="http://ilk.uvt.nl/folia" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="test" version="{version}" generator="{generator}">
+<FoLiA xmlns="http://ilk.uvt.nl/folia" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="test" version="1.5.0" generator="{generator}">
   <metadata type="native">
     <annotations>
       <gap-annotation annotator="sloot" set="extended-gap-set"/>
@@ -1236,7 +1236,7 @@ class Test02Sanity(unittest.TestCase):
     def test102d3_declarations(self):
         """Sanity Check - Declarations - Ignore Duplicates"""
         xml = """<?xml version="1.0"?>\n
-<FoLiA xmlns="http://ilk.uvt.nl/folia" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="test" version="{version}" generator="{generator}">
+<FoLiA xmlns="http://ilk.uvt.nl/folia" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="test" version="1.5.0" generator="{generator}">
   <metadata type="native">
     <annotations>
       <gap-annotation annotator="sloot" set="gap-set"/>
@@ -1256,7 +1256,7 @@ class Test02Sanity(unittest.TestCase):
     def test102e_declarations(self):
         """Sanity Check - Declarations - Missing declaration"""
         xml = """<?xml version="1.0"?>\n
-<FoLiA xmlns="http://ilk.uvt.nl/folia" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="test" version="{version}" generator="{generator}">
+<FoLiA xmlns="http://ilk.uvt.nl/folia" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="test" version="1.5.0" generator="{generator}">
   <metadata type="native">
     <annotations>
     </annotations>
@@ -1272,7 +1272,7 @@ class Test02Sanity(unittest.TestCase):
     def test102f_declarations(self):
         """Sanity Check - Declarations - Declaration not needed"""
         xml = """<?xml version="1.0"?>\n
-<FoLiA xmlns="http://ilk.uvt.nl/folia" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="test" version="{version}" generator="{generator}">
+<FoLiA xmlns="http://ilk.uvt.nl/folia" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="test" version="1.5.0" generator="{generator}">
   <metadata type="native">
     <annotations>
     </annotations>
@@ -1287,7 +1287,7 @@ class Test02Sanity(unittest.TestCase):
     def test102g_declarations(self):
         """Sanity Check - Declarations - 'Undefined' set in declaration"""
         xml = """<?xml version="1.0"?>\n
-<FoLiA xmlns="http://ilk.uvt.nl/folia" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="test" version="{version}" generator="{generator}">
+<FoLiA xmlns="http://ilk.uvt.nl/folia" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="test" version="1.5.0" generator="{generator}">
   <metadata type="native">
     <annotations>
         <gap-annotation annotator="sloot" />
@@ -1303,7 +1303,7 @@ class Test02Sanity(unittest.TestCase):
     def test102h_declarations(self):
         """Sanity Check - Declarations - Double ambiguous declarations unset default"""
         xml = """<?xml version="1.0"?>\n
-<FoLiA xmlns="http://ilk.uvt.nl/folia" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="test" version="{version}" generator="{generator}">
+<FoLiA xmlns="http://ilk.uvt.nl/folia" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="test" version="1.5.0" generator="{generator}">
   <metadata type="native">
     <annotations>
          <gap-annotation annotator="sloot" set="gap-set"/>
@@ -1321,7 +1321,7 @@ class Test02Sanity(unittest.TestCase):
     def test102i_declarations(self):
         """Sanity Check - Declarations - miscellaneous trouble"""
         xml = """<?xml version="1.0"?>\n
-<FoLiA xmlns="http://ilk.uvt.nl/folia" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="test" version="{version}" generator="{generator}">
+<FoLiA xmlns="http://ilk.uvt.nl/folia" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="test" version="1.5.0" generator="{generator}">
   <metadata type="native">
     <annotations>
          <gap-annotation annotator="sloot" set="gap1-set"/>
@@ -1354,7 +1354,7 @@ class Test02Sanity(unittest.TestCase):
     def test102j_declarations(self):
         """Sanity Check - Declarations - Adding a declaration in other set."""
         xml = """<?xml version="1.0"?>\n
-<FoLiA xmlns="http://ilk.uvt.nl/folia" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="test" version="{version}" generator="{generator}">
+<FoLiA xmlns="http://ilk.uvt.nl/folia" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="test" version="1.5.0" generator="{generator}">
   <metadata type="native">
     <annotations>
          <gap-annotation annotator="sloot" set="gap-set"/>
@@ -1379,7 +1379,7 @@ class Test02Sanity(unittest.TestCase):
     def test102k_declarations(self):
         """Sanity Check - Declarations - Several annotator types."""
         xml = """<?xml version="1.0"?>\n
-<FoLiA xmlns="http://ilk.uvt.nl/folia" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="test" version="{version}" generator="{generator}">
+<FoLiA xmlns="http://ilk.uvt.nl/folia" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="test" version="1.5.0" generator="{generator}">
   <metadata type="native">
     <annotations>
          <gap-annotation annotatortype="auto" set="gap-set"/>
@@ -1412,7 +1412,7 @@ class Test02Sanity(unittest.TestCase):
     def test102l_declarations(self):
         """Sanity Check - Declarations - Datetime default."""
         xml = """<?xml version="1.0"?>\n
-<FoLiA xmlns="http://ilk.uvt.nl/folia" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="test" version="{version}" generator="{generator}">
+<FoLiA xmlns="http://ilk.uvt.nl/folia" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="test" version="1.5.0" generator="{generator}">
   <metadata type="native">
     <annotations>
          <gap-annotation set="gap-set" datetime="2011-12-15T19:00" />
@@ -1430,7 +1430,7 @@ class Test02Sanity(unittest.TestCase):
     def test102m_declarations(self):
         """Sanity Check - Declarations - Adding a declaration of a FoLiA v1.4 RDF Set Definition."""
         xml = """<?xml version="1.0"?>\n
-<FoLiA xmlns="http://ilk.uvt.nl/folia" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="test" version="{version}" generator="{generator}">
+<FoLiA xmlns="http://ilk.uvt.nl/folia" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="test" version="1.5.0" generator="{generator}">
   <metadata type="native">
     <annotations>
     </annotations>
@@ -1444,7 +1444,7 @@ class Test02Sanity(unittest.TestCase):
     def test102n_aliases(self):
         """Sanity Check - Declarations - Testing Aliases"""
         xml = """<?xml version="1.0"?>
-<FoLiA xmlns="http://ilk.uvt.nl/folia" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="test" version="{version}" generator="{generator}">
+<FoLiA xmlns="http://ilk.uvt.nl/folia" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="test" version="1.5.0" generator="{generator}">
   <metadata type="native">n"
     <annotations>n"
       <gap-annotation set="some very convoluted url or such which clutters all" alias="gap-set" datetime="2012-06-18T17:49"/>
@@ -1487,7 +1487,7 @@ class Test02Sanity(unittest.TestCase):
     def test103_namespaces(self):
         """Sanity Check - Alien namespaces - Checking whether properly ignored"""
         xml = """<?xml version="1.0"?>\n
-<FoLiA xmlns:xlink="http://www.w3.org/1999/xlink" xmlns="http://ilk.uvt.nl/folia" xmlns:alien="http://somewhere.else" xml:id="example" generator="{generator}" version="{version}">
+<FoLiA xmlns:xlink="http://www.w3.org/1999/xlink" xmlns="http://ilk.uvt.nl/folia" xmlns:alien="http://somewhere.else" xml:id="example" generator="{generator}" version="1.5.0">
   <metadata type="native">
     <annotations>
     </annotations>
@@ -1514,7 +1514,7 @@ class Test02Sanity(unittest.TestCase):
     def test104_speech(self):
         """Sanity Check - Speech data (without attributes)"""
         xml = """<?xml version="1.0"?>\n
-<FoLiA xmlns="http://ilk.uvt.nl/folia" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="test" version="{version}" generator="{generator}">
+<FoLiA xmlns="http://ilk.uvt.nl/folia" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="test" version="1.5.0" generator="{generator}">
   <metadata type="native">
     <annotations>
         <utterance-annotation set="utterances" />
@@ -1547,7 +1547,7 @@ class Test02Sanity(unittest.TestCase):
     def test104b_speech(self):
         """Sanity Check - Speech data with speech attributes"""
         xml = """<?xml version="1.0"?>\n
-<FoLiA xmlns="http://ilk.uvt.nl/folia" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="test" version="{version}" generator="{generator}">
+<FoLiA xmlns="http://ilk.uvt.nl/folia" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="test" version="1.5.0" generator="{generator}">
   <metadata type="native">
     <annotations>
         <utterance-annotation set="utterances" />
@@ -1616,7 +1616,7 @@ class Test02Sanity(unittest.TestCase):
     def test105_complexalignment(self):
         """Sanity Check - Complex alignment"""
         xml = """<?xml version="1.0" encoding="UTF-8"?>
-<FoLiA xmlns="http://ilk.uvt.nl/folia" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="test" version="{version}" generator="{generator}">
+<FoLiA xmlns="http://ilk.uvt.nl/folia" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="test" version="1.5.0" generator="{generator}">
 <metadata type="native">
  <annotations>
     <complexalignment-annotation />
@@ -1664,7 +1664,7 @@ class Test02Sanity(unittest.TestCase):
     def test107a_submetadataextref(self):
         """Sanity Check - Submetadata external reference (CMDI)"""
         xml = """<?xml version="1.0" encoding="UTF-8"?>
-<FoLiA xmlns="http://ilk.uvt.nl/folia" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="test" version="{version}" generator="{generator}">
+<FoLiA xmlns="http://ilk.uvt.nl/folia" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="test" version="1.5.0" generator="{generator}">
 <metadata type="native">
     <annotations>
     </annotations>
@@ -1681,7 +1681,7 @@ class Test02Sanity(unittest.TestCase):
     def test107b_metadatainternal(self):
         """Sanity Check - Submetadata internal (foreign data) (Dublin Core)"""
         xml = """<?xml version="1.0" encoding="UTF-8"?>
-<FoLiA xmlns="http://ilk.uvt.nl/folia" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="test" version="{version}" generator="{generator}">
+<FoLiA xmlns="http://ilk.uvt.nl/folia" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="test" version="1.5.0" generator="{generator}">
 <metadata>
   <annotations>
   </annotations>
@@ -1707,7 +1707,7 @@ class Test02Sanity(unittest.TestCase):
     def test108_text_with_comment(self):
         """Sanity Check - Text with XML comment"""
         xml = """<?xml version="1.0"?>\n
-<FoLiA xmlns="http://ilk.uvt.nl/folia" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="test" version="{version}" generator="{generator}">
+<FoLiA xmlns="http://ilk.uvt.nl/folia" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="test" version="1.5.0" generator="{generator}">
   <metadata type="native">
     <annotations>
     </annotations>
@@ -1722,7 +1722,7 @@ class Test02Sanity(unittest.TestCase):
     def test108b_text_with_comment(self):
         """Sanity Check - Text with XML comment"""
         xml = """<?xml version="1.0"?>\n
-<FoLiA xmlns="http://ilk.uvt.nl/folia" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="test" version="{version}" generator="{generator}">
+<FoLiA xmlns="http://ilk.uvt.nl/folia" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="test" version="1.5.0" generator="{generator}">
   <metadata type="native">
     <annotations>
     </annotations>
@@ -1737,7 +1737,7 @@ class Test02Sanity(unittest.TestCase):
     def test108c_text_with_comment(self):
         """Sanity Check - Text with FoLiA comment"""
         xml = """<?xml version="1.0"?>\n
-<FoLiA xmlns="http://ilk.uvt.nl/folia" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="test" version="{version}" generator="{generator}">
+<FoLiA xmlns="http://ilk.uvt.nl/folia" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="test" version="1.5.0" generator="{generator}">
   <metadata type="native">
     <annotations>
     </annotations>
@@ -2300,6 +2300,7 @@ class Test04Create(unittest.TestCase):
         """Creating a FoLiA Document from scratch"""
         self.doc = folia.Document(id='example')
         self.doc.declare(folia.AnnotationType.TOKEN, 'adhocset',annotator='proycon')
+        self.doc.declare(folia.AnnotationType.TEXT)
 
         self.assertEqual(self.doc.defaultset(folia.AnnotationType.TOKEN), 'adhocset')
         self.assertEqual(self.doc.defaultannotator(folia.AnnotationType.TOKEN, 'adhocset'), 'proycon')
@@ -2323,6 +2324,7 @@ class Test05Correction(unittest.TestCase):
     def setUp(self):
         self.doc = folia.Document(id='example', textvalidation=True)
         self.doc.declare(folia.AnnotationType.TOKEN, set='adhocset',annotator='proycon')
+        self.doc.declare(folia.AnnotationType.TEXT)
         self.text = folia.Text(self.doc, id=self.doc.id + '.text.1')
         self.doc.append( self.text )
 
@@ -2762,7 +2764,7 @@ class Test09Validation(unittest.TestCase):
     def test003_invalid_text_misspelled(self):
         """Validation - Invalid Text (Misspelled word)"""
         xml = """<?xml version="1.0" encoding="UTF-8"?>
-<FoLiA xmlns="http://ilk.uvt.nl/folia" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="test" version="{version}" generator="{generator}">
+<FoLiA xmlns="http://ilk.uvt.nl/folia" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="test" version="1.5.0" generator="{generator}">
   <metadata type="native">
     <annotations>
       <token-annotation annotator="ucto" annotatortype="auto" datetime="2017-09-25T10:29:52" set="tokconfig-nld"/>
@@ -2785,7 +2787,7 @@ class Test09Validation(unittest.TestCase):
     def test004_invalid_text_missing(self):
         """Validation - Invalid Text (Missing Word)"""
         xml = """<?xml version="1.0" encoding="UTF-8"?>
-<FoLiA xmlns="http://ilk.uvt.nl/folia" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="test" version="{version}" generator="{generator}">
+<FoLiA xmlns="http://ilk.uvt.nl/folia" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="test" version="1.5.0" generator="{generator}">
   <metadata type="native">
     <annotations>
       <token-annotation annotator="ucto" annotatortype="auto" datetime="2017-09-25T10:29:52" set="tokconfig-nld"/>
@@ -2808,7 +2810,7 @@ class Test09Validation(unittest.TestCase):
     def test005_textvalidation_intermittent_redundancy(self):
         """Validation - Text Validation (Intermittent Redundancy)"""
         xml = """<?xml version="1.0" encoding="UTF-8"?>
-<FoLiA xmlns="http://ilk.uvt.nl/folia" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="test" version="{version}" generator="{generator}">
+<FoLiA xmlns="http://ilk.uvt.nl/folia" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="test" version="1.5.0" generator="{generator}">
   <metadata type="native">
     <annotations>
       <token-annotation annotator="ucto" annotatortype="auto" datetime="2017-09-25T10:29:52" set="tokconfig-nld"/>
@@ -2836,7 +2838,7 @@ het    ook   ?
     def test006_multiple_textclasses(self):
         """Validation - Invalid Text (Multiple classes)"""
         xml = """<?xml version="1.0" encoding="UTF-8"?>
-<FoLiA xmlns="http://ilk.uvt.nl/folia" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="test" version="{version}" generator="{generator}">
+<FoLiA xmlns="http://ilk.uvt.nl/folia" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="test" version="1.5.0" generator="{generator}">
   <metadata type="native">
     <annotations>
       <token-annotation annotator="ucto" annotatortype="auto" datetime="2017-09-25T10:29:52" set="tokconfig-nld"/>
@@ -2862,7 +2864,7 @@ het    ook   ?
     def test007_textcheck_no_morphemes(self):
         """Validation - No text checking on (nested) morphemes"""
         xml = """<?xml version="1.0" encoding="UTF-8"?>
-<FoLiA xmlns="http://ilk.uvt.nl/folia" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="test" version="{version}" generator="{generator}">
+<FoLiA xmlns="http://ilk.uvt.nl/folia" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="test" version="1.5.0" generator="{generator}">
   <metadata type="native">
     <annotations>
       <token-annotation annotator="ucto" annotatortype="auto" datetime="2017-09-25T10:29:52" set="tokconfig-nld"/>
@@ -2909,7 +2911,7 @@ het    ook   ?
     def test008_offset(self):
         """Validation - Offset validation"""
         xml = """<?xml version="1.0" encoding="UTF-8"?>
-<FoLiA xmlns="http://ilk.uvt.nl/folia" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="test" version="{version}" generator="{generator}">
+<FoLiA xmlns="http://ilk.uvt.nl/folia" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="test" version="1.5.0" generator="{generator}">
   <metadata type="native">
     <annotations>
       <token-annotation annotator="ucto" annotatortype="auto" datetime="2017-09-25T10:29:52" set="tokconfig-nld"/>
@@ -2990,7 +2992,7 @@ het    ook   ?
     def test009_invalid_offset(self):
         """Validation - Offset validation (invalid)"""
         xml = """<?xml version="1.0" encoding="UTF-8"?>
-<FoLiA xmlns="http://ilk.uvt.nl/folia" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="test" version="{version}" generator="{generator}">
+<FoLiA xmlns="http://ilk.uvt.nl/folia" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="test" version="1.5.0" generator="{generator}">
   <metadata type="native">
     <annotations>
       <token-annotation annotator="ucto" annotatortype="auto" datetime="2017-09-25T10:29:52" set="tokconfig-nld"/>
@@ -3068,7 +3070,7 @@ het    ook   ?
     def test010_offset_reference(self):
         """Validation - Offset validation with explicit references"""
         xml = """<?xml version="1.0" encoding="UTF-8"?>
-<FoLiA xmlns="http://ilk.uvt.nl/folia" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="test" version="{version}" generator="{generator}">
+<FoLiA xmlns="http://ilk.uvt.nl/folia" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="test" version="1.5.0" generator="{generator}">
   <metadata type="native">
     <annotations>
       <token-annotation annotator="ucto" annotatortype="auto" datetime="2017-09-25T10:29:52" set="tokconfig-nld"/>
@@ -3147,7 +3149,7 @@ het    ook   ?
     def test011a_offset_textmarkup(self):
         """Validation - Offset validation with text markup (non-text-modifiers)"""
         xml = """<?xml version="1.0" encoding="UTF-8"?>
-<FoLiA xmlns="http://ilk.uvt.nl/folia" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="test" version="{version}" generator="{generator}">
+<FoLiA xmlns="http://ilk.uvt.nl/folia" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="test" version="1.5.0" generator="{generator}">
   <metadata type="native">
     <annotations>
       <token-annotation annotator="ucto" annotatortype="auto" datetime="2017-09-25T10:29:52" set="tokconfig-nld"/>
@@ -3227,7 +3229,7 @@ het    ook   ?
     def test011b_offset_textmarkup(self):
         """Validation - Offset validation with text markup (with text modifiers like br)"""
         xml = """<?xml version="1.0" encoding="UTF-8"?>
-<FoLiA xmlns="http://ilk.uvt.nl/folia" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="test" version="{version}" generator="{generator}">
+<FoLiA xmlns="http://ilk.uvt.nl/folia" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="test" version="1.5.0" generator="{generator}">
   <metadata type="native">
     <annotations>
       <token-annotation annotator="ucto" annotatortype="auto" datetime="2017-09-25T10:29:52" set="tokconfig-nld"/>
@@ -3306,7 +3308,7 @@ het    ook   ?
     def test012_string(self):
         """Validation - Text Validation on String"""
         xml = """<?xml version="1.0" encoding="UTF-8"?>
-<FoLiA xmlns="http://ilk.uvt.nl/folia" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="test" version="{version}" generator="{generator}">
+<FoLiA xmlns="http://ilk.uvt.nl/folia" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="test" version="1.5.0" generator="{generator}">
   <metadata type="native">
     <annotations>
       <token-annotation annotator="ucto" annotatortype="auto" datetime="2017-09-25T10:29:52" set="tokconfig-nld"/>
@@ -3331,7 +3333,7 @@ het    ook   ?
     def test013a_correction(self):
         """Validation - Text Validation on Correction (single text layer)"""
         xml = """<?xml version="1.0" encoding="UTF-8"?>
-<FoLiA xmlns="http://ilk.uvt.nl/folia" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="test" version="{version}" generator="{generator}">
+<FoLiA xmlns="http://ilk.uvt.nl/folia" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="test" version="1.5.0" generator="{generator}">
   <metadata type="native">
     <annotations>
       <token-annotation annotator="ucto" annotatortype="auto" datetime="2017-09-25T10:29:52" set="tokconfig-nld"/>
@@ -3394,7 +3396,7 @@ het    ook   ?
     def test013b_correction(self):
         """Validation - Text Validation on Correction (Double text layers)"""
         xml = """<?xml version="1.0" encoding="UTF-8"?>
-<FoLiA xmlns="http://ilk.uvt.nl/folia" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="test" version="{version}" generator="{generator}">
+<FoLiA xmlns="http://ilk.uvt.nl/folia" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="test" version="1.5.0" generator="{generator}">
   <metadata type="native">
     <annotations>
       <token-annotation annotator="ucto" annotatortype="auto" datetime="2017-09-25T10:29:52" set="tokconfig-nld"/>
@@ -3469,7 +3471,7 @@ het    ook   ?
     def test013c_correction(self):
         """Validation - Text Validation on Correction (Double text layers, structural changes)"""
         xml = """<?xml version="1.0" encoding="UTF-8"?>
-<FoLiA xmlns="http://ilk.uvt.nl/folia" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="test" version="{version}" generator="{generator}">
+<FoLiA xmlns="http://ilk.uvt.nl/folia" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="test" version="1.5.0" generator="{generator}">
   <metadata type="native">
     <annotations>
       <token-annotation annotator="ucto" annotatortype="auto" datetime="2017-09-25T10:29:52" set="tokconfig-nld"/>
@@ -3555,7 +3557,7 @@ het    ook   ?
     def test013d_correction(self):
         """Validation - Text Validation on Correction (Double text layers, structural changes, custom class)"""
         xml = """<?xml version="1.0" encoding="UTF-8"?>
-<FoLiA xmlns="http://ilk.uvt.nl/folia" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="test" version="{version}" generator="{generator}">
+<FoLiA xmlns="http://ilk.uvt.nl/folia" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="test" version="1.5.0" generator="{generator}">
   <metadata type="native">
     <annotations>
       <token-annotation annotator="ucto" annotatortype="auto" datetime="2017-09-25T10:29:52" set="tokconfig-nld"/>
@@ -3642,7 +3644,7 @@ het    ook   ?
         """Validation - Text Validation on complex nested correction (Double text layers, structural changes, custom class)"""
         #NOTE: Current library implementation won't be able to validate nested layers and will just skip those!
         xml = """<?xml version="1.0" encoding="UTF-8"?>
-<FoLiA xmlns="http://ilk.uvt.nl/folia" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="test" version="{version}" generator="{generator}">
+<FoLiA xmlns="http://ilk.uvt.nl/folia" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="test" version="1.5.0" generator="{generator}">
   <metadata type="native">
     <annotations>
       <token-annotation annotator="ucto" annotatortype="auto" datetime="2017-09-25T10:29:52" set="tokconfig-nld"/>
@@ -3777,6 +3779,7 @@ het    ook   ?
         """Validation - Text Validation with redundancy on partial construction"""
         #NOTE: Current library implementation won't be able to validate nested layers and will just skip those!
         doc = folia.Document(id='example',textvalidation=True)
+        doc.declare(folia.TextContent)
 
         text = folia.Text(doc, id=doc.id + '.text.1')
 
@@ -3796,7 +3799,7 @@ het    ook   ?
     def test014_fullparagraph(self):
         """Validation - Text Validation with sentence text delimiter inheritance"""
         xml = """<?xml version="1.0" encoding="UTF-8"?>
-<FoLiA xmlns="http://ilk.uvt.nl/folia" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="test" version="{version}" generator="{generator}">
+<FoLiA xmlns="http://ilk.uvt.nl/folia" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="test" version="1.5.0" generator="{generator}">
   <metadata type="native">
     <annotations>
       <paragraph-annotation set="undefined" />
@@ -4010,7 +4013,7 @@ het    ook   ?
     def test015_textwhitespace(self):
         """Validation - Whitespace in text content sanity check"""
         xml = """<?xml version="1.0" encoding="UTF-8"?>
-<FoLiA xmlns="http://ilk.uvt.nl/folia" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="test" version="{version}" generator="{generator}">
+<FoLiA xmlns="http://ilk.uvt.nl/folia" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="test" version="1.5.0" generator="{generator}">
   <metadata type="native">
     <annotations>
     </annotations>
