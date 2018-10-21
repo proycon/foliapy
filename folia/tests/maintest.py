@@ -1518,6 +1518,8 @@ class Test02Sanity(unittest.TestCase):
   <metadata type="native">
     <annotations>
         <utterance-annotation set="utterances" />
+        <token-annotation />
+        <phon-annotation />
     </annotations>
   </metadata>
   <speech xml:id="example.speech">
@@ -1549,6 +1551,8 @@ class Test02Sanity(unittest.TestCase):
   <metadata type="native">
     <annotations>
         <utterance-annotation set="utterances" />
+        <token-annotation />
+        <phon-annotation />
     </annotations>
   </metadata>
   <speech xml:id="example.speech" src="helloworld.ogg" speaker="proycon">
