@@ -51,6 +51,7 @@ from lxml import etree as ElementTree
 def xmlcheck(xml,expect):
     #obj1 = lxml.objectify.fromstring(expect)
     #expect = lxml.etree.tostring(obj1)
+    #expect = re.sub(r' version="[^"]*" generator="[^"]*"', ' version="' + folia.FOLIAVERSION + '" generator="foliapy-v' + folia.LIBVERSION + '"', expect, re.MULTILINE)
     f = open(os.path.join(TMPDIR, 'foliatest.fragment.expect.xml'),'w',encoding='utf-8')
     f.write(expect)
     f.close()
@@ -130,7 +131,7 @@ class Test_E001_Tokens_Structure(unittest.TestCase):
         self.assertEqual( str(w) , "." )
 
 
-    def test_sentence(self): #Covered by new test E001
+    def test_sentence(self):
         """Simple Token & Structure Test - Sentence"""
         #grab second sentence
         s = self.doc.sentences(1)
@@ -139,7 +140,7 @@ class Test_E001_Tokens_Structure(unittest.TestCase):
         self.assertFalse( s.hastext() ) #no explicit text
         self.assertEqual( str(s), "This is an example." )
 
-    def test_index(self): #Covered by new test E001
+    def test_index(self):
         """Simple Token & Structure Test - Index"""
         #grab something using the index
         w = self.doc['example.p.1.s.1.w.1']
@@ -147,6 +148,18 @@ class Test_E001_Tokens_Structure(unittest.TestCase):
         self.assertEqual( self.doc['example.p.1.s.1.w.1'] , self.doc.index['example.p.1.s.1.w.1'] )
         self.assertEqual( w.id , 'example.p.1.s.1.w.1' )
         self.assertEqual( w.text() , "Hello" )
+
+
+    def test_declaration(self):
+        """Simple Token & Structure Test - Declarations"""
+        print(self.doc.annotations,file=sys.stderr)
+        self.assertTrue( self.doc.declared(folia.AnnotationType.TOKEN) )
+        self.assertTrue( self.doc.declared(folia.Word) ) #same as above, resolves automatically
+        self.assertTrue( self.doc.declared(folia.AnnotationType.TEXT) )
+        self.assertTrue( self.doc.declared(folia.TextContent) ) #same as above, resolves automatically
+        self.assertTrue( self.doc.declared(folia.Sentence) )
+        self.assertTrue( self.doc.declared(folia.Paragraph) )
+
 
 ###################### OLD TESTS ##########################
 
@@ -989,12 +1002,12 @@ class Test02Sanity(unittest.TestCase):
         f.write(LEGACYEXAMPLE)
         f.close()
         self.doc.save(os.path.join(TMPDIR,'foliatest100.xml'))
-        self.assertEqual(  folia.Document(file=os.path.join(TMPDIR,'foliatest100.xml'),debug=False), self.doc )
+        self.assertEqual(  folia.Document(file=os.path.join(TMPDIR,'foliatest100.xml'),version='1.5.0', debug=False), self.doc )
 
     def test100b_sanity_xmldiff(self):
         """Sanity Check - B - Checking output file against input using xmldiff (should be equal)"""
         f = open(os.path.join(TMPDIR,'foliatest.xml'),'w',encoding='utf-8')
-        f.write(LEGACYEXAMPLE)
+        f.write( re.sub(r' version="[^"]*" generator="[^"]*"', ' version="' + folia.FOLIAVERSION + '" generator="foliapy-v' + folia.LIBVERSION + '"', LEGACYEXAMPLE, re.MULTILINE) )
         f.close()
         #use xmldiff to compare the two:
         self.doc.save(os.path.join(TMPDIR,'foliatest100.xml'))
@@ -4069,7 +4082,7 @@ with open(os.path.join(FOLIAPATH, 'examples/full-legacy.1.5.folia.xml'), 'r',enc
     LEGACYEXAMPLE = foliaexample_f.read()
 
 #We cheat, by setting the generator and version attributes to match the library, so xmldiff doesn't complain when we compare against this reference
-LEGACYEXAMPLE = re.sub(r' version="[^"]*" generator="[^"]*"', ' version="' + folia.FOLIAVERSION + '" generator="foliapy-v' + folia.LIBVERSION + '"', LEGACYEXAMPLE, re.MULTILINE)
+#LEGACYEXAMPLE = re.sub(r' version="[^"]*" generator="[^"]*"', ' version="' + folia.FOLIAVERSION + '" generator="foliapy-v' + folia.LIBVERSION + '"', LEGACYEXAMPLE, re.MULTILINE)
 
 #Another cheat, alien namespace attributes are ignored by the folia library, strip them so xmldiff doesn't complain
 LEGACYEXAMPLE = re.sub(r' xmlns:alien="[^"]*" alien:attrib="[^"]*"', '', LEGACYEXAMPLE, re.MULTILINE)
