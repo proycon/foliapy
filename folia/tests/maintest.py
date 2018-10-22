@@ -152,7 +152,6 @@ class Test_E001_Tokens_Structure(unittest.TestCase):
 
     def test_declaration(self):
         """Simple Token & Structure Test - Declarations"""
-        print(self.doc.annotations,file=sys.stderr)
         self.assertTrue( self.doc.declared(folia.AnnotationType.TOKEN) )
         self.assertTrue( self.doc.declared(folia.Word) ) #same as above, resolves automatically
         self.assertTrue( self.doc.declared(folia.AnnotationType.TEXT) )
