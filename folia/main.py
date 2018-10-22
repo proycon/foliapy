@@ -8117,6 +8117,17 @@ class Reader(object):
             self.bypassleak = False
         self.stream = io.open(filename,'rb')
         self.initdoc()
+        if checkversion(self.doc.version,'2.0.0') < 0:
+            self.doc.declare(AnnotationType.PHON)
+        if 'declare' in kwargs:
+            for item in kwargs['declare']:
+                if isinstance(item, (list,tuple)):
+                    self.doc.declare(item[0], item[1])
+                else:
+                    self.doc.declare(item)
+        else:
+            #declare text by default (set declare=[] if you don't want this)
+            self.doc.declare(AnnotationType.TEXT)
 
 
     def findwords(self, *args, **kwargs):

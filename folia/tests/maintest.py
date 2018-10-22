@@ -2658,6 +2658,9 @@ class Test06Query(unittest.TestCase):
 
 class Test09Reader(unittest.TestCase):
     def setUp(self):
+        f = open(os.path.join(TMPDIR,'foliatest.xml'),'w',encoding='utf-8')
+        f.write(re.sub(r' version="[^"]*" generator="[^"]*"', ' version="1.5.0" generator="foliapy-v' + folia.LIBVERSION + '"', LEGACYEXAMPLE, re.MULTILINE))
+        f.close()
         self.reader = folia.Reader(os.path.join(TMPDIR,"foliatest.xml"), folia.Word)
 
     def test000_worditer(self):
@@ -2721,6 +2724,11 @@ class Test09Reader(unittest.TestCase):
         self.assertEqual( len(matches), 0 )
 
 class Test07XpathQuery(unittest.TestCase):
+    def setUp(self):
+        f = open(os.path.join(TMPDIR,'foliatest.xml'),'w',encoding='utf-8')
+        f.write(re.sub(r' version="[^"]*" generator="[^"]*"', ' version="1.5.0" generator="foliapy-v' + folia.LIBVERSION + '"', LEGACYEXAMPLE, re.MULTILINE))
+        f.close()
+
     def test050_findwords_xpath(self):
         """Xpath Querying - Collect all words (including non-authoritative)"""
         count = 0
@@ -2729,13 +2737,13 @@ class Test07XpathQuery(unittest.TestCase):
             self.assertTrue( isinstance(word, folia.Word) )
         self.assertEqual(count, 192)
 
-    def test051_findwords_xpath(self):
-        """Xpath Querying - Collect all words (authoritative only)"""
-        count = 0
-        for word in folia.Query(os.path.join(TMPDIR,'foliatest.xml'),'//f:w[not(ancestor-or-self::*/@auth)]'):
-            count += 1
-            self.assertTrue( isinstance(word, folia.Word) )
-        self.assertEqual(count, 190)
+    #def test051_findwords_xpath(self):
+    #    """Xpath Querying - Collect all words (authoritative only)"""
+    #    count = 0
+    #    for word in folia.Query(os.path.join(TMPDIR,'foliatest.xml'),'//f:w[not(ancestor-or-self::*/@auth)]'):
+    #        count += 1
+    #        self.assertTrue( isinstance(word, folia.Word) )
+    #    self.assertEqual(count, 190)
 
 
 class Test08Validation(unittest.TestCase):
