@@ -7160,7 +7160,7 @@ class Document(object):
 
 
         #Set defaults
-        if len(self.annotators[annotationtype][set]) == 1:
+        if len(self.annotators[annotationtype][set]) == 1 and args:
             self.annotationdefaults[annotationtype][set] = {'processor': processor.id}
             return processor #returns the last one
         elif not args:
