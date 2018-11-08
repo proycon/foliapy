@@ -443,7 +443,7 @@ def parsecommonarguments(object, doc, annotationtype, required, allowed, **kwarg
 
     if object.cls and not object.set:
         if doc and doc.autodeclare:
-            if not (annotationtype, 'undefined') in doc.annotations:
+            if (annotationtype, 'undefined') not in doc.annotations:
                 doc.annotations.append( (annotationtype, 'undefined') )
                 doc.annotationdefaults[annotationtype] = {'undefined': {} }
             object.set = 'undefined'
@@ -4789,7 +4789,7 @@ class Reference(AbstractStructureElement):
     def relaxng(cls, includechildren=True,extraattribs = None, extraelements=None):
         E = ElementMaker(namespace="http://relaxng.org/ns/structure/1.0",nsmap={None:'http://relaxng.org/ns/structure/1.0' , 'folia': "http://ilk.uvt.nl/folia", 'xml' : "http://www.w3.org/XML/1998/namespace",'a':"http://relaxng.org/ns/annotation/0.9" })
         if not extraattribs: extraattribs = []
-        extraattribs.append( E.attribute(name='id')) #id reference
+        extraattribs.append( E.optional(E.attribute(name='id'))) #id reference
         extraattribs.append( E.optional(E.attribute(name='type' )))
         extraattribs.append( E.optional(E.attribute(name='format' )))
         return super(Reference, cls).relaxng(includechildren, extraattribs, extraelements)
@@ -6379,11 +6379,14 @@ class Document(object):
             textvalidation (bool): Do validation of text consistency (default: False)``
             preparsexmlcallback (function):  Callback for a function taking one argument (``node``, an lxml node). Will be called whenever an XML element is parsed into FoLiA. The function should return an instance inherited from folia.AbstractElement, or None to abort parsing this element (and all its children)
             parsexmlcallback (function):  Callback for a function taking one argument (``element``, a FoLiA element). Will be called whenever an XML element is parsed into FoLiA. The function should return an instance inherited from folia.AbstractElement, or None to abort adding this element (and all its children)
+            version (str): force a particular FoLiA version (use with caution)
+            declare (list): Declare the specifies annotation types: may include annotationtypes or annotationtype, set tuples.
             debug (bool): Boolean to enable/disable debug
         """
 
 
-        self.version = FOLIAVERSION
+        self.version = kwargs.get('version', FOLIAVERSION)
+        self.force_version = 'version' in kwargs
         self.document_version = None
 
         self.data = [] #will hold all texts (usually only one)
@@ -6392,12 +6395,6 @@ class Document(object):
         self.annotations = [] #Ordered list of incorporated(AnnotationType, set (str))
         self.annotators = {} #AnnotationType => set => Annotator    (leaf value resolves to Processor when called)
 
-        #Add implicit declaration for TextContent
-        self.annotations.append( (AnnotationType.TEXT,'undefined') )
-        self.annotationdefaults[AnnotationType.TEXT] = {'undefined': {} }
-        #Add implicit declaration for PhonContent
-        self.annotations.append( (AnnotationType.PHON,'undefined') )
-        self.annotationdefaults[AnnotationType.PHON] = {'undefined': {} }
 
         self.index = {} #all IDs go here
         self.declareprocessed = False # Will be set to True when declarations have been processed
@@ -6540,6 +6537,16 @@ class Document(object):
         if self.mode != Mode.XPATH:
             #XML Tree is now obsolete (only needed when partially loaded for xpath queries), free memory
             self.tree = None
+
+        if 'declare' in kwargs:
+            for item in kwargs['declare']:
+                if isinstance(item, (list,tuple)):
+                    self.declare(item[0], item[1])
+                else:
+                    self.declare(item)
+        else:
+            #declare text by default (set declare=[] if you don't want this)
+            self.declare(AnnotationType.TEXT)
 
     #def __del__(self):
     #    del self.index
@@ -6712,9 +6719,10 @@ class Document(object):
                     break
             #gather attribs
 
-            if (annotationtype == AnnotationType.TEXT or annotationtype == AnnotationType.PHON) and set == 'undefined' and len(self.annotationdefaults[annotationtype][set]) == 0:
-                #this is the implicit TextContent declaration, no need to output it explicitly
-                continue
+            if checkversion(self.version, '2.0.0') < 0: #implicit declarations only in older FoLiA
+                if (annotationtype == AnnotationType.TEXT or annotationtype == AnnotationType.PHON) and set == 'undefined' and len(self.annotationdefaults[annotationtype][set]) == 0:
+                    #this is the implicit TextContent declaration, no need to output it explicitly
+                    continue
 
             attribs = {}
             if set and set != 'undefined':
@@ -7039,7 +7047,7 @@ class Document(object):
         n = node.xpath('//imdi:Languages/imdi:Language/imdi:ID', namespaces=ns)
         if n and n[0].text: self._language = n[0].text
 
-    def declare(self, annotationtype, set, *args, **kwargs):
+    def declare(self, annotationtype, set=None, *args, **kwargs):
         """Declare new annotation types, sets or annotators to be used in the document.
 
            This typically done by associating an annotationtype and set with a processor, the processor
@@ -7083,6 +7091,8 @@ class Document(object):
 
 
         """
+        if set is None:
+            set = "undefined"
         if not isinstance(set,str):
             raise ValueError("Set parameter for declare() must be a string")
 
@@ -7150,7 +7160,7 @@ class Document(object):
 
 
         #Set defaults
-        if len(self.annotators[annotationtype][set]) == 1:
+        if len(self.annotators[annotationtype][set]) == 1 and args:
             self.annotationdefaults[annotationtype][set] = {'processor': processor.id}
             return processor #returns the last one
         elif not args:
@@ -7161,7 +7171,7 @@ class Document(object):
             self.annotationdefaults[annotationtype][set] = {}
 
 
-    def declared(self, annotationtype, set):
+    def declared(self, annotationtype, set=None):
         """Checks if the annotation type is present (i.e. declared) in the document.
 
         Arguments:
@@ -7177,7 +7187,13 @@ class Document(object):
             bool
         """
         if inspect.isclass(annotationtype): annotationtype = annotationtype.ANNOTATIONTYPE
-        return ( (annotationtype,set) in self.annotations) or (set in self.alias_set and self.alias_set[set] and (annotationtype, self.alias_set[set]) in self.annotations )
+        if set is None:
+            for atype,_  in self.annotations:
+                if annotationtype == atype:
+                    return True
+            return False
+        else:
+            return ( (annotationtype,set) in self.annotations) or (set in self.alias_set and self.alias_set[set] and (annotationtype, self.alias_set[set]) in self.annotations )
 
 
     def defaultset(self, annotationtype):
@@ -7478,12 +7494,22 @@ class Document(object):
                             self.id = node.attrib['id']
                         except KeyError:
                             raise Exception("FoLiA Document has no ID!")
-                if 'version' in node.attrib:
+                if 'version' in node.attrib and not self.force_version:
                     self.version = node.attrib['version']
-                    if checkversion(self.version) > 0:
-                        print("WARNING!!! Document uses a newer version of FoLiA than this library! (" + self.version + " vs " + FOLIAVERSION + "). Any possible subsequent failures in parsing or processing may probably be attributed to this. Upgrade foliapy to remedy this.",file=sys.stderr)
-                else:
+                elif not self.force_version:
                     self.version = None
+                if self.debug >= 1: print("[FoLiA DEBUG] FoLiA version:", self.version,file=stderr)
+                if checkversion(self.version) > 0:
+                    print("WARNING!!! Document uses a newer version of FoLiA than this library! (" + self.version + " vs " + FOLIAVERSION + "). Any possible subsequent failures in parsing or processing may probably be attributed to this. Upgrade foliapy to remedy this.",file=sys.stderr)
+                if checkversion(self.version,'2.0.0') < 0:
+                    #older FoLiA, add implicit declarations:
+
+                    #Add implicit declaration for TextContent
+                    self.annotations.append( (AnnotationType.TEXT,'undefined') )
+                    self.annotationdefaults[AnnotationType.TEXT] = {'undefined': {} }
+                    #Add implicit declaration for PhonContent
+                    self.annotations.append( (AnnotationType.PHON,'undefined') )
+                    self.annotationdefaults[AnnotationType.PHON] = {'undefined': {} }
                 if 'document_version' in node.attrib:
                     self.document_version = node.attrib['document_version']
 
@@ -7598,7 +7624,7 @@ class Document(object):
         if self.mode == Mode.MEMORY:
             s = 0
             for t in self.data:
-                s +=  sum( 1 for e in t.select(Class,recursive,True ) )
+                s += t.count(Class,set,recursive, ignore)
             return s
 
     def paragraphs(self, index = None):
@@ -8091,6 +8117,17 @@ class Reader(object):
             self.bypassleak = False
         self.stream = io.open(filename,'rb')
         self.initdoc()
+        if checkversion(self.doc.version,'2.0.0') < 0:
+            self.doc.declare(AnnotationType.PHON)
+        if 'declare' in kwargs:
+            for item in kwargs['declare']:
+                if isinstance(item, (list,tuple)):
+                    self.doc.declare(item[0], item[1])
+                else:
+                    self.doc.declare(item)
+        else:
+            #declare text by default (set declare=[] if you don't want this)
+            self.doc.declare(AnnotationType.TEXT)
 
 
     def findwords(self, *args, **kwargs):
@@ -8200,7 +8237,7 @@ def validate(filename,schema=None,deep=False):
 #================================= FOLIA SPECIFICATION ==========================================================
 
 #foliaspec:header
-#This file was last updated according to the FoLiA specification for version 2.0.0 on 2018-10-13 20:40:36, using foliaspec.py
+#This file was last updated according to the FoLiA specification for version 2.0.0 on 2018-10-19 16:11:21, using foliaspec.py
 #Code blocks after a foliaspec comment (until the next newline) are automatically generated. **DO NOT EDIT THOSE** and **DO NOT REMOVE ANY FOLIASPEC COMMENTS** !!!
 
 #foliaspec:structurescope:STRUCTURESCOPE
@@ -8837,6 +8874,7 @@ Reference.ACCEPTED_DATA = (AbstractAnnotationLayer, Alignment, Alternative, Alte
 Reference.ANNOTATIONTYPE = AnnotationType.REFERENCE
 Reference.LABEL = "Reference"
 Reference.TEXTDELIMITER = None
+Reference.XLINK = True
 Reference.XMLTAG = "ref"
 #------ Relation -------
 Relation.LABEL = "Relation"
