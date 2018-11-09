@@ -4983,15 +4983,15 @@ class Reference(AbstractStructureElement):
         extraattribs.append( E.optional(E.attribute(name='format' )))
         return super(Reference, cls).relaxng(includechildren, extraattribs, extraelements)
 
-class AlignReference(AbstractElement):
-    """The AlignReference element is used to point to specific elements inside the aligned source.
+class LinkReference(AbstractElement):
+    """The LinkReference element is used to point to specific elements inside the aligned source.
 
     It is used with :class:`Alignment` which is responsible for pointing to the external resource."""
 
     def __init__(self, doc, *args, **kwargs): #pylint: disable=super-init-not-called
         #Special constructor, not calling super constructor
         if 'id' not in kwargs:
-            raise Exception("ID required for AlignReference")
+            raise Exception("ID required for LinkReference")
         if 'type' in kwargs:
             if isinstance(kwargs['type'], AbstractElement) or inspect.isclass(kwargs['type']):
                 self.type = kwargs['type'].XMLTAG
@@ -5014,7 +5014,7 @@ class AlignReference(AbstractElement):
 
     @classmethod
     def parsexml(Class, node, doc, **kwargs):#pylint: disable=bad-classmethod-argument
-        assert Class is AlignReference or issubclass(Class, AlignReference)
+        assert Class is LinkReference or issubclass(Class, LinkReference)
 
         #special handling for word references
         if not kwargs: kwargs = {}
@@ -5027,7 +5027,7 @@ class AlignReference(AbstractElement):
             kwargs['type'] = node.attrib['type']
         except KeyError:
             raise ValueError("No such type: " + node.attrib['type'])
-        return AlignReference(doc,**kwargs)
+        return LinkReference(doc,**kwargs)
 
     @classmethod
     def relaxng(cls, includechildren=True,extraattribs = None, extraelements=None):
@@ -5055,20 +5055,22 @@ class AlignReference(AbstractElement):
             attribs['type'] = self.type
         if self.t: attribs['t'] = self.t
 
-        return E.aref( **attribs)
+        return E.x( **attribs)
 
     def json(self, attribs=None, recurse=True, ignorelist=False):
         return {} #alignment not supported yet, TODO
 
+LinkReference = AlignReference #backward compatibility for FoLiA < 2
 
-class Alignment(AbstractElement):
+
+class Relation(AbstractElement):
     """
-    The Alignment element is a form of higher-order annotation taht is used to point to an external resource.
+    The Relation element is a form of higher-order annotation taht is used to point to an external resource.
 
     It concerns references as annotation rather than references which are
     explicitly part of the text, such as hyperlinks and :class:`Reference`.
 
-    Inside the Alignment element, the :class:`AlignReference` element may be used to point to specific elements (multiple denotes a span).
+    Inside the Relation element, the :class:`LinkReference` element may be used to point to specific elements (multiple denotes a span).
     """
 
     def __init__(self, doc, *args, **kwargs):
@@ -5098,7 +5100,7 @@ class Alignment(AbstractElement):
     def resolve(self, documents=None):
         if documents is None: documents = {}
         #documents is a dictionary of urls to document instances, to aid in resolving cross-document alignments
-        for x in self.select(AlignReference,None,True,False):
+        for x in self.select(LinkReference,None,True,False):
             yield x.resolve(self, documents)
 
     @classmethod
@@ -5107,6 +5109,8 @@ class Alignment(AbstractElement):
         if extraattribs is None: extraattribs = []
         extraattribs.append(E.optional(E.attribute(name="format")))
         return super(Alignment,cls).relaxng(includechildren, extraattribs, extraelements)
+
+Alignment = Relation #backward compatibility for FoLiA < 2
 
 
 class ErrorDetection(AbstractExtendedInlineAnnotation):
@@ -7767,7 +7771,9 @@ class Document(object):
                             self.data.append(e)
             else:
                 #generic handling (FoLiA)
-                if not foliatag in XML2CLASS:
+                if foliatag in OLDTAGS: #backward compatibility
+                    foliatag = OLDTAGS[foliatag]
+                if foliatag not in XML2CLASS:
                     raise Exception("Unknown FoLiA XML tag: " + foliatag)
                 Class = XML2CLASS[foliatag]
                 return Class.parsexml(node,self)
@@ -8549,7 +8555,7 @@ ANNOTATIONTYPE2XML = {
 
 #foliaspec:string_class_map
 XML2CLASS = {
-    "aref": AlignReference,
+    "x": LinkReference,
     "alignment": Alignment,
     "alt": Alternative,
     "altlayers": AlternativeLayers,
@@ -8645,7 +8651,11 @@ XML2CLASS = {
     "wref": WordReference,
 }
 
+
 XML2CLASS['listitem'] = ListItem #backward compatibility for erroneous old FoLiA versions (XML tag is 'item' now, consistent with manual)
+
+#foliaspec:oldtags_map
+XXX
 
 #foliaspec:annotationtype_layerclass_map
 ANNOTATIONTYPE2LAYERCLASS = {
@@ -8726,12 +8736,12 @@ AbstractInlineAnnotation.OCCURRENCES_PER_SET = 1
 AbstractInlineAnnotation.OPTIONAL_ATTRIBS = (Attrib.ID, Attrib.CLASS, Attrib.ANNOTATOR, Attrib.N, Attrib.CONFIDENCE, Attrib.DATETIME, Attrib.SRC, Attrib.BEGINTIME, Attrib.ENDTIME, Attrib.SPEAKER, Attrib.TEXTCLASS, Attrib.METADATA,)
 AbstractInlineAnnotation.REQUIRED_ATTRIBS = (Attrib.CLASS,)
 #------ AbstractSpanAnnotation -------
-AbstractSpanAnnotation.ACCEPTED_DATA = (AlignReference, Alignment, Comment, Description, ForeignData, Metric,)
+AbstractSpanAnnotation.ACCEPTED_DATA = (LinkReference, Alignment, Comment, Description, ForeignData, Metric,)
 AbstractSpanAnnotation.OPTIONAL_ATTRIBS = (Attrib.ID, Attrib.CLASS, Attrib.ANNOTATOR, Attrib.N, Attrib.CONFIDENCE, Attrib.DATETIME, Attrib.SRC, Attrib.BEGINTIME, Attrib.ENDTIME, Attrib.SPEAKER, Attrib.TEXTCLASS, Attrib.METADATA,)
 AbstractSpanAnnotation.PRINTABLE = True
 AbstractSpanAnnotation.SPEAKABLE = True
 #------ AbstractSpanRole -------
-AbstractSpanRole.ACCEPTED_DATA = (AlignReference, Alignment, Comment, Description, Feature, ForeignData, Metric, WordReference,)
+AbstractSpanRole.ACCEPTED_DATA = (LinkReference, Alignment, Comment, Description, Feature, ForeignData, Metric, WordReference,)
 AbstractSpanRole.OPTIONAL_ATTRIBS = (Attrib.ID, Attrib.ANNOTATOR, Attrib.N, Attrib.DATETIME,)
 #------ AbstractStructureElement -------
 AbstractStructureElement.ACCEPTED_DATA = (AbstractAnnotationLayer, Alignment, Alternative, AlternativeLayers, Comment, Correction, Description, Feature, ForeignData, Metric, Part,)
@@ -8760,10 +8770,10 @@ AbstractTextMarkup.XLINK = True
 #------ ActorFeature -------
 ActorFeature.SUBSET = "actor"
 ActorFeature.XMLTAG = None
-#------ AlignReference -------
-AlignReference.XMLTAG = "aref"
+#------ LinkReference -------
+LinkReference.XMLTAG = "x"
 #------ Alignment -------
-Alignment.ACCEPTED_DATA = (AlignReference, Comment, Description, Feature, ForeignData, Metric,)
+Alignment.ACCEPTED_DATA = (LinkReference, Comment, Description, Feature, ForeignData, Metric,)
 Alignment.ANNOTATIONTYPE = AnnotationType.ALIGNMENT
 Alignment.LABEL = "Alignment"
 Alignment.OPTIONAL_ATTRIBS = (Attrib.ID, Attrib.CLASS, Attrib.ANNOTATOR, Attrib.N, Attrib.CONFIDENCE, Attrib.DATETIME, Attrib.SRC, Attrib.BEGINTIME, Attrib.ENDTIME, Attrib.SPEAKER, Attrib.METADATA,)
@@ -8809,7 +8819,7 @@ Cell.OPTIONAL_ATTRIBS = (Attrib.ID, Attrib.ANNOTATOR, Attrib.N, Attrib.CONFIDENC
 Cell.TEXTDELIMITER = " | "
 Cell.XMLTAG = "cell"
 #------ Chunk -------
-Chunk.ACCEPTED_DATA = (AlignReference, Alignment, Comment, Description, Feature, ForeignData, Metric, WordReference,)
+Chunk.ACCEPTED_DATA = (LinkReference, Alignment, Comment, Description, Feature, ForeignData, Metric, WordReference,)
 Chunk.ANNOTATIONTYPE = AnnotationType.CHUNKING
 Chunk.LABEL = "Chunk"
 Chunk.XMLTAG = "chunk"
@@ -8845,7 +8855,7 @@ Content.OCCURRENCES = 1
 Content.PRINTABLE = True
 Content.XMLTAG = "content"
 #------ CoreferenceChain -------
-CoreferenceChain.ACCEPTED_DATA = (AlignReference, Alignment, Comment, CoreferenceLink, Description, Feature, ForeignData, Metric,)
+CoreferenceChain.ACCEPTED_DATA = (LinkReference, Alignment, Comment, CoreferenceLink, Description, Feature, ForeignData, Metric,)
 CoreferenceChain.ANNOTATIONTYPE = AnnotationType.COREFERENCE
 CoreferenceChain.LABEL = "Coreference Chain"
 CoreferenceChain.REQUIRED_DATA = (CoreferenceLink,)
@@ -8856,7 +8866,7 @@ CoreferenceLayer.ANNOTATIONTYPE = AnnotationType.COREFERENCE
 CoreferenceLayer.PRIMARYELEMENT = False
 CoreferenceLayer.XMLTAG = "coreferences"
 #------ CoreferenceLink -------
-CoreferenceLink.ACCEPTED_DATA = (AlignReference, Alignment, Comment, Description, Feature, ForeignData, Headspan, LevelFeature, Metric, ModalityFeature, TimeFeature, WordReference,)
+CoreferenceLink.ACCEPTED_DATA = (LinkReference, Alignment, Comment, Description, Feature, ForeignData, Headspan, LevelFeature, Metric, ModalityFeature, TimeFeature, WordReference,)
 CoreferenceLink.ANNOTATIONTYPE = AnnotationType.COREFERENCE
 CoreferenceLink.LABEL = "Coreference Link"
 CoreferenceLink.PRIMARYELEMENT = False
@@ -8885,7 +8895,7 @@ DependenciesLayer.ANNOTATIONTYPE = AnnotationType.DEPENDENCY
 DependenciesLayer.PRIMARYELEMENT = False
 DependenciesLayer.XMLTAG = "dependencies"
 #------ Dependency -------
-Dependency.ACCEPTED_DATA = (AlignReference, Alignment, Comment, DependencyDependent, Description, Feature, ForeignData, Headspan, Metric,)
+Dependency.ACCEPTED_DATA = (LinkReference, Alignment, Comment, DependencyDependent, Description, Feature, ForeignData, Headspan, Metric,)
 Dependency.ANNOTATIONTYPE = AnnotationType.DEPENDENCY
 Dependency.LABEL = "Dependency"
 Dependency.REQUIRED_DATA = (DependencyDependent, Headspan,)
@@ -8920,7 +8930,7 @@ EntitiesLayer.ANNOTATIONTYPE = AnnotationType.ENTITY
 EntitiesLayer.PRIMARYELEMENT = False
 EntitiesLayer.XMLTAG = "entities"
 #------ Entity -------
-Entity.ACCEPTED_DATA = (AlignReference, Alignment, Comment, Description, Feature, ForeignData, Metric, WordReference,)
+Entity.ACCEPTED_DATA = (LinkReference, Alignment, Comment, Description, Feature, ForeignData, Metric, WordReference,)
 Entity.ANNOTATIONTYPE = AnnotationType.ENTITY
 Entity.LABEL = "Entity"
 Entity.XMLTAG = "entity"
@@ -9051,7 +9061,7 @@ Note.ANNOTATIONTYPE = AnnotationType.NOTE
 Note.LABEL = "Note"
 Note.XMLTAG = "note"
 #------ Observation -------
-Observation.ACCEPTED_DATA = (AlignReference, Alignment, Comment, Description, Feature, ForeignData, Metric, WordReference,)
+Observation.ACCEPTED_DATA = (LinkReference, Alignment, Comment, Description, Feature, ForeignData, Metric, WordReference,)
 Observation.ANNOTATIONTYPE = AnnotationType.OBSERVATION
 Observation.LABEL = "Observation"
 Observation.XMLTAG = "observation"
@@ -9105,7 +9115,7 @@ PosAnnotation.ANNOTATIONTYPE = AnnotationType.POS
 PosAnnotation.LABEL = "Part-of-Speech"
 PosAnnotation.XMLTAG = "pos"
 #------ Predicate -------
-Predicate.ACCEPTED_DATA = (AlignReference, Alignment, Comment, Description, Feature, ForeignData, Metric, SemanticRole, WordReference,)
+Predicate.ACCEPTED_DATA = (LinkReference, Alignment, Comment, Description, Feature, ForeignData, Metric, SemanticRole, WordReference,)
 Predicate.ANNOTATIONTYPE = AnnotationType.PREDICATE
 Predicate.LABEL = "Predicate"
 Predicate.XMLTAG = "predicate"
@@ -9131,7 +9141,7 @@ Row.LABEL = "Table Row"
 Row.TEXTDELIMITER = "\n"
 Row.XMLTAG = "row"
 #------ SemanticRole -------
-SemanticRole.ACCEPTED_DATA = (AlignReference, Alignment, Comment, Description, Feature, ForeignData, Headspan, Metric, WordReference,)
+SemanticRole.ACCEPTED_DATA = (LinkReference, Alignment, Comment, Description, Feature, ForeignData, Headspan, Metric, WordReference,)
 SemanticRole.ANNOTATIONTYPE = AnnotationType.SEMROLE
 SemanticRole.LABEL = "Semantic Role"
 SemanticRole.REQUIRED_ATTRIBS = (Attrib.CLASS,)
@@ -9154,7 +9164,7 @@ Sentence.LABEL = "Sentence"
 Sentence.TEXTDELIMITER = " "
 Sentence.XMLTAG = "s"
 #------ Sentiment -------
-Sentiment.ACCEPTED_DATA = (AlignReference, Alignment, Comment, Description, Feature, ForeignData, Headspan, Metric, PolarityFeature, Source, StrengthFeature, Target, WordReference,)
+Sentiment.ACCEPTED_DATA = (LinkReference, Alignment, Comment, Description, Feature, ForeignData, Headspan, Metric, PolarityFeature, Source, StrengthFeature, Target, WordReference,)
 Sentiment.ANNOTATIONTYPE = AnnotationType.SENTIMENT
 Sentiment.LABEL = "Sentiment"
 Sentiment.XMLTAG = "sentiment"
@@ -9173,7 +9183,7 @@ Speech.LABEL = "Speech Body"
 Speech.TEXTDELIMITER = "\n\n\n"
 Speech.XMLTAG = "speech"
 #------ Statement -------
-Statement.ACCEPTED_DATA = (AlignReference, Alignment, Comment, Description, Feature, ForeignData, Headspan, Metric, Relation, Source, WordReference,)
+Statement.ACCEPTED_DATA = (LinkReference, Alignment, Comment, Description, Feature, ForeignData, Headspan, Metric, Relation, Source, WordReference,)
 Statement.ANNOTATIONTYPE = AnnotationType.STATEMENT
 Statement.LABEL = "Statement"
 Statement.XMLTAG = "statement"
@@ -9208,7 +9218,7 @@ Suggestion.XMLTAG = "suggestion"
 SynsetFeature.SUBSET = "synset"
 SynsetFeature.XMLTAG = None
 #------ SyntacticUnit -------
-SyntacticUnit.ACCEPTED_DATA = (AlignReference, Alignment, Comment, Description, Feature, ForeignData, Metric, SyntacticUnit, WordReference,)
+SyntacticUnit.ACCEPTED_DATA = (LinkReference, Alignment, Comment, Description, Feature, ForeignData, Metric, SyntacticUnit, WordReference,)
 SyntacticUnit.ANNOTATIONTYPE = AnnotationType.SYNTAX
 SyntacticUnit.LABEL = "Syntactic Unit"
 SyntacticUnit.XMLTAG = "su"
@@ -9274,7 +9284,7 @@ TextMarkupStyle.XMLTAG = "t-style"
 TimeFeature.SUBSET = "time"
 TimeFeature.XMLTAG = None
 #------ TimeSegment -------
-TimeSegment.ACCEPTED_DATA = (ActorFeature, AlignReference, Alignment, BegindatetimeFeature, Comment, Description, EnddatetimeFeature, Feature, ForeignData, Metric, WordReference,)
+TimeSegment.ACCEPTED_DATA = (ActorFeature, LinkReference, Alignment, BegindatetimeFeature, Comment, Description, EnddatetimeFeature, Feature, ForeignData, Metric, WordReference,)
 TimeSegment.ANNOTATIONTYPE = AnnotationType.TIMESEGMENT
 TimeSegment.LABEL = "Time Segment"
 TimeSegment.XMLTAG = "timesegment"
