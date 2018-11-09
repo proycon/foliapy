@@ -6994,6 +6994,12 @@ class Document(object):
                 raise Exception("Invalid annotation type")
         return l
 
+    def done(self):
+        """Signal that you are done editing the document, this will perform any pending post-processing operation"""
+        self.pendingvalidation()
+        self.pendingsort()
+
+
     def xml(self):
         """Serialise the document to XML.
 
@@ -7004,8 +7010,8 @@ class Document(object):
             :meth:`Document.xmlstring`
         """
 
-        self.pendingvalidation()
-        self.pendingsort()
+        self.done()
+
 
         E = ElementMaker(namespace="http://ilk.uvt.nl/folia",nsmap={'xml' : "http://www.w3.org/XML/1998/namespace", 'xlink':"http://www.w3.org/1999/xlink"})
         attribs = {}
@@ -7806,8 +7812,7 @@ class Document(object):
         else:
             raise Exception("Unknown FoLiA XML tag: " + node.tag)
 
-        self.pendingvalidation() #perform  any pending offset validations (if applicable)
-        self.pendingsort() #perform any pending sorts (if applicable)
+        self.done()
         self.doneparsing = True #indicates that the document is still parsing
 
 
