@@ -1357,7 +1357,7 @@ class AbstractElement(object):
         if self.id:
             return hash(self.id)
         else:
-            raise TypeError("FoLiA elements are only hashable if they have an ID")
+            return hash(id(self)) #use the memory address
 
     def __iter__(self):
         """Iterate over all children of this element.
@@ -3377,6 +3377,12 @@ class AbstractStructureElement(AbstractElement, AllowInlineAnnotation, AllowGene
         if self.doc and self.doc.textvalidation:
             self.doc.textvalidationerrors += int(not self.textvalidation())
 
+    def __hash__(self):
+        if self.id:
+            return hash(self.id)
+        else:
+            return hash(id(self)) #use the memory address
+
     def words(self, index = None):
         """Returns a generator of Word elements found (recursively) under this element.
 
@@ -4638,19 +4644,6 @@ class AbstractSpanAnnotation(AbstractElement, AllowGenerateID, AllowCorrections)
     def postappend(self):
         super(AbstractSpanAnnotation,self).postappend()
 
-        #If a span annotation element with wrefs x y z is added in the scope of parent span annotation element with wrefs u v w x y z, then x y z is removed from the parent span (no duplication, implicit through recursion)
-        e = self.parent
-        directwrefs = None #will be populated on first iteration
-        while isinstance(e, AbstractSpanAnnotation):
-            if directwrefs is None:
-                directwrefs = self.wrefs(recurse=False)
-            for wref in directwrefs:
-                try:
-                    e.data.remove(wref)
-                except ValueError:
-                    pass
-            e = e.parent
-
         if self.doc and self.doc.doneparsing:
             try:
                 layer = self.layer()
@@ -4664,11 +4657,12 @@ class AbstractSpanAnnotation(AbstractElement, AllowGenerateID, AllowCorrections)
         return self.ancestor(AbstractAnnotationLayer)
 
     def sort(self, force=False):
-        """Sort children (wrefs and child spans) in order of appearance. Returns True if sort is successful (or not needed), False if sort needs to be deferred to a later stage"""
+        """Sort children (wrefs and child spans) in order of appearance. Returns True if sort is successful (or not needed), False if sort could not be performed at this stage"""
         if self.doc and self.doc.debug >= 2: print("CALLED SORT ON", type(self), self.id,file=sys.stderr)
         nonrefdata = [] #data that has no wrefs
         refdata = [] #data that has wrefs
         missingparents = False
+        duplicates = set() #set of potential duplicate wrefs in parent and children
         for e in self.data:
             missingparents = not e.parent or missingparents
             #is this element a word reference?
@@ -4683,12 +4677,21 @@ class AbstractSpanAnnotation(AbstractElement, AllowGenerateID, AllowCorrections)
                     #empty span
                     if self.doc and self.doc.debug >= 2: print("EMPTY SPAN ", (type(e), self.id),file=sys.stderr)
                     reference = False
+
+                #If a child span contains references that the parent span also contains, they will be removed from the parent, as they are already implicit through recursion.
+                for childwref in e.wrefs(recurse=True):
+                    if childwref in self.data:
+                        duplicates.add(childwref)
+
             elif not isinstance(e, (Word, Morpheme, Phoneme)):
                 reference = False
             if not reference:
                 nonrefdata.append(e)
             else:
                 refdata.append(e)
+
+        refdata = [ w for w in refdata if w not in duplicates ]
+        self.data = nonrefdata + refdata #everything that is a non-reference will precede everything that is a reference
 
         if missingparents:
             #unable to sort if not all elements have parents yet, defer to later stage (e.g. serialisation)
@@ -4698,7 +4701,6 @@ class AbstractSpanAnnotation(AbstractElement, AllowGenerateID, AllowCorrections)
         if len(refdata) <= 1:
             return True #by definition in proper order
 
-        self.data = nonrefdata + refdata #everything that is a non-reference will precede everything that is a reference
 
         cache = set() #contains (w1,w2) word tuples indicating w1 precedes w2 (to prevent recomputation)
 
@@ -7003,6 +7005,7 @@ class Document(object):
         """
 
         self.pendingvalidation()
+        self.pendingsort()
 
         E = ElementMaker(namespace="http://ilk.uvt.nl/folia",nsmap={'xml' : "http://www.w3.org/XML/1998/namespace", 'xlink':"http://www.w3.org/1999/xlink"})
         attribs = {}
@@ -7043,6 +7046,7 @@ class Document(object):
             jsondoc = json.dumps(doc.json())
         """
         self.pendingvalidation()
+        self.pendingsort()
 
         jsondoc = {'id': self.id, 'children': [], 'declarations': self.jsondeclarations() }
         if self.version:

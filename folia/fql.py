@@ -1944,6 +1944,7 @@ class Query(object):
             else:
                 raise QueryError("Invalid return type: " + self.returntype)
 
+            self.doc.pendingsort()
         else:
             responseselection = []
 
