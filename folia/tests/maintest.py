@@ -1748,6 +1748,85 @@ class Test02Sanity(unittest.TestCase):
         doc = folia.Document(string=xml)
         self.assertEqual(doc['example.text.1'].text(),"This is the real text")
 
+    def test109_precedes(self):
+        """Sanity Check - Check precedes() method"""
+        self.assertTrue( self.doc["WR-P-E-J-0000000001.p.1.s.1.w.1"].precedes(self.doc["WR-P-E-J-0000000001.p.1.s.1.w.2"]) )
+        self.assertFalse( self.doc["WR-P-E-J-0000000001.p.1.s.1.w.2"].precedes(self.doc["WR-P-E-J-0000000001.p.1.s.1.w.1"]) )
+        self.assertTrue( self.doc["WR-P-E-J-0000000001.p.1.s.1.w.1"].precedes(self.doc["WR-P-E-J-0000000001.p.1.s.1.w.2"]) )
+        self.assertTrue( self.doc["WR-P-E-J-0000000001.p.1.s.1.w.1"].precedes(self.doc["WR-P-E-J-0000000001.p.1.s.2.w.9"]) )
+        self.assertFalse( self.doc["WR-P-E-J-0000000001.p.1.s.2.w.9"].precedes(self.doc["WR-P-E-J-0000000001.p.1.s.1.w.1"]) )
+
+    def test110_spansort(self):
+        """Sanity Check - Checking span sorting"""
+        XML = """<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet type="text/xsl" href="folia2html.xsl"?>
+<FoLiA xmlns:xlink="http://www.w3.org/1999/xlink" xmlns="http://ilk.uvt.nl/folia" xml:id="WR-P-E-J-0000000001" version="1.5" generator="manual">
+  <metadata type="native">
+    <annotations>
+      <token-annotation annotator="ilktok" annotatortype="auto" />
+      <syntax-annotation set="syntax-set" />
+    </annotations>
+  </metadata>
+  <text>
+    <s xml:id="WR-P-E-J-0000000001.p.1.s.1">
+      <w xml:id="WR-P-E-J-0000000001.p.1.s.1.w.1">
+        <t>Stemma</t>
+      </w>
+      <w xml:id="WR-P-E-J-0000000001.p.1.s.1.w.2">
+        <t>is</t>
+      </w>
+      <w xml:id="WR-P-E-J-0000000001.p.1.s.1.w.3">
+        <t>een</t>
+      </w>
+      <w xml:id="WR-P-E-J-0000000001.p.1.s.1.w.4">
+        <t>ander</t>
+      </w>
+      <w xml:id="WR-P-E-J-0000000001.p.1.s.1.w.5">
+        <t>woord</t>
+      </w>
+      <w xml:id="WR-P-E-J-0000000001.p.1.s.1.w.6">
+        <t>voor</t>
+      </w>
+      <w xml:id="WR-P-E-J-0000000001.p.1.s.1.w.7" space="no">
+        <t>stamboom</t>
+      </w>
+      <w xml:id="WR-P-E-J-0000000001.p.1.s.1.w.8">
+        <t>.</t>
+      </w>
+      <syntax>
+        <su xml:id="WR-P-E-J-0000000001.p.1.s.1.su.sentence" class="sentence">
+          <su xml:id="WR-P-E-J-0000000001.p.1.s.1.su.subject" class="subject">
+            <wref id="WR-P-E-J-0000000001.p.1.s.1.w.1" t="Stemma"/>
+          </su>
+          <su xml:id="WR-P-E-J-0000000001.p.1.s.1.su.verb" class="verb">
+            <wref id="WR-P-E-J-0000000001.p.1.s.1.w.2" t="is"/>
+          </su>
+          <su xml:id="WR-P-E-J-0000000001.p.1.s.1.su.pred" class="predicate">
+            <su xml:id="WR-P-E-J-0000000001.p.1.s.1.su.pp" class="pp">
+              <wref id="WR-P-E-J-0000000001.p.1.s.1.w.6" t="voor"/>
+              <wref id="WR-P-E-J-0000000001.p.1.s.1.w.7" t="stamboom"/>
+            </su>
+            <su xml:id="WR-P-E-J-0000000001.p.1.s.1.su.np" class="np">
+              <wref id="WR-P-E-J-0000000001.p.1.s.1.w.3" t="een"/>
+              <su xml:id="WR-P-E-J-0000000001.p.1.s.1.su.adj" class="adj">
+                  <wref id="WR-P-E-J-0000000001.p.1.s.1.w.4" t="ander"/>
+              </su>
+              <wref id="WR-P-E-J-0000000001.p.1.s.1.w.5" t="woord"/>
+            </su>
+          </su>
+          <wref id="WR-P-E-J-0000000001.p.1.s.1.w.8" t="."/>
+        </su>
+      </syntax>
+    </s>
+  </text>
+</FoLiA>
+"""
+        self.doc = folia.Document(string=XML)
+        s = self.doc['WR-P-E-J-0000000001.p.1.s.1']
+        layer = next(s.select(folia.SyntaxLayer))
+        self.assertTrue( xmlcheck(layer.xmlstring(),"""<syntax xmlns="http://ilk.uvt.nl/folia"><su class="sentence" xml:id="WR-P-E-J-0000000001.p.1.s.1.su.sentence"><su class="subject" xml:id="WR-P-E-J-0000000001.p.1.s.1.su.subject"><wref id="WR-P-E-J-0000000001.p.1.s.1.w.1" t="Stemma"/></su><su class="verb" xml:id="WR-P-E-J-0000000001.p.1.s.1.su.verb"><wref id="WR-P-E-J-0000000001.p.1.s.1.w.2" t="is"/></su><su class="predicate" xml:id="WR-P-E-J-0000000001.p.1.s.1.su.pred"><su class="np" xml:id="WR-P-E-J-0000000001.p.1.s.1.su.np"><wref id="WR-P-E-J-0000000001.p.1.s.1.w.3" t="een"/><su class="adj" xml:id="WR-P-E-J-0000000001.p.1.s.1.su.adj"><wref id="WR-P-E-J-0000000001.p.1.s.1.w.4" t="ander"/></su><wref id="WR-P-E-J-0000000001.p.1.s.1.w.5" t="woord"/></su><su class="pp" xml:id="WR-P-E-J-0000000001.p.1.s.1.su.pp"><wref id="WR-P-E-J-0000000001.p.1.s.1.w.6" t="voor"/><wref id="WR-P-E-J-0000000001.p.1.s.1.w.7" t="stamboom"/></su></su><wref id="WR-P-E-J-0000000001.p.1.s.1.w.8" t="."/></su></syntax>"""))
+
+
 class Test04Edit(unittest.TestCase):
 
     def setUp(self):
@@ -2153,7 +2232,7 @@ class Test04Edit(unittest.TestCase):
         l = s.annotation(folia.EntitiesLayer)
         l.correct(original=self.doc['example.radboud.university.nijmegen.org'], new=folia.Entity(self.doc, *self.doc['example.radboud.university.nijmegen.org'].wrefs(), cls="loc",set="http://raw.github.com/proycon/folia/master/setdefinitions/namedentities.foliaset.xml") ,set='corrections',cls='wrongclass')
 
-        self.assertTrue( xmlcheck(l.xmlstring(), '<entities xmlns="http://ilk.uvt.nl/folia"><correction xml:id="example.cell.correction.1" class="wrongclass"><new><entity class="loc" set="http://raw.github.com/proycon/folia/master/setdefinitions/namedentities.foliaset.xml"><wref t="Radboud" id="example.table.1.w.6"/><wref t="University" id="example.table.1.w.7"/><wref t="Nijmegen" id="example.table.1.w.8"/></entity></new><original auth="no"><entity xml:id="example.radboud.university.nijmegen.org" class="org" set="http://raw.github.com/proycon/folia/master/setdefinitions/namedentities.foliaset.xml"><wref t="Radboud" id="example.table.1.w.6"/><wref t="University" id="example.table.1.w.7"/><wref t="Nijmegen" id="example.table.1.w.8"/><comment annotator="proycon">This is our university!</comment></entity></original></correction></entities>'))
+        self.assertTrue( xmlcheck(l.xmlstring(), '<entities xmlns="http://ilk.uvt.nl/folia"><correction xml:id="example.cell.correction.1" class="wrongclass"><new><entity class="loc" set="http://raw.github.com/proycon/folia/master/setdefinitions/namedentities.foliaset.xml"><wref t="Radboud" id="example.table.1.w.6"/><wref t="University" id="example.table.1.w.7"/><wref t="Nijmegen" id="example.table.1.w.8"/></entity></new><original auth="no"><entity xml:id="example.radboud.university.nijmegen.org" class="org" set="http://raw.github.com/proycon/folia/master/setdefinitions/namedentities.foliaset.xml"><comment annotator="proycon">This is our university!</comment><wref t="Radboud" id="example.table.1.w.6"/><wref t="University" id="example.table.1.w.7"/><wref t="Nijmegen" id="example.table.1.w.8"/></entity></original></correction></entities>'))
 
     def test013d_spanannot(self):
         """Edit Check - Adding Span Annotation (entity, from sentence using add)"""
@@ -2298,8 +2377,8 @@ class Test04Create(unittest.TestCase):
     def test001_create(self):
         """Creating a FoLiA Document from scratch"""
         self.doc = folia.Document(id='example')
+        self.assertTrue( self.doc.autodeclare )
         self.doc.declare(folia.AnnotationType.TOKEN, 'adhocset',annotator='proycon')
-        self.doc.declare(folia.AnnotationType.TEXT)
 
         self.assertEqual(self.doc.defaultset(folia.AnnotationType.TOKEN), 'adhocset')
         self.assertEqual(self.doc.defaultannotator(folia.AnnotationType.TOKEN, 'adhocset'), 'proycon')

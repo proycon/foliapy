@@ -84,6 +84,9 @@ DOCSTRING_GENERIC_ATTRIBS = """    id (str): An ID for the element. IDs must be 
     contents (list): Alternative for ``*args``, exists for purely syntactic reasons.
 """
 
+DEFAULT_TEXT_SET = "https://github.com/proycon/folia/blob/master/setdefinitions/text.foliaset.ttl"
+DEFAULT_PHON_SET = "https://github.com/proycon/folia/blob/master/setdefinitions/phon.foliaset.ttl"
+
 ILLEGAL_UNICODE_CONTROL_CHARACTERS = {} #XML does not like unicode control characters
 for ordinal in range(0x20):
     if chr(ordinal) not in '\t\r\n':
@@ -144,6 +147,10 @@ class DuplicateAnnotationError(Exception):
 
 class DuplicateIDError(Exception):
     """Exception raised when an identifier that is already in use is assigned again to another element"""
+    pass
+
+class NoCommonAncestor(Exception):
+    """Exception raised when two elements do not share a common ancestor"""
     pass
 
 class NoDefaultError(Exception):
@@ -220,7 +227,11 @@ class Processor:
     @classmethod
     def parsexml(Class, node): #pylint: disable=bad-classmethod-argument
         if node.tag == '{' + NSFOLIA + '}processor':
-            processor = Processor(node.attrib['name'],id=node.attrib['{http://www.w3.org/XML/1998/namespace}id'],  type=node.attrib.get('type', ProcessorType.AUTO), version=node.attrib.get('version',None), document_version=node.attrib.get('document_version', None), folia_version=node.attrib.get('folia_version', None), command=node.attrib.get('command', None),host=node.attrib.get('host', None),user=node.attrib.get('user', None),begindatetime=node.attrib.get('begindatetime', None) ,enddatetime=node.attrib.get('enddatetime', None), resourcelink=node.attrib.get('resourcelink', None))
+            begindatetime = node.attrib.get('begindatetime', None)
+            if begindatetime: begindatetime = parse_datetime(begindatetime)
+            enddatetime = node.attrib.get('enddatetime', None)
+            if enddatetime: enddatetime = parse_datetime(enddatetime)
+            processor = Processor(node.attrib['name'],id=node.attrib['{http://www.w3.org/XML/1998/namespace}id'],  type=node.attrib.get('type', ProcessorType.AUTO), version=node.attrib.get('version',None), document_version=node.attrib.get('document_version', None), folia_version=node.attrib.get('folia_version', None), command=node.attrib.get('command', None),host=node.attrib.get('host', None),user=node.attrib.get('user', None),begindatetime=begindatetime,enddatetime=enddatetime, resourcelink=node.attrib.get('resourcelink', None))
             for subnode in node:
                 if not isinstance(subnode, ElementTree._Comment): #pylint: disable=protected-access
                     if subnode.tag == '{' + NSFOLIA + '}processor':
@@ -240,6 +251,8 @@ class Processor:
         for key in ('name','type', 'version','document_version', 'folia_version','command','host','user','begindatetime','enddatetime', 'resourcelink'):
             if hasattr(self,key) and getattr(self,key) is not None:
                 attribs[key] = getattr(self, key)
+                if isinstance(attribs[key], datetime):
+                    attribs[key] = attribs[key].strftime("%Y-%m-%dT%H:%M:%S")
         elements = []
         if isinstance(self.metadata, NativeMetaData): #serialize metadata on the processor
             for key, value in self.metadata.items():
@@ -405,25 +418,24 @@ def parsecommonarguments(object, doc, annotationtype, required, allowed, **kwarg
     if 'set' in kwargs:
         if Attrib.CLASS not in supported and not object.SETONLY:
             raise ValueError("Set is not supported on " + object.__class__.__name__)
-        if not kwargs['set']:
-            object.set ="undefined"
+        if not kwargs['set'] and checkversion(doc.version, '2.0.0') < 0:
+            object.set ="undefined" #FoLiA <2.0 allowed a 'default' undefined set, FoLiA 2.0 doesn't
+        elif not kwargs['set']:
+            object.set = None
         else:
             object.set = kwargs['set']
         del kwargs['set']
 
-        if object.set:
-            if doc and (not (annotationtype in doc.annotationdefaults) or not (object.set in doc.annotationdefaults[annotationtype])):
-                if object.set in doc.alias_set:
-                    object.set = doc.alias_set[object.set]
-                elif doc.autodeclare:
-                    doc.annotations.append( (annotationtype, object.set ) )
-                    doc.annotationdefaults[annotationtype] = {object.set: {} }
-                else:
-                    raise ValueError("Set '" + object.set + "' is used for " + object.__class__.__name__ + ", but has no declaration!")
+        if doc and (not (annotationtype in doc.annotationdefaults) or not (object.set in doc.annotationdefaults[annotationtype])):
+            if object.set in doc.alias_set:
+                object.set = doc.alias_set[object.set]
+            elif doc.autodeclare:
+                doc.annotations.append( (annotationtype, object.set ) )
+                doc.annotationdefaults[annotationtype] = {object.set: {} }
+            else:
+                raise ValueError("Set '" + str(object.set) + "' is used for " + object.__class__.__name__ + ", but has no declaration!")
     elif annotationtype in doc.annotationdefaults and len(doc.annotationdefaults[annotationtype]) == 1:
         object.set = list(doc.annotationdefaults[annotationtype].keys())[0]
-    elif object.ANNOTATIONTYPE == AnnotationType.TEXT:
-        object.set = "undefined" #text content needs never be declared (for backward compatibility) and is in set 'undefined'
     elif Attrib.CLASS in required: #or (hasattr(object,'SETONLY') and object.SETONLY):
         raise ValueError("Set is required for " + object.__class__.__name__)
 
@@ -443,10 +455,17 @@ def parsecommonarguments(object, doc, annotationtype, required, allowed, **kwarg
 
     if object.cls and not object.set:
         if doc and doc.autodeclare:
-            if (annotationtype, 'undefined') not in doc.annotations:
-                doc.annotations.append( (annotationtype, 'undefined') )
-                doc.annotationdefaults[annotationtype] = {'undefined': {} }
-            object.set = 'undefined'
+            if checkversion(doc.version, '2.0.0') < 0: #'undefined' set only for FoLiA < 2.0.0
+                if (annotationtype, 'undefined') not in doc.annotations:
+                    doc.annotations.append( (annotationtype, 'undefined') )
+                    doc.annotationdefaults[annotationtype] = {'undefined': {} }
+                object.set = 'undefined'
+            elif isinstance(object, TextContent): #FoLiA v2.0, autodeclare text
+                if doc.debug >= 1: print("[FoLiA DEBUG] Auto-declaring Text Annotation",file=stderr)
+                doc.declare(AnnotationType.TEXT, DEFAULT_TEXT_SET)
+            elif isinstance(object, PhonContent): #FoLiA v2.0
+                if doc.debug >= 1: print("[FoLiA DEBUG] Auto-declaring Phonetic Annotation",file=stderr)
+                doc.declare(AnnotationType.TEXT, DEFAULT_PHON_SET)
         else:
             raise ValueError("Set is required for " + object.__class__.__name__ +  ". Class '" + object.cls + "' assigned without set.")
 
@@ -1718,7 +1737,7 @@ class AbstractElement(object):
                 child.parent = self
             elif PhonContent in self.ACCEPTED_DATA:
                 #you can pass strings directly (just for convenience), will be made into phoncontent automatically (note that textcontent always takes precedence, so you most likely will have to do it explicitly)
-                child = PhonContent(self.doc, child ) #pylint: disable=redefined-variable-type
+                child = PhonContent(self.doc, child )
                 self.data.append(child)
                 child.parent = self
             else:
@@ -1794,14 +1813,14 @@ class AbstractElement(object):
             raise Exception("Too many arguments specified. Only possible when first argument is a class and not an instance")
 
         #Do the actual appending
-        if not Class and isinstance(child,str) and TextContent in self.ACCEPTED_DATA: #pylint: disable=undefined-variable
+        if not Class and isinstance(child,str) and TextContent in self.ACCEPTED_DATA:
             #you can pass strings directly (just for convenience), will be made into textcontent automatically.
             child = TextContent(self.doc, child )
             self.data.insert(index, child)
             child.parent = self
         elif Class or (isinstance(child, AbstractElement) and child.__class__.addable(self, set)): #(prevents calling addable again if already done above)
             if 'alternative' in kwargs and kwargs['alternative']:
-                child = Alternative(self.doc, child, generate_id_in=self) #pylint: disable=redefined-variable-type
+                child = Alternative(self.doc, child, generate_id_in=self)
             self.data.insert(index, child)
             child.parent = self
         else:
@@ -2421,6 +2440,40 @@ class AbstractElement(object):
                         return i #yes, i ... not j!
         return -1
 
+    def precedes(self, other):
+        """Returns a boolean indicating whether this element precedes the other element"""
+        if not self.parent:
+            raise NoCommonAncestor("Element " + repr(self) + " has no parent!")
+        elif not other.parent:
+            raise NoCommonAncestor("Other element " + repr(other) + " has no parent!")
+        try:
+            ancestor = next(commonancestors(AbstractElement, self, other))
+        except StopIteration:
+            raise NoCommonAncestor("Elements share no common ancestor")
+        #now we just do a depth first search and see who comes first
+        def callback(e):
+            if e is self:
+                return True
+            elif e is other:
+                return False
+            return None
+        result = ancestor.depthfirstsearch(callback)
+        if result is None:
+            raise Exception("Unable to find relation between elements! (shouldn't happen)")
+        return result
+
+
+    def depthfirstsearch(self, function):
+        """Generic depth first search algorithm using a callback function, continues as long as the callback function returns None"""
+        result = function(self)
+        if result is not None:
+            return result
+        for e in self:
+            if isinstance(e, AbstractElement):
+                result = e.depthfirstsearch(function)
+                if result is not None:
+                    return result
+        return None
 
     def next(self, Class=True, scope=True, reverse=False):
         """Returns the next element, if it is of the specified type and if it does not cross the boundary of the defined scope. Returns None if no next element is found. Non-authoritative elements are never returned.
@@ -2439,7 +2492,7 @@ class AbstractElement(object):
             order = reversed
             descendindex = -1
         else:
-            order = lambda x: x #pylint: disable=redefined-variable-type
+            order = lambda x: x
             descendindex = 0
 
         child = self
@@ -3030,7 +3083,7 @@ class AllowCorrections(object):
             del kwargs['current']
         if 'new' in kwargs:
             if not isinstance(kwargs['new'], list) and not isinstance(kwargs['new'], tuple): kwargs['new'] = [kwargs['new']] #support both lists (for multiple elements at once), as well as single element
-            addnew = New(self.doc, *kwargs['new']) #pylint: disable=redefined-variable-type
+            addnew = New(self.doc, *kwargs['new'])
             c.replace(addnew)
             for current in c.select(Current): #delete current if present
                 c.remove(current)
@@ -3666,7 +3719,7 @@ class TextContent(AbstractContentAnnotation):
         e = self
         while True:
             if e.parent:
-                e = e.parent #pylint: disable=redefined-variable-type
+                e = e.parent
             else:
                 #no parent, breaking
                 return False
@@ -3889,7 +3942,7 @@ class PhonContent(AbstractContentAnnotation):
         e = self
         while True:
             if e.parent:
-                e = e.parent #pylint: disable=redefined-variable-type
+                e = e.parent
             else:
                 #no parent, breaking
                 return False
@@ -4447,9 +4500,36 @@ class AbstractSpanAnnotation(AbstractElement, AllowGenerateID, AllowCorrections)
 
     def append(self, child, *args, **kwargs):
         """See :meth:`AbstractElement.append`"""
-        if (isinstance(child, Word) or isinstance(child, Morpheme) or isinstance(child, Phoneme))  and WordReference in self.ACCEPTED_DATA:
-            #Accept Word instances instead of WordReference, references will be automagically used upon serialisation
-            self.data.append(child)
+        if isinstance(child, (Word, Morpheme, Phoneme)) and WordReference in self.ACCEPTED_DATA:
+            #We don't really append but do an insertion so all references are in proper order
+            insertionpoint = len(self.data)
+            needsort = False
+            for i, sibling in enumerate(self.data):
+                if isinstance(sibling, (Word, Morpheme, Phoneme)):
+                    wref = child
+                elif isinstance(sibling, AbstractSpanAnnotation):
+                    try:
+                        wref = sibling.wrefs(0)
+                    except IndexError:
+                        needsort = True
+                else:
+                    wref = None
+                if wref:
+                    try:
+                        if not sibling.precedes(wref):
+                            insertionpoint = i
+                            break
+                    except NoCommonAncestor: #happens if we can't determine common ancestors
+                        needsort = True
+
+            self.data.insert(insertionpoint, child)
+            child.postappend()
+            if needsort and self.doc and self.doc.doneparsing:
+                try:
+                    self.doc.layersortbuffer.append(self.layer())
+                except:
+                    #no such ancestor
+                    pass
             return child
         else:
             return super(AbstractSpanAnnotation,self).append(child, *args, **kwargs)
@@ -4571,6 +4651,103 @@ class AbstractSpanAnnotation(AbstractElement, AllowGenerateID, AllowCorrections)
                     pass
             e = e.parent
 
+        if self.doc and self.doc.doneparsing:
+            try:
+                layer = self.layer()
+                if self not in self.doc.layersortbuffer:
+                    self.doc.layersortbuffer.append(layer)
+            except NoSuchAnnotation:
+                pass
+
+    def layer(self):
+        """Return the annotation layer this annotation pertains to"""
+        return self.ancestor(AbstractAnnotationLayer)
+
+    def sort(self, force=False):
+        """Sort children (wrefs and child spans) in order of appearance. Returns True if sort is successful (or not needed), False if sort needs to be deferred to a later stage"""
+        if self.doc and self.doc.debug >= 2: print("CALLED SORT ON", type(self), self.id,file=sys.stderr)
+        nonrefdata = [] #data that has no wrefs
+        refdata = [] #data that has wrefs
+        missingparents = False
+        for e in self.data:
+            missingparents = not e.parent or missingparents
+            #is this element a word reference?
+            reference = True #falsify
+            if isinstance(e, AbstractSpanAnnotation):
+                if self.doc and self.doc.debug >= 2: print("RECURSION",file=sys.stderr)
+                e.sort()
+                if self.doc and self.doc.debug >= 2: print("RETURNED FROM RECURSION, ",type(self), self.id,file=sys.stderr)
+                try:
+                    w = e.wrefs(0, recurse=True)
+                except IndexError:
+                    #empty span
+                    if self.doc and self.doc.debug >= 2: print("EMPTY SPAN ", (type(e), self.id),file=sys.stderr)
+                    reference = False
+            elif not isinstance(e, (Word, Morpheme, Phoneme)):
+                reference = False
+            if not reference:
+                nonrefdata.append(e)
+            else:
+                refdata.append(e)
+
+        if missingparents:
+            #unable to sort if not all elements have parents yet, defer to later stage (e.g. serialisation)
+            if self.doc and self.doc.debug >= 2: print(" MISSING PARENTS INSIDE ", (type(self), self.id),file=sys.stderr)
+            return False
+
+        if len(refdata) <= 1:
+            return True #by definition in proper order
+
+        self.data = nonrefdata + refdata #everything that is a non-reference will precede everything that is a reference
+
+        cache = set() #contains (w1,w2) word tuples indicating w1 precedes w2 (to prevent recomputation)
+
+        if self.doc and self.doc.debug >= 2: print(" SORTING ", (type(self), self.id),file=sys.stderr)
+        if self.doc and self.doc.debug >= 2: print("  SORT BEFORE: ", [(type(e), e.id) for e in self.data] ,file=sys.stderr)
+        #now make sure everything that is a reference is in proper order
+        #using a simple bubble sort
+        inorder = False
+        while not inorder: #as long as elements are not in proper order
+            inorder = True #falsify this
+            for i in range(len(nonrefdata),len(self.data) - 1):
+                e1 = self.data[i]
+                e2 = self.data[i+1]
+
+                if isinstance(e1, (Word, Morpheme, Phoneme)):
+                    e1_word = e1
+                elif isinstance(e1, AbstractSpanAnnotation):
+                    e1_word = e1.wrefs(0, recurse=True)
+                else: #TODO: corrections
+                    e1_word = None
+                if isinstance(e2, (Word, Morpheme, Phoneme)):
+                    e2_word = e2
+                elif isinstance(e2, AbstractSpanAnnotation):
+                    e2_word = e2.wrefs(0, recurse=True)
+                else: #TODO: corrections
+                    e2_word = None
+
+                if self.doc and self.doc.debug >= 2: print("     TESTING: ",  type(e1),e1.id , " vs ", type(e2),e2.id,file=sys.stderr)
+                if e1_word and e2_word:
+                    if self.doc and self.doc.debug >= 2: print("       CHECKING: ",  e1_word.id , " vs ", e2_word.id ,file=sys.stderr)
+                    try:
+                        if not e1_word.precedes(e2_word):
+                            if self.doc and self.doc.debug >= 2: print("       SWAPPING!",file=sys.stderr)
+                            #swap places
+                            self.data[i] = e2
+                            self.data[i+1] = e1
+                            #cache.add((e2_word,e1_word))
+                            inorder = False
+                        else:
+                            if self.doc and self.doc.debug >= 2: print("       OK!",file=sys.stderr)
+                            #cache.add((e1_word,e2_word))
+                    except NoCommonAncestor:
+                            if self.doc and self.doc.debug >= 2: print("       No common ancestor",file=sys.stderr)
+                else:
+                    if self.doc and self.doc.debug >= 2: print("       NO REFERENCE WORDS", file=sys.stderr)
+
+            if self.doc and self.doc.debug >= 2: print("  SORT AFTER: ", [(type(e), e.id) for e in self.data] ,file=sys.stderr)
+        return True
+
 class AbstractAnnotationLayer(AbstractElement, AllowGenerateID, AllowCorrections):
     """Annotation layers for Span Annotation are derived from this abstract base class"""
 
@@ -4613,6 +4790,11 @@ class AbstractAnnotationLayer(AbstractElement, AllowGenerateID, AllowCorrections
                         break
 
         return super(AbstractAnnotationLayer, self).append(child, *args, **kwargs)
+
+    def postappend(self):
+        super(AbstractAnnotationLayer, self).postappend()
+        if self.doc:
+            self.doc.layersortbuffer.append(self)  #will hold instances derived off AbstractAnnotationLayer (i.e. all span annotation layers), so the the span annotations within can be sorted after all parsing is done
 
     def add(self, child, *args, **kwargs): #alias for append
         return self.append(child, *args, **kwargs)
@@ -4697,6 +4879,11 @@ class AbstractAnnotationLayer(AbstractElement, AllowGenerateID, AllowCorrections
 
     def deepvalidation(self):
         return True
+
+    def sort(self):
+        for e in self:
+            if isinstance(e, AbstractSpanAnnotation):
+                e.sort()
 
 # class AbstractSubtokenAnnotationLayer(AbstractElement, AllowGenerateID):
     # """Annotation layers for Subtoken Annotation are derived from this abstract base class"""
@@ -6380,7 +6567,8 @@ class Document(object):
             preparsexmlcallback (function):  Callback for a function taking one argument (``node``, an lxml node). Will be called whenever an XML element is parsed into FoLiA. The function should return an instance inherited from folia.AbstractElement, or None to abort parsing this element (and all its children)
             parsexmlcallback (function):  Callback for a function taking one argument (``element``, a FoLiA element). Will be called whenever an XML element is parsed into FoLiA. The function should return an instance inherited from folia.AbstractElement, or None to abort adding this element (and all its children)
             version (str): force a particular FoLiA version (use with caution)
-            declare (list): Declare the specifies annotation types: may include annotationtypes or annotationtype, set tuples.
+            declare (list): Declare the specifies annotation types. Consists of a list or tuple of annotationtypes or (annotation,set) tuples or (annotationtype,set,processor) tuples
+            processor (Processor): Register the current processor in the provenance data and use this processor in all subsequent declarations
             debug (bool): Boolean to enable/disable debug
         """
 
@@ -6402,6 +6590,7 @@ class Document(object):
         self.metadata = NativeMetaData() #will point to XML Element holding native metadata
         self.metadatatype = "native"
         self.provenance = Provenance()
+        self.processor = None
 
         self.submetadata = OrderedDict()
         self.submetadatatype = {}
@@ -6411,7 +6600,10 @@ class Document(object):
 
         self.textclasses = set() #will contain the text classes found
 
-        self.autodeclare = False #Automatic declarations in case of undeclared elements (will be enabled for DCOI, since DCOI has no declarations)
+        self.autodeclare = None #Automatic declarations in case of undeclared elements, will be set later
+                                # False for FoLiA < 2.0
+                                # True for FoLiA >= 2.0
+                                # True for DCOI compatibility
 
         if 'setdefinitions' in kwargs:
             self.setdefinitions = kwargs['setdefinitions'] #to re-use a shared store
@@ -6469,6 +6661,9 @@ class Document(object):
         if self.deepvalidation:
             self.loadsetdefinitions = True
 
+        if 'processor' in kwargs and kwargs['processor']:
+            assert isinstance(kwargs['processor'], Processor)
+            self.processor = kwargs['processor']
 
         if 'textvalidation' in kwargs:
             self.textvalidation = bool(kwargs['textvalidation'])
@@ -6476,6 +6671,7 @@ class Document(object):
             self.textvalidation = False
         self.textvalidationerrors = 0 #will count the number of text validation errors
         self.offsetvalidationbuffer = [] #will hold (AbstractStructureElement, textclass pairs) that need to be validated still (if textvalidation == True), validation will be done when all parsing is complete and/or prior to serialisation
+        self.layersortbuffer = [] #will hold instances derived off AbstractAnnotationLayer (i.e. all span annotation layers), so the the span annotations within can be sorted after all parsing is done
 
         if 'allowadhocsets' in kwargs:
             self.allowadhocsets = bool(kwargs['allowadhocsets'])
@@ -6486,7 +6682,7 @@ class Document(object):
                 self.allowadhocsets = True
 
         if 'autodeclare' in kwargs:
-            self.autodeclare = True
+            self.autodeclare = kwargs['autodeclare']
 
         if 'bypassleak' in kwargs:
             self.bypassleak = False #obsolete now
@@ -6504,6 +6700,8 @@ class Document(object):
         if 'id' in kwargs:
             isncname(kwargs['id'])
             self.id = kwargs['id']
+            if self.autodeclare is None:
+                self.autodeclare = True
         elif 'file' in kwargs:
             self.filename = kwargs['file']
             if self.filename[-4:].lower() == '.bz2':
@@ -6514,7 +6712,7 @@ class Document(object):
                 del contents
                 self.parsexml(self.tree.getroot())
             elif self.filename[-3:].lower() == '.gz':
-                f = gzip.GzipFile(self.filename) #pylint: disable=redefined-variable-type
+                f = gzip.GzipFile(self.filename)
                 contents = f.read()
                 f.close()
                 self.tree = xmltreefromstring(contents)
@@ -6534,19 +6732,27 @@ class Document(object):
         else:
             raise Exception("No ID, filename or tree specified")
 
+
+        #### POST-READING
+
         if self.mode != Mode.XPATH:
             #XML Tree is now obsolete (only needed when partially loaded for xpath queries), free memory
             self.tree = None
 
+        if self.processor:
+            #Add the processor to the provenance chain
+            self.provenance.append( self.processor )
+
         if 'declare' in kwargs:
             for item in kwargs['declare']:
                 if isinstance(item, (list,tuple)):
-                    self.declare(item[0], item[1])
+                    self.declare(item[0], item[1], *item[2:])
                 else:
                     self.declare(item)
         else:
             #declare text by default (set declare=[] if you don't want this)
-            self.declare(AnnotationType.TEXT)
+            if all( t != AnnotationType.TEXT for t, s in self.annotations ):
+                self.declare(AnnotationType.TEXT, DEFAULT_TEXT_SET)
 
     #def __del__(self):
     #    del self.index
@@ -6614,7 +6820,7 @@ class Document(object):
             f.write(self.xmlstring().encode('utf-8'))
             f.close()
         elif filename[-3:].lower() == '.gz':
-            f = gzip.GzipFile(filename,'wb') #pylint: disable=redefined-variable-type
+            f = gzip.GzipFile(filename,'wb')
             f.write(self.xmlstring().encode('utf-8'))
             f.close()
         else:
@@ -6691,7 +6897,7 @@ class Document(object):
         if text is Text:
             text = Text(self, id=self.id + '.text.' + str(len(self.data)+1) )
         elif text is Speech:
-            text = Speech(self, id=self.id + '.speech.' + str(len(self.data)+1) ) #pylint: disable=redefined-variable-type
+            text = Speech(self, id=self.id + '.speech.' + str(len(self.data)+1) )
         else:
             assert isinstance(text, Text) or isinstance(text, Speech)
         self.data.append(text)
@@ -6725,7 +6931,7 @@ class Document(object):
                     continue
 
             attribs = {}
-            if set and set != 'undefined':
+            if set and (set != 'undefined' or checkversion(self.version,'2.0.0') >= 0):
                 attribs['{' + NSFOLIA + '}set'] = set
 
 
@@ -6766,7 +6972,7 @@ class Document(object):
                 continue
 
             jsonnode = {'annotationtype': label.lower()}
-            if set and set != 'undefined':
+            if set and (set != 'undefined' or checkversion(self.version,'2.0.0') >= 0):
                 jsonnode['set'] = set
 
 
@@ -6890,6 +7096,7 @@ class Document(object):
         """Internal method to parse XML declarations"""
         if self.debug >= 1:
             print("[FoLiA DEBUG] Processing Annotation Declarations",file=stderr)
+        PREFOLIA2 = checkversion(self.version,'2.0.0') < 0
         self.declareprocessed = True
         for subnode in node: #pylint: disable=too-many-nested-blocks
             if not isinstance(subnode.tag, str): continue
@@ -6904,20 +7111,20 @@ class Document(object):
 
                 if 'set' in subnode.attrib and subnode.attrib['set']:
                     set = subnode.attrib['set']
-                else:
+                elif PREFOLIA2:
                     set = 'undefined'
-
-
+                else:
+                    set = None
 
                 if (type,set) in self.annotations:
-                    if type == AnnotationType.TEXT:
-                        #explicit Text declaration, remove the implicit declaration:
+                    if set and set != 'undefined':
+                        #Remove any prior None or 'undefined' declarations (the latter only for FoLiA < 2):
                         a = []
                         for t,s in self.annotations:
-                            if not (t == AnnotationType.TEXT and s == 'undefined'):
+                            if not ((s == 'undefined' and PREFOLIA2) or (s is None)):
                                 a.append( (t,s) )
                         self.annotations = a
-                    #raise ValueError("Double declaration of " + subnode.tag + ", set '" + set + "' + is already declared")    //doubles are okay says Ko
+                        self.annotations.append( (type, set) )
                 else:
                     self.annotations.append( (type, set) )
 
@@ -6946,11 +7153,11 @@ class Document(object):
                     self.annotationdefaults[type] = {}
                 defaults = {}
                 if len(self.annotators[type][set]) == 1:
-                    #There is only one annotator (FoLiA >= v1.6), it will be the default
+                    #There is only one annotator (FoLiA >= v2), it will be the default
                     for annotator in self.getannotators(type, set): #should only iterate over one!
                         defaults['processor'] = annotator.processor_id
                 elif len(self.annotators[type][set]) >= 1:
-                    #There are multiple annotators (FoLiA >= v1.6), there will be no defaults
+                    #There are multiple annotators (FoLiA >= v2), there will be no defaults
                     self.annotationdefaults[type][set] = {} #no defaults
                 else:
                     #Fallback to FoLiA <= v1.5 behaviour; parse from attributes
@@ -7077,6 +7284,12 @@ class Document(object):
             doc.declare(folia.PosAnnotation, 'http://some/path/brown-tag-set', main_processor, Processor(name="mytagger"))
             doc.declare(folia.LemmaAnnotation, 'http://some/set', main_processor, Processor(name="mylemmatiser"))
 
+        Example 2b (with provenance; nested processors, same as above but setting main processor on Document instantiation instead)::
+
+            doc = folia.Document(id="mydoc", processor=Processor(name="myNLPtool", version="2.2"))
+            doc.declare(folia.PosAnnotation, 'http://some/path/brown-tag-set', Processor(name="mytagger"))
+            doc.declare(folia.LemmaAnnotation, 'http://some/set', Processor(name="mylemmatiser"))
+
         Example 3 (with provenance; nested processors)::
             main_processor = Processor(name="myEditor", version="1.2")
             doc.declare(folia.PosAnnotation, 'http://some/path/brown-tag-set', main_processor, Processor(name="alice", type=AnnotatorType.MANUAL))
@@ -7091,18 +7304,23 @@ class Document(object):
 
 
         """
-        if set is None:
-            set = "undefined"
-        if not isinstance(set,str):
-            raise ValueError("Set parameter for declare() must be a string")
-
         if inspect.isclass(annotationtype):
             annotationtype = annotationtype.ANNOTATIONTYPE
+        if set is None and checkversion(self.version, '2.0.0') < 0:
+            set = "undefined" #only for FoLiA < v2
+        else:
+            if annotationtype == AnnotationType.TEXT:
+                set = DEFAULT_TEXT_SET
+            elif annotationtype == AnnotationType.PHON:
+                set = DEFAULT_PHON_SET
+        if set is not None and not isinstance(set,str):
+            raise ValueError("Set parameter for declare() must be a string")
+
         if annotationtype in self.alias_set and set in self.alias_set[annotationtype]:
             raise ValueError("Set " + set + " conflicts with alias, may not be equal!")
         if (annotationtype, set) not in self.annotations:
             self.annotations.append( (annotationtype,set) )
-            if set and self.loadsetdefinitions and not set in self.setdefinitions:
+            if set and self.loadsetdefinitions and set not in self.setdefinitions:
                 if set[:7] == "http://" or set[:8] == "https://" or set[:6] == "ftp://":
                     self.setdefinitions[set] = SetDefinition(set,verbose=self.verbose) #will raise exception on error
         if annotationtype not in self.annotationdefaults:
@@ -7124,6 +7342,10 @@ class Document(object):
                 self.set_alias[annotationtype] = {}
             self.alias_set[annotationtype][kwargs['alias']] = set
             self.set_alias[annotationtype][set] = kwargs['alias']
+
+        #add the document main processor
+        if self.processor and (not args or args[0] != self.processor):
+            args.insert(0, self.processor)
 
         context = None
         return_processors = []
@@ -7480,6 +7702,8 @@ class Document(object):
         elif isstring(node):
             node = xmltreefromstring(node).getroot()
 
+        self.doneparsing = False #indicates that the document is still parsing
+
         if node.tag.startswith('{' + NSFOLIA + '}'):
             foliatag = node.tag[nslen:]
             if foliatag == "FoLiA":
@@ -7503,13 +7727,16 @@ class Document(object):
                     print("WARNING!!! Document uses a newer version of FoLiA than this library! (" + self.version + " vs " + FOLIAVERSION + "). Any possible subsequent failures in parsing or processing may probably be attributed to this. Upgrade foliapy to remedy this.",file=sys.stderr)
                 if checkversion(self.version,'2.0.0') < 0:
                     #older FoLiA, add implicit declarations:
+                    if self.autodeclare is None: self.autodeclare = False
 
-                    #Add implicit declaration for TextContent
+                    #Add implicit declaration for TextContent (FoLiA < 2)
                     self.annotations.append( (AnnotationType.TEXT,'undefined') )
                     self.annotationdefaults[AnnotationType.TEXT] = {'undefined': {} }
-                    #Add implicit declaration for PhonContent
+                    #Add implicit declaration for PhonContent (FoLiA < 2)
                     self.annotations.append( (AnnotationType.PHON,'undefined') )
                     self.annotationdefaults[AnnotationType.PHON] = {'undefined': {} }
+                else:
+                    if self.autodeclare is None: self.autodeclare = True
                 if 'document_version' in node.attrib:
                     self.document_version = node.attrib['document_version']
 
@@ -7576,6 +7803,15 @@ class Document(object):
             raise Exception("Unknown FoLiA XML tag: " + node.tag)
 
         self.pendingvalidation() #perform  any pending offset validations (if applicable)
+        self.pendingsort() #perform any pending sorts (if applicable)
+        self.doneparsing = True #indicates that the document is still parsing
+
+
+    def pendingsort(self, warnonly=None):
+        """Perform any pending sorts on span annotation elements (per layer, in turn recurses into all span annotations)"""
+        while self.layersortbuffer:
+            layer = self.layersortbuffer.pop()
+            layer.sort()
 
 
     def pendingvalidation(self, warnonly=None):
@@ -8050,7 +8286,7 @@ def findwords(doc, worditerator, *args, **kwargs):
                     yield match
 
     else:
-        patterns = args #pylint: disable=redefined-variable-type
+        patterns = args
         buffers = []
 
         for word in worditerator():
