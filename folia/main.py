@@ -5060,7 +5060,7 @@ class LinkReference(AbstractElement):
     def json(self, attribs=None, recurse=True, ignorelist=False):
         return {} #alignment not supported yet, TODO
 
-LinkReference = AlignReference #backward compatibility for FoLiA < 2
+AlignReference = LinkReference #backward compatibility for FoLiA < 2
 
 
 class Relation(AbstractElement):
