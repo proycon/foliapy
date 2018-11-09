@@ -1760,7 +1760,7 @@ class AbstractElement(object):
         If a *class* derived from AbstractElement is passed as first argument, an instance will first be created and then appended.
 
         Arguments:
-            index (int): The position where to insert the chldelement
+            index (int): The position where to insert the child element
             child: Instance or class
 
         Keyword arguments:
