@@ -430,10 +430,10 @@ class Test02Sanity(unittest.TestCase):
         self.assertEqual( p.feat('pvtijd'), 'tgw' )
         self.assertEqual( p.feat('pvagr'), 'met-t' )
 
-    def test019_alignment(self):
-        """Sanity Check - Alignment in same document"""
+    def test019_relation(self):
+        """Sanity Check - Relation in same document"""
         w = self.doc['WR-P-E-J-0000000001.p.1.s.3.w.10']
-        a = w.annotation(folia.Alignment)
+        a = w.annotation(folia.Relation)
         target = next(a.resolve())
         self.assertEqual( target, self.doc['WR-P-E-J-0000000001.p.1.s.3.w.5'] )
 
@@ -945,15 +945,15 @@ class Test02Sanity(unittest.TestCase):
         l = self.doc['sandbox.list.1'] #this is a bit of a malformed paragraph due to the explicit whitespace and linebreaks in it, but makes for a nice test:
         self.assertEqual( l.text(), "Eerste testitem\nTweede testitem")
 
-    def test047_alignment(self):
-        """Sanity check - Alignment"""
+    def test047_relation(self):
+        """Sanity check - Relation"""
         word = self.doc['WR-P-E-J-0000000001.p.1.s.3.w.10']
-        a = word.annotation(folia.Alignment)
+        a = word.annotation(folia.Relation)
         self.assertEqual( a.cls, "reference")
-        aref = next(a.select(folia.AlignReference,ignore=False))
-        self.assertEqual( aref.id,"WR-P-E-J-0000000001.p.1.s.3.w.5" )
-        self.assertEqual( aref.type, 'w' )
-        self.assertEqual( aref.t,"handschriften" )
+        xref = next(a.select(folia.LinkReference,ignore=False))
+        self.assertEqual( xref.id,"WR-P-E-J-0000000001.p.1.s.3.w.5" )
+        self.assertEqual( xref.type, 'w' )
+        self.assertEqual( xref.t,"handschriften" )
 
     def test048_observations(self):
         """Sanity check - Observations"""
@@ -980,7 +980,7 @@ class Test02Sanity(unittest.TestCase):
         sentiment = sentiments.annotation(folia.Statement)
         self.assertEqual( sentiment.cls , "promise")
         self.assertEqual( sentiment.annotation(folia.Source).text(), "Hij")
-        self.assertEqual( sentiment.annotation(folia.Relation).text(), "had beloofd")
+        self.assertEqual( sentiment.annotation(folia.StatementRelation).text(), "had beloofd")
         self.assertEqual( sentiment.annotation(folia.Headspan).text(), "hij zou winnen")
 
     def test099_write(self):
@@ -997,19 +997,21 @@ class Test02Sanity(unittest.TestCase):
 
     def test100a_sanity(self):
         """Sanity Check - A - Checking output file against input (should be equal)"""
-        f = open(os.path.join(TMPDIR,'foliatest.xml'),'w',encoding='utf-8')
-        f.write(LEGACYEXAMPLE)
-        f.close()
-        self.doc.save(os.path.join(TMPDIR,'foliatest100.xml'))
-        self.assertEqual(  folia.Document(file=os.path.join(TMPDIR,'foliatest100.xml'),version='1.5.0', debug=False), self.doc )
+        #uses a partial rather than full legacy example without elements that have been renamed in FoLiA 2.0
+        doc = folia.Document(string=PARTIALLEGACYEXAMPLE, debug=False)
+        doc.save(os.path.join(TMPDIR,'foliatest100.xml'))
+        reloadeddoc = folia.Document(file=os.path.join(TMPDIR,'foliatest100.xml'),version='1.5.0', debug=False)
+        self.assertEqual( reloadeddoc , doc )
 
     def test100b_sanity_xmldiff(self):
         """Sanity Check - B - Checking output file against input using xmldiff (should be equal)"""
+        #uses a partial rather than full legacy example without elements that have been renamed in FoLiA 2.0
         f = open(os.path.join(TMPDIR,'foliatest.xml'),'w',encoding='utf-8')
-        f.write( re.sub(r' version="[^"]*" generator="[^"]*"', ' version="' + folia.FOLIAVERSION + '" generator="foliapy-v' + folia.LIBVERSION + '"', LEGACYEXAMPLE, re.MULTILINE) )
+        f.write( re.sub(r' version="[^"]*" generator="[^"]*"', ' version="' + folia.FOLIAVERSION + '" generator="foliapy-v' + folia.LIBVERSION + '"', PARTIALLEGACYEXAMPLE, re.MULTILINE) )
         f.close()
         #use xmldiff to compare the two:
-        self.doc.save(os.path.join(TMPDIR,'foliatest100.xml'))
+        doc = folia.Document(string=PARTIALLEGACYEXAMPLE, debug=False)
+        doc.save(os.path.join(TMPDIR,'foliatest100.xml'))
         retcode = os.system('xmldiff -c ' + os.path.join(TMPDIR,'foliatest.xml') + ' ' + os.path.join(TMPDIR,'foliatest100.xml'))
         #retcode = 1 #disabled (memory hog)
         self.assertEqual( retcode, 0)
@@ -1612,42 +1614,45 @@ class Test02Sanity(unittest.TestCase):
         doc = folia.Document(string=xml)
         self.assertTrue( xmlcheck( doc['example.speech'].xmlstring(), u(speechxml)) )
 
-    def test105_complexalignment(self):
-        """Sanity Check - Complex alignment"""
+    def test105_spanrelation(self):
+        """Sanity Check - Span Relation"""
         xml = """<?xml version="1.0" encoding="UTF-8"?>
-<FoLiA xmlns="http://ilk.uvt.nl/folia" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="test" version="1.5.0" generator="{generator}">
+<FoLiA xmlns="http://ilk.uvt.nl/folia" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="test" version="2.0.0" generator="{generator}">
 <metadata type="native">
  <annotations>
-    <complexalignment-annotation />
-    <alignment-annotation set="blah" />
+    <spanrelation-annotation set="blah" />
+    <relation-annotation set="blah" />
+    <paragraph-annotation />
+    <sentence-annotation />
+    <text-annotation />
  </annotations>
 </metadata>
 <text xml:id="test.text">
     <p xml:id="p.1">
 	<s xml:id="p.1.s.1"><t>Dit is een test.</t></s>
 	<s xml:id="p.1.s.2"><t>Ik wil kijken of het werkt.</t></s>
-	<complexalignments>
-	    <complexalignment>
-		<alignment>
-		    <aref id="p.1.s.1" type="s" />
-		    <aref id="p.1.s.2" type="s" />
-		</alignment>
-		<alignment class="translation" xlink:href="en.folia.xml" xlink:type="simple">
-		    <aref id="p.1.s.1" type="s" />
-		</alignment>
-	    </complexalignment>
-	</complexalignments>
+	<spanrelations>
+	    <spanrelation>
+            <relation class="source">
+                <xref id="p.1.s.1" type="s" />
+                <xref id="p.1.s.2" type="s" />
+            </relation>
+            <relation class="translation" xlink:href="en.folia.xml" xlink:type="simple">
+                <xref id="p.1.s.1" type="s" />
+            </relation>
+	    </spanrelation>
+	</spanrelations>
     </p>
 </text>
 </FoLiA>""".format(version=folia.FOLIAVERSION, generator='foliapy-v' + folia.LIBVERSION)
         doc = folia.Document(string=xml)
         self.assertTrue(doc.xml() is not None) #serialisation check
 
-        l = doc.paragraphs(0).annotation(folia.ComplexAlignmentLayer)
-        ca = list(l.annotations(folia.ComplexAlignment))
+        l = doc.paragraphs(0).annotation(folia.SpanRelationLayer)
+        ca = list(l.annotations(folia.SpanRelation))
         self.assertEqual(len(ca),1)
-        alignments = list(ca[0].select(folia.Alignment))
-        self.assertEqual(len(alignments),2)
+        relations = list(ca[0].select(folia.Relation))
+        self.assertEqual(len(relations),2)
 
     def test106_submetadata(self):
         """Sanity Check - Submetadata"""
@@ -2139,18 +2144,18 @@ class Test04Edit(unittest.TestCase):
 
         self.assertTrue( xmlcheck(w.xmlstring(),'<w xmlns="http://ilk.uvt.nl/folia" xml:id="WR-P-E-J-0000000001.p.1.s.5.w.3"><t>handschriften</t><pos set="https://raw.githubusercontent.com/proycon/folia/master/setdefinitions/frog-mbpos-cgn" class="N(soort,mv,basis)"/><lemma class="handschrift"/><morphology><morpheme function="lexical" class="stem"><t offset="0">handschrift</t><lemma class="handschrift"/></morpheme><morpheme function="inflexional" class="suffix"><t offset="11">en</t></morpheme></morphology></w>'))
 
-    def test012_alignment(self):
-        """Edit Check - Adding Alignment"""
+    def test012_relation(self):
+        """Edit Check - Adding Relation"""
         w = self.doc['WR-P-E-J-0000000001.p.1.s.6.w.8']
 
-        a = w.append( folia.Alignment, cls="coreference")
-        a.append( folia.AlignReference, id='WR-P-E-J-0000000001.p.1.s.6.w.1', type=folia.Word)
-        a.append( folia.AlignReference, id='WR-P-E-J-0000000001.p.1.s.6.w.2', type=folia.Word)
+        a = w.append( folia.Relation, cls="coreference")
+        a.append( folia.LinkReference, id='WR-P-E-J-0000000001.p.1.s.6.w.1', type=folia.Word)
+        a.append( folia.LinkReference, id='WR-P-E-J-0000000001.p.1.s.6.w.2', type=folia.Word)
 
         self.assertEqual( next(a.resolve()), self.doc['WR-P-E-J-0000000001.p.1.s.6.w.1'] )
         self.assertEqual( list(a.resolve())[1], self.doc['WR-P-E-J-0000000001.p.1.s.6.w.2'] )
 
-        self.assertTrue( xmlcheck(w.xmlstring(),'<w xmlns="http://ilk.uvt.nl/folia" xml:id="WR-P-E-J-0000000001.p.1.s.6.w.8"><t>ze</t><pos set="https://raw.githubusercontent.com/proycon/folia/master/setdefinitions/frog-mbpos-cgn" class="VNW(pers,pron,stan,red,3,mv)"/><lemma class="ze"/><alignment class="coreference"><aref type="w" id="WR-P-E-J-0000000001.p.1.s.6.w.1"/><aref type="w" id="WR-P-E-J-0000000001.p.1.s.6.w.2"/></alignment></w>'))
+        self.assertTrue( xmlcheck(w.xmlstring(),'<w xmlns="http://ilk.uvt.nl/folia" xml:id="WR-P-E-J-0000000001.p.1.s.6.w.8"><t>ze</t><pos set="https://raw.githubusercontent.com/proycon/folia/master/setdefinitions/frog-mbpos-cgn" class="VNW(pers,pron,stan,red,3,mv)"/><lemma class="ze"/><relation class="coreference"><xref type="w" id="WR-P-E-J-0000000001.p.1.s.6.w.1"/><xref type="w" id="WR-P-E-J-0000000001.p.1.s.6.w.2"/></relation></w>'))
 
 
 
@@ -4175,11 +4180,16 @@ class Test10Provenance(unittest.TestCase):
 with open(os.path.join(FOLIAPATH, 'examples/full-legacy.1.5.folia.xml'), 'r',encoding='utf-8') as foliaexample_f:
     LEGACYEXAMPLE = foliaexample_f.read()
 
+with open(os.path.join(FOLIAPATH, 'examples/partial-legacy.1.5.folia.xml'), 'r',encoding='utf-8') as foliaexample_f:
+    PARTIALLEGACYEXAMPLE = foliaexample_f.read()
+
 #We cheat, by setting the generator and version attributes to match the library, so xmldiff doesn't complain when we compare against this reference
 #LEGACYEXAMPLE = re.sub(r' version="[^"]*" generator="[^"]*"', ' version="' + folia.FOLIAVERSION + '" generator="foliapy-v' + folia.LIBVERSION + '"', LEGACYEXAMPLE, re.MULTILINE)
 
 #Another cheat, alien namespace attributes are ignored by the folia library, strip them so xmldiff doesn't complain
 LEGACYEXAMPLE = re.sub(r' xmlns:alien="[^"]*" alien:attrib="[^"]*"', '', LEGACYEXAMPLE, re.MULTILINE)
+
+PARTIALLEGACYEXAMPLE = re.sub(r' xmlns:alien="[^"]*" alien:attrib="[^"]*"', '', PARTIALLEGACYEXAMPLE, re.MULTILINE)
 
 
 DCOIEXAMPLE="""<?xml version="1.0" encoding="iso-8859-15"?>
