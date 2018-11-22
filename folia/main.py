@@ -2701,8 +2701,7 @@ class AbstractElement(object):
                                             elements.append( E.optional( E.ref(name=c2.XMLTAG) ) )
                                         else:
                                             elements.append( E.zeroOrMore( E.ref(name=c2.XMLTAG) ) )
-                                            if c2.XMLTAG == 'item': #nasty hack for backward compatibility with deprecated listitem element
-                                                elements.append( E.zeroOrMore( E.ref(name='listitem') ) )
+                                            elements += list(c2.relaxng_backwards(E))
                                         done[c2.XMLTAG] = True
                                 except AttributeError:
                                     continue
@@ -2722,9 +2721,8 @@ class AbstractElement(object):
                                 elements.append( E.optional( E.ref(name=c.XMLTAG) ) )
                             else:
                                 elements.append( E.zeroOrMore( E.ref(name=c.XMLTAG) ) )
-                                if c.XMLTAG == 'item':
-                                    #nasty hack for backward compatibility with deprecated listitem element
-                                    elements.append( E.zeroOrMore( E.ref(name='listitem') )  )
+                                elements += list(c.relaxng_backwards(E))
+
                             done[c.XMLTAG] = True
                     except AttributeError:
                         continue
@@ -2746,6 +2744,15 @@ class AbstractElement(object):
             return E.define( E.element(E.text(), *(preamble + attribs), **{'name': cls.XMLTAG}), name=cls.XMLTAG, ns=NSFOLIA)
         else:
             return E.define( E.element(*(preamble + attribs), **{'name': cls.XMLTAG}), name=cls.XMLTAG, ns=NSFOLIA)
+
+    @classmethod
+    def relaxng_backwards(cls, E = None):
+        """internal helper function for backward compatibility"""
+        if E is None: E = ElementMaker(namespace="http://relaxng.org/ns/structure/1.0",nsmap={None:'http://relaxng.org/ns/structure/1.0' , 'folia': "http://ilk.uvt.nl/folia", 'xml' : "http://www.w3.org/XML/1998/namespace",'a':"http://relaxng.org/ns/annotation/0.9" })
+        if cls.XMLTAG in OLDTAGS_REVERSE:
+            yield E.zeroOrMore( E.ref(name=OLDTAGS_REVERSE[cls.XMLTAG]))
+
+
 
     @classmethod
     def parsexml(Class, node, doc, **kwargs): #pylint: disable=bad-classmethod-argument
@@ -5079,23 +5086,23 @@ class Relation(AbstractElement):
             del kwargs['format']
         else:
             self.format = "text/folia+xml"
-        super(Alignment,self).__init__(doc, *args, **kwargs)
+        super(Relation,self).__init__(doc, *args, **kwargs)
 
     @classmethod
     def parsexml(Class, node, doc, **kwargs):#pylint: disable=bad-classmethod-argument
         if 'format' in node.attrib:
             kwargs['format'] = node.attrib['format']
             del node.attrib['format']
-        return super(Alignment,Class).parsexml(node, doc, **kwargs)
+        return super(Relation,Class).parsexml(node, doc, **kwargs)
 
     def xml(self, attribs = None,elements = None, skipchildren = False):
         if not attribs: attribs = {}
         if self.format and self.format != "text/folia+xml":
             attribs['format'] = self.format
-        return super(Alignment,self).xml(attribs,elements, skipchildren)
+        return super(Relation,self).xml(attribs,elements, skipchildren)
 
     def json(self, attribs =None, recurse=True, ignorelist=False):
-        return {} #alignment not supported yet, TODO
+        return {} #not supported yet, TODO
 
     def resolve(self, documents=None):
         if documents is None: documents = {}
@@ -5108,7 +5115,7 @@ class Relation(AbstractElement):
         E = ElementMaker(namespace="http://relaxng.org/ns/structure/1.0",nsmap={None:'http://relaxng.org/ns/structure/1.0' , 'folia': "http://ilk.uvt.nl/folia", 'xml' : "http://www.w3.org/XML/1998/namespace"})
         if extraattribs is None: extraattribs = []
         extraattribs.append(E.optional(E.attribute(name="format")))
-        return super(Alignment,cls).relaxng(includechildren, extraattribs, extraelements)
+        return super(Relation,cls).relaxng(includechildren, extraattribs, extraelements)
 
 Alignment = Relation #backward compatibility for FoLiA < 2
 
@@ -5860,7 +5867,7 @@ class ObservationLayer(AbstractAnnotationLayer):
     """Observation Layer: Annotation layer for :class:`Observation` span annotation elements."""
 
 class SpanRelationLayer(AbstractAnnotationLayer):
-    """Complex alignment layer"""
+    """Span Relation Layer: Annotation layer for :class:`SpanRelation`"""
 
 
 class HeadFeature(Feature):
@@ -8115,9 +8122,19 @@ def relaxng_declarations():
                 E.optional( E.attribute(E.data(type='dateTime',datatypeLibrary='http://www.w3.org/2001/XMLSchema-datatypes'), name='datetime') ), #pre-provenance, FoLiA <2.0
                 E.zeroOrMore(
                     E.element(E.attribute(E.data(type='IDREF',datatypeLibrary='http://www.w3.org/2001/XMLSchema-datatypes'), name="processor"), name="annotator")
-                ),
-            name=key.lower() + '-annotation')
-
+                )
+                , name=key.lower() + '-annotation')
+            #backward compatibility with FoLiA 1.5
+            if key.lower() in OLDTAGS_REVERSE:
+                yield E.element(
+                    E.optional( E.attribute(E.data(type='string',datatypeLibrary='http://www.w3.org/2001/XMLSchema-datatypes'), name='set') ),
+                    E.optional( E.attribute(E.data(type='string',datatypeLibrary='http://www.w3.org/2001/XMLSchema-datatypes'), name='annotator') ), #pre-provenance, FoLiA <2.0
+                    E.optional( E.attribute(E.data(type='string',datatypeLibrary='http://www.w3.org/2001/XMLSchema-datatypes'), name='annotatortype') ), #pre-provenance, FoLiA <2.0
+                    E.optional( E.attribute(E.data(type='dateTime',datatypeLibrary='http://www.w3.org/2001/XMLSchema-datatypes'), name='datetime') ), #pre-provenance, FoLiA <2.0
+                    E.zeroOrMore(
+                        E.element(E.attribute(E.data(type='IDREF',datatypeLibrary='http://www.w3.org/2001/XMLSchema-datatypes'), name="processor"), name="annotator")
+                    )
+                    , name=OLDTAGS_REVERSE[key.lower()] + '-annotation')
 
 def relaxng(filename=None):
     """Generates a RelaxNG Schema for FoLiA. Optionally saves it to file.
@@ -8214,10 +8231,11 @@ def relaxng(filename=None):
                 done[c.XMLTAG] = True
                 definition = c.relaxng()
                 grammar.append( definition )
-                if c.XMLTAG == 'item': #nasty backward-compatibility hack to allow deprecated listitem element (actually called item)
+                if c.XMLTAG in OLDTAGS_REVERSE: #backward-compatibility hack to allow renamed elements
+                    oldtag = OLDTAGS_REVERSE[c.XMLTAG]
                     definition_alias = c.relaxng()
-                    definition_alias.set('name','listitem')
-                    definition_alias[0].set('name','listitem')
+                    definition_alias.set('name',oldtag)
+                    definition_alias[0].set('name',oldtag)
                     grammar.append( definition_alias )
 
     #for e in relaxng_imdi():
@@ -8490,7 +8508,7 @@ def validate(filename,schema=None,deep=False):
 #================================= FOLIA SPECIFICATION ==========================================================
 
 #foliaspec:header
-#This file was last updated according to the FoLiA specification for version 2.0.0 on 2018-11-09 23:32:29, using foliaspec.py
+#This file was last updated according to the FoLiA specification for version 2.0.0 on 2018-11-22 17:03:20, using foliaspec.py
 #Code blocks after a foliaspec comment (until the next newline) are automatically generated. **DO NOT EDIT THOSE** and **DO NOT REMOVE ANY FOLIASPEC COMMENTS** !!!
 
 #foliaspec:structurescope:STRUCTURESCOPE
@@ -8658,7 +8676,9 @@ XML2CLASS['listitem'] = ListItem #backward compatibility for erroneous old FoLiA
 
 #foliaspec:oldtags_map
 OLDTAGS = {
-  "alignment": "relation",  "aref": "xref",  "complexalignment": "spanrelation",  "complexalignments": "spanrelations",}
+  "alignment": "relation",  "aref": "xref",  "complexalignment": "spanrelation",  "complexalignments": "spanrelations",  "listitem": "item",}
+
+OLDTAGS_REVERSE = { value: key for key, value in OLDTAGS.items() }
 
 #foliaspec:annotationtype_layerclass_map
 ANNOTATIONTYPE2LAYERCLASS = {
