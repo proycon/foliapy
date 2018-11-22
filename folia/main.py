@@ -2749,8 +2749,8 @@ class AbstractElement(object):
     def relaxng_backwards(cls, E = None):
         """internal helper function for backward compatibility"""
         if E is None: E = ElementMaker(namespace="http://relaxng.org/ns/structure/1.0",nsmap={None:'http://relaxng.org/ns/structure/1.0' , 'folia': "http://ilk.uvt.nl/folia", 'xml' : "http://www.w3.org/XML/1998/namespace",'a':"http://relaxng.org/ns/annotation/0.9" })
-        if newtag in OLDTAGS_REVERSE:
-            yield E.zeroOrMore( E.ref(name=OLDTAGS_REVERSE[newtag]))
+        if cls.XMLTAG in OLDTAGS_REVERSE:
+            yield E.zeroOrMore( E.ref(name=OLDTAGS_REVERSE[cls.XMLTAG]))
 
 
 
