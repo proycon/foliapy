@@ -5079,23 +5079,23 @@ class Relation(AbstractElement):
             del kwargs['format']
         else:
             self.format = "text/folia+xml"
-        super(Alignment,self).__init__(doc, *args, **kwargs)
+        super(Relation,self).__init__(doc, *args, **kwargs)
 
     @classmethod
     def parsexml(Class, node, doc, **kwargs):#pylint: disable=bad-classmethod-argument
         if 'format' in node.attrib:
             kwargs['format'] = node.attrib['format']
             del node.attrib['format']
-        return super(Alignment,Class).parsexml(node, doc, **kwargs)
+        return super(Relation,Class).parsexml(node, doc, **kwargs)
 
     def xml(self, attribs = None,elements = None, skipchildren = False):
         if not attribs: attribs = {}
         if self.format and self.format != "text/folia+xml":
             attribs['format'] = self.format
-        return super(Alignment,self).xml(attribs,elements, skipchildren)
+        return super(Relation,self).xml(attribs,elements, skipchildren)
 
     def json(self, attribs =None, recurse=True, ignorelist=False):
-        return {} #alignment not supported yet, TODO
+        return {} #not supported yet, TODO
 
     def resolve(self, documents=None):
         if documents is None: documents = {}
@@ -5108,7 +5108,7 @@ class Relation(AbstractElement):
         E = ElementMaker(namespace="http://relaxng.org/ns/structure/1.0",nsmap={None:'http://relaxng.org/ns/structure/1.0' , 'folia': "http://ilk.uvt.nl/folia", 'xml' : "http://www.w3.org/XML/1998/namespace"})
         if extraattribs is None: extraattribs = []
         extraattribs.append(E.optional(E.attribute(name="format")))
-        return super(Alignment,cls).relaxng(includechildren, extraattribs, extraelements)
+        return super(Relation,cls).relaxng(includechildren, extraattribs, extraelements)
 
 Alignment = Relation #backward compatibility for FoLiA < 2
 
