@@ -4175,6 +4175,11 @@ class Test10Provenance(unittest.TestCase):
         #The old annotator attribute can also still be used and refers to the processor name:
         self.assertEqual(word.annotation(folia.LemmaAnnotation).annotator, "mblem")
 
+    def test004_create(self):
+        doc = folia.Document(id="test", processor=folia.Processor("TestSuite"))
+        self.assertIsInstance(doc.provenance, folia.Provenance)
+        self.assertEqual(doc.provenance['p0'].name, 'TestSuite')
+
 
 
 with open(os.path.join(FOLIAPATH, 'examples/full-legacy.1.5.folia.xml'), 'r',encoding='utf-8') as foliaexample_f:

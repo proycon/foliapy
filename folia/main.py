@@ -7366,6 +7366,8 @@ class Document(object):
 
         #add the document main processor
         if self.processor and (not args or args[0] != self.processor):
+            if isinstance(args, tuple):
+                args = list(args)
             args.insert(0, self.processor)
 
         context = None
