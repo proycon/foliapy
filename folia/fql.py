@@ -1821,7 +1821,7 @@ class Action(object): #Action expression
 class Context(object):
     def __init__(self, **kwargs):
         self.format = kwargs.get("format","python")
-        self.returntype = kwargs.gets("returntype", "focus")
+        self.returntype = kwargs.get("returntype", "focus")
         self.request = kwargs.get("request", "all")
         self.defaults = {}
         self.defaultsets = {}
