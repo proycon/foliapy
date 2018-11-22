@@ -2701,8 +2701,7 @@ class AbstractElement(object):
                                             elements.append( E.optional( E.ref(name=c2.XMLTAG) ) )
                                         else:
                                             elements.append( E.zeroOrMore( E.ref(name=c2.XMLTAG) ) )
-                                            if c2.XMLTAG == 'item': #nasty hack for backward compatibility with deprecated listitem element
-                                                elements.append( E.zeroOrMore( E.ref(name='listitem') ) )
+                                            elements += list(c2.relaxng_backwards(E))
                                         done[c2.XMLTAG] = True
                                 except AttributeError:
                                     continue
@@ -2722,9 +2721,8 @@ class AbstractElement(object):
                                 elements.append( E.optional( E.ref(name=c.XMLTAG) ) )
                             else:
                                 elements.append( E.zeroOrMore( E.ref(name=c.XMLTAG) ) )
-                                if c.XMLTAG == 'item':
-                                    #nasty hack for backward compatibility with deprecated listitem element
-                                    elements.append( E.zeroOrMore( E.ref(name='listitem') )  )
+                                elements += list(c.relaxng_backwards(E))
+
                             done[c.XMLTAG] = True
                     except AttributeError:
                         continue
@@ -2746,6 +2744,15 @@ class AbstractElement(object):
             return E.define( E.element(E.text(), *(preamble + attribs), **{'name': cls.XMLTAG}), name=cls.XMLTAG, ns=NSFOLIA)
         else:
             return E.define( E.element(*(preamble + attribs), **{'name': cls.XMLTAG}), name=cls.XMLTAG, ns=NSFOLIA)
+
+    @classmethod
+    def relaxng_backwards(cls, E = None):
+        """internal helper function for backward compatibility"""
+        if E is None: E = ElementMaker(namespace="http://relaxng.org/ns/structure/1.0",nsmap={None:'http://relaxng.org/ns/structure/1.0' , 'folia': "http://ilk.uvt.nl/folia", 'xml' : "http://www.w3.org/XML/1998/namespace",'a':"http://relaxng.org/ns/annotation/0.9" })
+        if newtag in OLDTAGS_REVERSE:
+            yield E.zeroOrMore( E.ref(name=OLDTAGS_REVERSE[newtag]))
+
+
 
     @classmethod
     def parsexml(Class, node, doc, **kwargs): #pylint: disable=bad-classmethod-argument
@@ -5860,7 +5867,7 @@ class ObservationLayer(AbstractAnnotationLayer):
     """Observation Layer: Annotation layer for :class:`Observation` span annotation elements."""
 
 class SpanRelationLayer(AbstractAnnotationLayer):
-    """Complex alignment layer"""
+    """Span Relation Layer: Annotation layer for :class:`SpanRelation`"""
 
 
 class HeadFeature(Feature):
@@ -8106,7 +8113,6 @@ class CorpusProcessor(object):
 
 def relaxng_declarations():
     E = ElementMaker(namespace="http://relaxng.org/ns/structure/1.0",nsmap={None:'http://relaxng.org/ns/structure/1.0' , 'folia': NSFOLIA, 'xml' : "http://www.w3.org/XML/1998/namespace"})
-    OLDTAGS_REVERSE = { value: key for key, value in OLDTAGS.items() } #for backward compatibility
     for key in vars(AnnotationType).keys():
         if key[0] != '_':
             yield E.element(
@@ -8225,10 +8231,11 @@ def relaxng(filename=None):
                 done[c.XMLTAG] = True
                 definition = c.relaxng()
                 grammar.append( definition )
-                if c.XMLTAG == 'item': #nasty backward-compatibility hack to allow deprecated listitem element (actually called item)
+                if c.XMLTAG in OLDTAGS_REVERSE: #backward-compatibility hack to allow renamed elements
+                    oldtag = OLDTAGS_REVERSE[c.XMLTAG]
                     definition_alias = c.relaxng()
-                    definition_alias.set('name','listitem')
-                    definition_alias[0].set('name','listitem')
+                    definition_alias.set('name',oldtag)
+                    definition_alias[0].set('name',oldtag)
                     grammar.append( definition_alias )
 
     #for e in relaxng_imdi():
@@ -8670,6 +8677,8 @@ XML2CLASS['listitem'] = ListItem #backward compatibility for erroneous old FoLiA
 #foliaspec:oldtags_map
 OLDTAGS = {
   "alignment": "relation",  "aref": "xref",  "complexalignment": "spanrelation",  "complexalignments": "spanrelations",}
+
+OLDTAGS_REVERSE = { value: key for key, value in OLDTAGS.items() }
 
 #foliaspec:annotationtype_layerclass_map
 ANNOTATIONTYPE2LAYERCLASS = {
