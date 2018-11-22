@@ -8508,7 +8508,7 @@ def validate(filename,schema=None,deep=False):
 #================================= FOLIA SPECIFICATION ==========================================================
 
 #foliaspec:header
-#This file was last updated according to the FoLiA specification for version 2.0.0 on 2018-11-09 23:32:29, using foliaspec.py
+#This file was last updated according to the FoLiA specification for version 2.0.0 on 2018-11-22 17:03:20, using foliaspec.py
 #Code blocks after a foliaspec comment (until the next newline) are automatically generated. **DO NOT EDIT THOSE** and **DO NOT REMOVE ANY FOLIASPEC COMMENTS** !!!
 
 #foliaspec:structurescope:STRUCTURESCOPE
@@ -8676,7 +8676,7 @@ XML2CLASS['listitem'] = ListItem #backward compatibility for erroneous old FoLiA
 
 #foliaspec:oldtags_map
 OLDTAGS = {
-  "alignment": "relation",  "aref": "xref",  "complexalignment": "spanrelation",  "complexalignments": "spanrelations",}
+  "alignment": "relation",  "aref": "xref",  "complexalignment": "spanrelation",  "complexalignments": "spanrelations",  "listitem": "item",}
 
 OLDTAGS_REVERSE = { value: key for key, value in OLDTAGS.items() }
 
