@@ -2589,12 +2589,11 @@ class AbstractElement(object):
         return self.leftcontext(size, placeholder,scope) + [self] + self.rightcontext(size, placeholder,scope)
 
     @classmethod
-    def relaxng(cls, includechildren=True,extraattribs = None, extraelements=None, origclass = None):
+    def relaxng(cls, includechildren=True,extraattribs = None, extraelements=None, origclass = None, elementname = None):
         """Returns a RelaxNG definition for this element (as an XML element (lxml.etree) rather than a string)"""
 
         E = ElementMaker(namespace="http://relaxng.org/ns/structure/1.0",nsmap={None:'http://relaxng.org/ns/structure/1.0' , 'folia': "http://ilk.uvt.nl/folia", 'xml' : "http://www.w3.org/XML/1998/namespace",'a':"http://relaxng.org/ns/annotation/0.9" })
 
-        if origclass: cls = origclass
 
         preamble = []
         try:
@@ -8106,18 +8105,22 @@ class CorpusProcessor(object):
 
 def relaxng_declarations():
     E = ElementMaker(namespace="http://relaxng.org/ns/structure/1.0",nsmap={None:'http://relaxng.org/ns/structure/1.0' , 'folia': NSFOLIA, 'xml' : "http://www.w3.org/XML/1998/namespace"})
-    for key in vars(AnnotationType).keys():
-        if key[0] != '_':
-            yield E.element(
+    contents = (
                 E.optional( E.attribute(E.data(type='string',datatypeLibrary='http://www.w3.org/2001/XMLSchema-datatypes'), name='set') ),
                 E.optional( E.attribute(E.data(type='string',datatypeLibrary='http://www.w3.org/2001/XMLSchema-datatypes'), name='annotator') ), #pre-provenance, FoLiA <2.0
                 E.optional( E.attribute(E.data(type='string',datatypeLibrary='http://www.w3.org/2001/XMLSchema-datatypes'), name='annotatortype') ), #pre-provenance, FoLiA <2.0
                 E.optional( E.attribute(E.data(type='dateTime',datatypeLibrary='http://www.w3.org/2001/XMLSchema-datatypes'), name='datetime') ), #pre-provenance, FoLiA <2.0
                 E.zeroOrMore(
                     E.element(E.attribute(E.data(type='IDREF',datatypeLibrary='http://www.w3.org/2001/XMLSchema-datatypes'), name="processor"), name="annotator")
-                ),
-            name=key.lower() + '-annotation')
-
+                )
+               )
+    OLDTAGS_REVERSE = { value: key for key, value in OLDTAGS.items() } #for backward compatibility
+    for key in vars(AnnotationType).keys():
+        if key[0] != '_':
+            yield E.element( *contents, name=key.lower() + '-annotation')
+            #backward compatibility with FoLiA 1.5
+            if key.lower() in OLDTAGS_REVERSE:
+                yield E.element( *contents, name=OLDTAGS_REVERSE[key.lower()] + '-annotation')
 
 def relaxng(filename=None):
     """Generates a RelaxNG Schema for FoLiA. Optionally saves it to file.
