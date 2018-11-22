@@ -1383,66 +1383,52 @@ def getassignments(q, i, assignments,  focus=None):
     return i
 
 
-class Processor(object):
-    def __init__(self, assignments={}):
-        self.assignments = assignments
-
-    @staticmethod
-    def parse(q,i=0):
-        if q.kw(i, ('PROCESSOR','SUBPROCESSOR')):
-            assignments = {"annotatortype": "auto"}
-            l = len(q)
-            while i < l:
-                if q.kw(i, ('id','version', 'document_version', 'command', 'host', 'user', 'folia_version', 'resourcelink')):
-                    if q[i+1] == 'NONE':
-                        assignments[q[i]] = None
-                    else:
-                        assignments[q[i]] = q[i+1]
-                    i+=2
-                elif q.kw(i,'type'):
-                    if q[i+1] == "auto":
-                        assignments[q[i]] = folia.ProcessorType.AUTO
-                    elif q[i+1] == "manual":
-                        assignments[q[i]] = folia.ProcessorType.MANUAL
-                    elif q[i+1] == "generator":
-                        assignments[q[i]] = folia.ProcessorType.GENERATOR
-                    elif q[i+1] == "NONE":
-                        assignments[q[i]] = None
-                    else:
-                        raise SyntaxError("Invalid value for annotatortype: " + str(q[i+1]))
-                    i+=2
-                elif q.kw(i,('text','value','phon')):
-                    if not focus is None and focus.Class in (folia.TextContent, folia.Description, folia.Comment):
-                        key = 'value'
-                    elif not focus is None and focus.Class is folia.PhonContent:
-                        key = 'phon'
-                    else:
-                        key = 'text'
-                    assignments[key] = q[i+1]
-                    i+=2
-                elif q.kw(i, 'begindatetime', 'enddatetime'):
-                    if q[i+1] == "now":
-                        assignments[q[i]] = datetime.datetime.now()
-                    elif q[i+1] == "NONE":
-                        assignments[q[i]] = None
-                    elif q[i+1].isdigit():
-                        try:
-                            assignments[q[i]] = datetime.datetime.fromtimestamp(q[i+1])
-                        except:
-                            raise SyntaxError("Unable to parse datetime: " + str(q[i+1]))
-                    else:
-                        try:
-                            assignments[q[i]] = datetime.strptime("%Y-%m-%dT%H:%M:%S")
-                        except:
-                            raise SyntaxError("Unable to parse datetime: " + str(q[i+1]))
-                    i += 2
+def getprocessor(q,i, parentprocessor=None):
+    if q.kw(i, ('PROCESSOR','SUBPROCESSOR')):
+        assignments = {"annotatortype": "auto"}
+        l = len(q)
+        while i < l:
+            if q.kw(i, ('id','version', 'document_version', 'command', 'host', 'user', 'folia_version', 'resourcelink')):
+                if q[i+1] == 'NONE':
+                    assignments[q[i]] = None
                 else:
-                    if not assignments:
-                        raise SyntaxError("Expected assignments after PROCESSOR statement, but no valid attribute found, got  " + str(q[i]) + " at position " + str(i) + " in: " +  str(q))
-                    break
-            return Processor(assignments),i
-        else:
-            raise SyntaxError("Expected PROCESSOR, got " + str(q[i]) + " in: " + str(q))
+                    assignments[q[i]] = q[i+1]
+                i+=2
+            elif q.kw(i,'type'):
+                if q[i+1] == "auto":
+                    assignments[q[i]] = folia.ProcessorType.AUTO
+                elif q[i+1] == "manual":
+                    assignments[q[i]] = folia.ProcessorType.MANUAL
+                elif q[i+1] == "generator":
+                    assignments[q[i]] = folia.ProcessorType.GENERATOR
+                elif q[i+1] == "NONE":
+                    assignments[q[i]] = None
+                else:
+                    raise SyntaxError("Invalid value for annotatortype: " + str(q[i+1]))
+                i+=2
+            elif q.kw(i, 'begindatetime', 'enddatetime'):
+                if q[i+1] == "now":
+                    assignments[q[i]] = datetime.datetime.now()
+                elif q[i+1] == "NONE":
+                    assignments[q[i]] = None
+                elif q[i+1].isdigit():
+                    try:
+                        assignments[q[i]] = datetime.datetime.fromtimestamp(q[i+1])
+                    except:
+                        raise SyntaxError("Unable to parse datetime: " + str(q[i+1]))
+                else:
+                    try:
+                        assignments[q[i]] = datetime.strptime("%Y-%m-%dT%H:%M:%S")
+                    except:
+                        raise SyntaxError("Unable to parse datetime: " + str(q[i+1]))
+                i += 2
+            else:
+                if not assignments:
+                    raise SyntaxError("Expected assignments after PROCESSOR statement, but no valid attribute found, got  " + str(q[i]) + " at position " + str(i) + " in: " +  str(q))
+                break
+        return folia.Processor(assignments['name'], type=assignments.get('type',None), id=assignments.get('id',None), version=assignments.get('version',None), document_version=assignments.get('document_version',None), folia_version=assignments.get('folia_version',None), command=assignments.get('command',None), host=assignments.get('host',None), user=assignments.get('user',None), begindatetime=assignments.get('begindatetime',None), enddatetime=assignments.get('enddatetime',None), resourcelink=assignments.get('resourcelink',None), parent=parentprocessor)
+    else:
+        raise SyntaxError("Expected PROCESSOR, got " + str(q[i]) + " in: " + str(q))
 
 class Action(object): #Action expression
     def __init__(self, action, focus, assignments={}):
@@ -1901,6 +1887,7 @@ class Query(object):
         self.request = copy(context.request)
         self.defaults = copy(context.defaults)
         self.defaultsets = copy(context.defaultsets)
+        self.processor = copy(context.processor)
         self.parse(q)
 
     def parse(self, q, i=0):
@@ -1933,7 +1920,7 @@ class Query(object):
 
             self.declarations.append( (Class, decset, defaults)  )
         elif q.kw(i,"PROCESSOR"):
-            self.processor,i = Processor.parse(q,i)
+            self.processor,i = getprocessor(q,i)
 
 
         if i < l:
