@@ -1326,7 +1326,7 @@ class Correction(object): #AS CORRECTION/SUGGESTION expression...
 def getassignments(q, i, assignments,  focus=None):
     l = len(q)
     while i < l:
-        if q.kw(i, ('id','set','subset','annotator','class','n')):
+        if q.kw(i, ('id','set','subset','annotator','processor','class','n')):
             if q[i+1] == 'NONE':
                 assignments[q[i]] = None
             else:
@@ -1771,12 +1771,13 @@ class Action(object): #Action expression
 
 
 class Context(object):
-    def __init__(self):
-        self.format = "python"
-        self.returntype = "focus"
-        self.request = "all"
+    def __init__(self, **kwargs):
+        self.format = kwargs.get("format","python")
+        self.returntype = kwargs.gets("returntype", "focus")
+        self.request = kwargs.get("request", "all")
         self.defaults = {}
         self.defaultsets = {}
+        self.processor = kwargs.get("processor", None)
 
 class Query(object):
     """This class represents an FQL query.
@@ -1869,6 +1870,9 @@ class Query(object):
                 raise SyntaxError("DECLARE statement must state a set")
 
             self.declarations.append( (Class, decset, defaults)  )
+        elif q.kw(i,"PROCESSOR"):
+
+
 
         if i < l:
             self.action,i = Action.parse(q,i)
