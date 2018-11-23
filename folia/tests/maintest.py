@@ -4176,9 +4176,10 @@ class Test10Provenance(unittest.TestCase):
         self.assertEqual(word.annotation(folia.LemmaAnnotation).annotator, "mblem")
 
     def test004_create(self):
-        doc = folia.Document(id="test", processor=folia.Processor("TestSuite"))
+        doc = folia.Document(id="test", processor=folia.Processor("TestSuite",id="p0"))
         self.assertIsInstance(doc.provenance, folia.Provenance)
         self.assertEqual(doc.provenance['p0'].name, 'TestSuite')
+        print(doc.xmlstring())
 
 
 

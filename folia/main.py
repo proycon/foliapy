@@ -7044,6 +7044,7 @@ class Document(object):
                 E.annotations(
                     *self.xmldeclarations()
                 ),
+                *self.xmlprovenance(),
                 *self.xmlmetadata(),
                 **metadataattribs
             )
@@ -7073,6 +7074,16 @@ class Document(object):
         for text in self.data:
             jsondoc['children'].append(text.json())
         return jsondoc
+
+    def xmlprovenance(self):
+        """Internal method to serialize provenance data to XML"""
+        E = ElementMaker(namespace="http://ilk.uvt.nl/folia",nsmap={None: "http://ilk.uvt.nl/folia", 'xml' : "http://www.w3.org/XML/1998/namespace"})
+        if self.provenance:
+            return [ self.provenance.xml() ]
+        else:
+            return []
+
+
 
     def xmlmetadata(self):
         """Internal method to serialize metadata to XML"""
@@ -7375,7 +7386,7 @@ class Document(object):
         for i, processor in enumerate(args):
             if isinstance(processor, Processor):
                 #check if processor is new
-                processor_new = processor in self.provenance
+                processor_new = processor not in self.provenance
                 if not processor_new:
                     processor = self.provenance[processor]
             else:
