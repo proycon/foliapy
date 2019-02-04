@@ -108,7 +108,7 @@ class ProcessorType(AnnotatorType): #superset of AnnotatorType
 #foliaspec:attributes
 #Defines all common FoLiA attributes (as part of the Attrib enumeration)
 class Attrib:
-    ID, CLASS, ANNOTATOR, CONFIDENCE, N, DATETIME, BEGINTIME, ENDTIME, SRC, SPEAKER, TEXTCLASS, METADATA = range(12)
+    ID, CLASS, ANNOTATOR, CONFIDENCE, N, DATETIME, BEGINTIME, ENDTIME, SRC, SPEAKER, TEXTCLASS, METADATA, IDREF = range(13)
 
 #foliaspec:annotationtype
 #Defines all annotation types (as part of the AnnotationType enumeration)
@@ -8523,7 +8523,7 @@ def validate(filename,schema=None,deep=False):
 #================================= FOLIA SPECIFICATION ==========================================================
 
 #foliaspec:header
-#This file was last updated according to the FoLiA specification for version 2.0.0 on 2018-11-22 17:03:20, using foliaspec.py
+#This file was last updated according to the FoLiA specification for version 2.0.0 on 2019-02-04 14:02:08, using foliaspec.py
 #Code blocks after a foliaspec comment (until the next newline) are automatically generated. **DO NOT EDIT THOSE** and **DO NOT REMOVE ANY FOLIASPEC COMMENTS** !!!
 
 #foliaspec:structurescope:STRUCTURESCOPE
@@ -8744,6 +8744,7 @@ AbstractElement.SPEAKABLE = False
 AbstractElement.SUBSET = None
 AbstractElement.TEXTCONTAINER = False
 AbstractElement.TEXTDELIMITER = None
+AbstractElement.WREFABLE = False
 AbstractElement.XLINK = False
 AbstractElement.XMLTAG = None
 
@@ -9032,6 +9033,7 @@ Linebreak.TEXTDELIMITER = ""
 Linebreak.XLINK = True
 Linebreak.XMLTAG = "br"
 #------ LinkReference -------
+LinkReference.OPTIONAL_ATTRIBS = (Attrib.IDREF,)
 LinkReference.XMLTAG = "xref"
 #------ List -------
 List.ACCEPTED_DATA = (AbstractAnnotationLayer, AbstractInlineAnnotation, Alternative, AlternativeLayers, Caption, Comment, Correction, Description, Event, Feature, ForeignData, ListItem, Metric, Note, Part, PhonContent, Reference, Relation, String, TextContent,)
@@ -9059,6 +9061,7 @@ Morpheme.ACCEPTED_DATA = (AbstractAnnotationLayer, AbstractInlineAnnotation, Alt
 Morpheme.ANNOTATIONTYPE = AnnotationType.MORPHOLOGICAL
 Morpheme.LABEL = "Morpheme"
 Morpheme.TEXTDELIMITER = ""
+Morpheme.WREFABLE = True
 Morpheme.XMLTAG = "morpheme"
 #------ MorphologyLayer -------
 MorphologyLayer.ACCEPTED_DATA = (Comment, Correction, Description, ForeignData, Morpheme,)
@@ -9114,6 +9117,7 @@ Phoneme.ACCEPTED_DATA = (AbstractAnnotationLayer, AbstractInlineAnnotation, Alte
 Phoneme.ANNOTATIONTYPE = AnnotationType.PHONOLOGICAL
 Phoneme.LABEL = "Phoneme"
 Phoneme.TEXTDELIMITER = ""
+Phoneme.WREFABLE = True
 Phoneme.XMLTAG = "phoneme"
 #------ PhonologyLayer -------
 PhonologyLayer.ACCEPTED_DATA = (Comment, Correction, Description, ForeignData, Phoneme,)
@@ -9351,8 +9355,10 @@ Word.ANNOTATIONTYPE = AnnotationType.TOKEN
 Word.LABEL = "Word/Token"
 Word.OPTIONAL_ATTRIBS = (Attrib.ID, Attrib.CLASS, Attrib.ANNOTATOR, Attrib.N, Attrib.CONFIDENCE, Attrib.DATETIME, Attrib.SRC, Attrib.BEGINTIME, Attrib.ENDTIME, Attrib.SPEAKER, Attrib.TEXTCLASS, Attrib.METADATA,)
 Word.TEXTDELIMITER = " "
+Word.WREFABLE = True
 Word.XMLTAG = "w"
 #------ WordReference -------
+WordReference.OPTIONAL_ATTRIBS = (Attrib.IDREF,)
 WordReference.XMLTAG = "wref"
 
 #EOF
