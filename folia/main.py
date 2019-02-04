@@ -8130,6 +8130,7 @@ def relaxng_declarations():
         if key[0] != '_':
             yield E.element(
                 E.optional( E.attribute(E.data(type='string',datatypeLibrary='http://www.w3.org/2001/XMLSchema-datatypes'), name='set') ),
+                E.optional( E.attribute(E.data(type='string',datatypeLibrary='http://www.w3.org/2001/XMLSchema-datatypes'), name='alias') ),
                 E.optional( E.attribute(E.data(type='string',datatypeLibrary='http://www.w3.org/2001/XMLSchema-datatypes'), name='annotator') ), #pre-provenance, FoLiA <2.0
                 E.optional( E.attribute(E.data(type='string',datatypeLibrary='http://www.w3.org/2001/XMLSchema-datatypes'), name='annotatortype') ), #pre-provenance, FoLiA <2.0
                 E.optional( E.attribute(E.data(type='dateTime',datatypeLibrary='http://www.w3.org/2001/XMLSchema-datatypes'), name='datetime') ), #pre-provenance, FoLiA <2.0
@@ -8141,6 +8142,7 @@ def relaxng_declarations():
             if key.lower() in OLDTAGS_REVERSE:
                 yield E.element(
                     E.optional( E.attribute(E.data(type='string',datatypeLibrary='http://www.w3.org/2001/XMLSchema-datatypes'), name='set') ),
+                    E.optional( E.attribute(E.data(type='string',datatypeLibrary='http://www.w3.org/2001/XMLSchema-datatypes'), name='alias') ),
                     E.optional( E.attribute(E.data(type='string',datatypeLibrary='http://www.w3.org/2001/XMLSchema-datatypes'), name='annotator') ), #pre-provenance, FoLiA <2.0
                     E.optional( E.attribute(E.data(type='string',datatypeLibrary='http://www.w3.org/2001/XMLSchema-datatypes'), name='annotatortype') ), #pre-provenance, FoLiA <2.0
                     E.optional( E.attribute(E.data(type='dateTime',datatypeLibrary='http://www.w3.org/2001/XMLSchema-datatypes'), name='datetime') ), #pre-provenance, FoLiA <2.0
