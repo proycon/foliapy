@@ -108,7 +108,7 @@ class ProcessorType(AnnotatorType): #superset of AnnotatorType
 #foliaspec:attributes
 #Defines all common FoLiA attributes (as part of the Attrib enumeration)
 class Attrib:
-    ID, CLASS, ANNOTATOR, CONFIDENCE, N, DATETIME, BEGINTIME, ENDTIME, SRC, SPEAKER, TEXTCLASS, METADATA = range(12)
+    ID, CLASS, ANNOTATOR, CONFIDENCE, N, DATETIME, BEGINTIME, ENDTIME, SRC, SPEAKER, TEXTCLASS, METADATA, IDREF = range(13)
 
 #foliaspec:annotationtype
 #Defines all annotation types (as part of the AnnotationType enumeration)
@@ -7044,6 +7044,7 @@ class Document(object):
                 E.annotations(
                     *self.xmldeclarations()
                 ),
+                *self.xmlprovenance(),
                 *self.xmlmetadata(),
                 **metadataattribs
             )
@@ -7073,6 +7074,16 @@ class Document(object):
         for text in self.data:
             jsondoc['children'].append(text.json())
         return jsondoc
+
+    def xmlprovenance(self):
+        """Internal method to serialize provenance data to XML"""
+        E = ElementMaker(namespace="http://ilk.uvt.nl/folia",nsmap={None: "http://ilk.uvt.nl/folia", 'xml' : "http://www.w3.org/XML/1998/namespace"})
+        if self.provenance:
+            return [ self.provenance.xml() ]
+        else:
+            return []
+
+
 
     def xmlmetadata(self):
         """Internal method to serialize metadata to XML"""
@@ -7375,7 +7386,7 @@ class Document(object):
         for i, processor in enumerate(args):
             if isinstance(processor, Processor):
                 #check if processor is new
-                processor_new = processor in self.provenance
+                processor_new = processor not in self.provenance
                 if not processor_new:
                     processor = self.provenance[processor]
             else:
@@ -8119,6 +8130,7 @@ def relaxng_declarations():
         if key[0] != '_':
             yield E.element(
                 E.optional( E.attribute(E.data(type='string',datatypeLibrary='http://www.w3.org/2001/XMLSchema-datatypes'), name='set') ),
+                E.optional( E.attribute(E.data(type='string',datatypeLibrary='http://www.w3.org/2001/XMLSchema-datatypes'), name='alias') ),
                 E.optional( E.attribute(E.data(type='string',datatypeLibrary='http://www.w3.org/2001/XMLSchema-datatypes'), name='annotator') ), #pre-provenance, FoLiA <2.0
                 E.optional( E.attribute(E.data(type='string',datatypeLibrary='http://www.w3.org/2001/XMLSchema-datatypes'), name='annotatortype') ), #pre-provenance, FoLiA <2.0
                 E.optional( E.attribute(E.data(type='dateTime',datatypeLibrary='http://www.w3.org/2001/XMLSchema-datatypes'), name='datetime') ), #pre-provenance, FoLiA <2.0
@@ -8130,6 +8142,7 @@ def relaxng_declarations():
             if key.lower() in OLDTAGS_REVERSE:
                 yield E.element(
                     E.optional( E.attribute(E.data(type='string',datatypeLibrary='http://www.w3.org/2001/XMLSchema-datatypes'), name='set') ),
+                    E.optional( E.attribute(E.data(type='string',datatypeLibrary='http://www.w3.org/2001/XMLSchema-datatypes'), name='alias') ),
                     E.optional( E.attribute(E.data(type='string',datatypeLibrary='http://www.w3.org/2001/XMLSchema-datatypes'), name='annotator') ), #pre-provenance, FoLiA <2.0
                     E.optional( E.attribute(E.data(type='string',datatypeLibrary='http://www.w3.org/2001/XMLSchema-datatypes'), name='annotatortype') ), #pre-provenance, FoLiA <2.0
                     E.optional( E.attribute(E.data(type='dateTime',datatypeLibrary='http://www.w3.org/2001/XMLSchema-datatypes'), name='datetime') ), #pre-provenance, FoLiA <2.0
@@ -8510,7 +8523,7 @@ def validate(filename,schema=None,deep=False):
 #================================= FOLIA SPECIFICATION ==========================================================
 
 #foliaspec:header
-#This file was last updated according to the FoLiA specification for version 2.0.0 on 2018-11-22 17:03:20, using foliaspec.py
+#This file was last updated according to the FoLiA specification for version 2.0.0 on 2019-02-04 14:02:08, using foliaspec.py
 #Code blocks after a foliaspec comment (until the next newline) are automatically generated. **DO NOT EDIT THOSE** and **DO NOT REMOVE ANY FOLIASPEC COMMENTS** !!!
 
 #foliaspec:structurescope:STRUCTURESCOPE
@@ -8731,6 +8744,7 @@ AbstractElement.SPEAKABLE = False
 AbstractElement.SUBSET = None
 AbstractElement.TEXTCONTAINER = False
 AbstractElement.TEXTDELIMITER = None
+AbstractElement.WREFABLE = False
 AbstractElement.XLINK = False
 AbstractElement.XMLTAG = None
 
@@ -9019,6 +9033,7 @@ Linebreak.TEXTDELIMITER = ""
 Linebreak.XLINK = True
 Linebreak.XMLTAG = "br"
 #------ LinkReference -------
+LinkReference.OPTIONAL_ATTRIBS = (Attrib.IDREF,)
 LinkReference.XMLTAG = "xref"
 #------ List -------
 List.ACCEPTED_DATA = (AbstractAnnotationLayer, AbstractInlineAnnotation, Alternative, AlternativeLayers, Caption, Comment, Correction, Description, Event, Feature, ForeignData, ListItem, Metric, Note, Part, PhonContent, Reference, Relation, String, TextContent,)
@@ -9046,6 +9061,7 @@ Morpheme.ACCEPTED_DATA = (AbstractAnnotationLayer, AbstractInlineAnnotation, Alt
 Morpheme.ANNOTATIONTYPE = AnnotationType.MORPHOLOGICAL
 Morpheme.LABEL = "Morpheme"
 Morpheme.TEXTDELIMITER = ""
+Morpheme.WREFABLE = True
 Morpheme.XMLTAG = "morpheme"
 #------ MorphologyLayer -------
 MorphologyLayer.ACCEPTED_DATA = (Comment, Correction, Description, ForeignData, Morpheme,)
@@ -9101,6 +9117,7 @@ Phoneme.ACCEPTED_DATA = (AbstractAnnotationLayer, AbstractInlineAnnotation, Alte
 Phoneme.ANNOTATIONTYPE = AnnotationType.PHONOLOGICAL
 Phoneme.LABEL = "Phoneme"
 Phoneme.TEXTDELIMITER = ""
+Phoneme.WREFABLE = True
 Phoneme.XMLTAG = "phoneme"
 #------ PhonologyLayer -------
 PhonologyLayer.ACCEPTED_DATA = (Comment, Correction, Description, ForeignData, Phoneme,)
@@ -9338,8 +9355,10 @@ Word.ANNOTATIONTYPE = AnnotationType.TOKEN
 Word.LABEL = "Word/Token"
 Word.OPTIONAL_ATTRIBS = (Attrib.ID, Attrib.CLASS, Attrib.ANNOTATOR, Attrib.N, Attrib.CONFIDENCE, Attrib.DATETIME, Attrib.SRC, Attrib.BEGINTIME, Attrib.ENDTIME, Attrib.SPEAKER, Attrib.TEXTCLASS, Attrib.METADATA,)
 Word.TEXTDELIMITER = " "
+Word.WREFABLE = True
 Word.XMLTAG = "w"
 #------ WordReference -------
+WordReference.OPTIONAL_ATTRIBS = (Attrib.IDREF,)
 WordReference.XMLTAG = "wref"
 
 #EOF

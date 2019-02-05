@@ -4179,6 +4179,7 @@ class Test10Provenance(unittest.TestCase):
         doc = folia.Document(id="test", processor=folia.Processor("TestSuite",id="p0"))
         self.assertIsInstance(doc.provenance, folia.Provenance)
         self.assertEqual(doc.provenance['p0'].name, 'TestSuite')
+        print(doc.xmlstring())
 
 
 
