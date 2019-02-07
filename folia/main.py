@@ -423,16 +423,14 @@ def parsecommonarguments(object, doc, annotationtype, required, allowed, **kwarg
         raise ValueError("Set is required for " + object.__class__.__name__)
 
     FOLIA2 = checkversion(doc.version, '2.0.0') >= 0
-    if FOLIA2 or (object.set and object.set != "undefined"):
+    if (FOLIA2 or (object.set and object.set != "undefined")) and not isinstance(object, (Text,Speech)): #Body is an undeclared element
         #Check if an element is declared (FoLiA v2+ only)
         #for FoLiA <2 we only check if we have a set
         #This is a much stricter check than older FoLiA versions
         if doc and (annotationtype not in doc.annotationdefaults or object.set not in doc.annotationdefaults[annotationtype]):
             if doc.autodeclare:
                 #autodeclare
-                if isinstance(object, (Text,Speech)): #Body is an undeclared element
-                    pass
-                elif isinstance(object, TextContent): #FoLiA v2.0, autodeclare text
+                if isinstance(object, TextContent): #FoLiA v2.0, autodeclare text
                     if FOLIA2:
                         if doc.debug >= 1: print("[FoLiA DEBUG] Auto-declaring Text Annotation",file=stderr)
                         doc.declare(AnnotationType.TEXT, DEFAULT_TEXT_SET)
