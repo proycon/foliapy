@@ -59,9 +59,7 @@ FOLIAVERSION = "2.0.0"
 NSFOLIA = "http://ilk.uvt.nl/folia"
 
 
-NSDCOI = "http://lands.let.ru.nl/projects/d-coi/ns/1.0"
 nslen = len(NSFOLIA) + 2
-nslendcoi = len(NSDCOI) + 2
 
 if 'TMPDIR' in os.environ:
     TMPDIR = os.environ['TMPDIR']
@@ -116,15 +114,6 @@ class AnnotationType:
     TEXT, TOKEN, DIVISION, PARAGRAPH, HEAD, LIST, FIGURE, WHITESPACE, LINEBREAK, SENTENCE, POS, LEMMA, DOMAIN, SENSE, SYNTAX, CHUNKING, ENTITY, CORRECTION, ERRORDETECTION, PHON, SUBJECTIVITY, MORPHOLOGICAL, EVENT, DEPENDENCY, TIMESEGMENT, GAP, QUOTE, NOTE, REFERENCE, RELATION, SPANRELATION, COREFERENCE, SEMROLE, METRIC, LANG, STRING, TABLE, STYLE, PART, UTTERANCE, ENTRY, TERM, DEFINITION, EXAMPLE, PHONOLOGICAL, PREDICATE, OBSERVATION, SENTIMENT, STATEMENT, ALTERNATIVE, RAWCONTENT, COMMENT, DESCRIPTION = range(53)
 
 
-    #Alternative is a special one, not declared and not used except for ID generation
-
-class TextCorrectionLevel: #THIS IS NOW COMPLETELY OBSOLETE AND ONLY HERE FOR BACKWARD COMPATIBILITY!
-    CORRECTED, UNCORRECTED, ORIGINAL, INLINE = range(4)
-
-class MetaDataType: #THIS IS NOW COMPLETELY OBSOLETE AND ONLY HERE FOR BACKWARD COMPATIBILITY! Metadata type is a free-fill field with only native predefined
-    NATIVE = "native"
-    CMDI = "cmdi"
-    IMDI = "imdi"
 
 class NoSuchAnnotation(Exception):
     """Exception raised when the requested type of annotation does not exist for the selected element"""
@@ -2777,7 +2766,6 @@ class AbstractElement(object):
 
 
 
-        dcoi = node.tag.startswith('{' + NSDCOI + '}')
         args = []
         if not kwargs: kwargs = {}
         text = None #for dcoi support
@@ -2804,19 +2792,6 @@ class AbstractElement(object):
                         args.append(e)
                     if (Class.TEXTCONTAINER or Class.PHONCONTAINER) and subnode.tail:
                         args.append(subnode.tail)
-                elif subnode.tag.startswith('{' + NSDCOI + '}'):
-                    #Dcoi support
-                    if Class is Text and subnode.tag[nslendcoi:] == 'body':
-                        for subsubnode in subnode:
-                            if doc.debug >= 1: print("[FoLiA DEBUG] Processing DCOI subnode " + subnode.tag[nslendcoi:],file=stderr)
-                            e = doc.parsexml(subsubnode, Class)
-                            if e is not None:
-                                args.append(e)
-                    else:
-                        if doc.debug >= 1: print( "[FoLiA DEBUG] Processing DCOI subnode " + subnode.tag[nslendcoi:],file=stderr)
-                        e = doc.parsexml(subnode, Class)
-                        if e is not None:
-                            args.append(e)
                 elif doc.debug >= 1:
                     print("[FoLiA DEBUG] Ignoring subnode outside of FoLiA namespace: " + subnode.tag,file=stderr)
 
@@ -2837,8 +2812,6 @@ class AbstractElement(object):
                     key = key[30:]
                     if key != 'href':
                         key = 'xlink' + key #xlinktype, xlinkrole, xlinklabel, xlinkshow, etc..
-                elif key.startswith('{' + NSDCOI + '}'):
-                    key = key[nslendcoi:]
 
             #D-Coi support:
             if dcoi:
@@ -6614,7 +6587,6 @@ class Document(object):
         self.autodeclare = None #Automatic declarations in case of undeclared elements, will be set later
                                 # False for FoLiA < 2.0
                                 # True for FoLiA >= 2.0
-                                # True for DCOI compatibility
 
         if 'setdefinitions' in kwargs:
             self.setdefinitions = kwargs['setdefinitions'] #to re-use a shared store
@@ -7270,21 +7242,6 @@ class Document(object):
 
 
 
-    def setimdi(self, node): #OBSOLETE
-        """OBSOLETE"""
-        ns = {'imdi': 'http://www.mpi.nl/IMDI/Schema/IMDI'}
-        self.metadatatype = MetaDataType.IMDI
-        self.metadata = ElementTree.tostring(node, xml_declaration=False, pretty_print=True, encoding='utf-8')
-        n = node.xpath('imdi:Session/imdi:Title', namespaces=ns)
-        if n and n[0].text: self._title = n[0].text
-        n = node.xpath('imdi:Session/imdi:Date', namespaces=ns)
-        if n and n[0].text: self._date = n[0].text
-        n = node.xpath('//imdi:Source/imdi:Access/imdi:Publisher', namespaces=ns)
-        if n and n[0].text: self._publisher = n[0].text
-        n = node.xpath('//imdi:Source/imdi:Access/imdi:Availability', namespaces=ns)
-        if n and n[0].text: self._license = n[0].text
-        n = node.xpath('//imdi:Languages/imdi:Language/imdi:ID', namespaces=ns)
-        if n and n[0].text: self._language = n[0].text
 
     def declare(self, annotationtype, set=None, *args, **kwargs):
         """Declare new annotation types, sets or annotators to be used in the document.
@@ -7799,44 +7756,6 @@ class Document(object):
                     raise Exception("Unknown FoLiA XML tag: " + foliatag)
                 Class = XML2CLASS[foliatag]
                 return Class.parsexml(node,self)
-        elif node.tag == '{' + NSDCOI + '}DCOI':
-            if self.debug >= 1: print("[FoLiA DEBUG] Found DCOI document",file=stderr)
-            self.autodeclare = True
-            try:
-                self.id = node.attrib['{http://www.w3.org/XML/1998/namespace}id']
-            except KeyError:
-                try:
-                    self.id = node.attrib['id']
-                except KeyError:
-                    try:
-                        self.id = node.attrib['XMLid']
-                    except KeyError:
-                        raise Exception("D-Coi Document has no ID!")
-            for subnode in node:
-                if subnode.tag == '{http://www.mpi.nl/IMDI/Schema/IMDI}METATRANSCRIPT':
-                    self.metadatatype = MetaDataType.IMDI
-                    self.setimdi(subnode)
-                elif subnode.tag == '{' + NSDCOI + '}text':
-                    if self.debug >= 1: print("[FoLiA DEBUG] Found Text",file=stderr)
-                    e = self.parsexml(subnode)
-                    if e is not None:
-                        self.data.append( e )
-        elif node.tag.startswith('{' + NSDCOI + '}'):
-            #generic handling (D-Coi)
-            if node.tag[nslendcoi:] in XML2CLASS:
-                Class = XML2CLASS[node.tag[nslendcoi:]]
-                return Class.parsexml(node,self)
-            elif node.tag[nslendcoi:][0:3] == 'div': #support for div0, div1, etc:
-                Class = Division
-                return Class.parsexml(node,self)
-            elif node.tag[nslendcoi:] == 'item': #support for listitem
-                Class = ListItem
-                return Class.parsexml(node,self)
-            elif node.tag[nslendcoi:] == 'figDesc': #support for description in figures
-                Class = Description
-                return Class.parsexml(node,self)
-            else:
-                raise Exception("Unknown DCOI XML tag: " + node.tag)
         else:
             raise Exception("Unknown FoLiA XML tag: " + node.tag)
 
