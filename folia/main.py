@@ -2075,11 +2075,11 @@ class AbstractElement(object):
             if self.ANNOTATIONTYPE in self.doc.annotators and self.set in self.doc.annotators[self.ANNOTATIONTYPE] and self.doc.annotators[self.ANNOTATIONTYPE][self.set]:
                 #there are new-style (FoLiA v1.6) annotators (pointing to processors in provenance data)
 
-                has_default = (self.ANNOTATIONTYPE in self.doc.annotationdefaults) and (self.set in self.doc.annotationdefaults[self.ANNOTATIONTYPE])
-                if not has_default:
-                    attribs['{' + NSFOLIA + '}processor'] = self.processor
+                has_default = (self.ANNOTATIONTYPE in self.doc.annotationdefaults) and (self.set in self.doc.annotationdefaults[self.ANNOTATIONTYPE]) and 'processor' in self.doc.annotationdefaults[self.ANNOTATIONTYPE][self.set]
+                if has_default:
+                    assert self.doc.annotationdefaults[self.ANNOTATIONTYPE][self.set]['processor'] == self.processor.id
                 else:
-                    assert self.annotationdefaults[self.ANNOTATIONTYPE][self.set] == self.processor.id
+                    attribs['{' + NSFOLIA + '}processor'] = self.processor.id
 
         if '{' + NSFOLIA + '}annotator' not in attribs and not self.processor: #do not override if caller already set it
             try:

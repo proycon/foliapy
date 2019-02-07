@@ -4179,7 +4179,18 @@ class Test10Provenance(unittest.TestCase):
         doc = folia.Document(id="test", processor=folia.Processor("TestSuite",id="p0"))
         self.assertIsInstance(doc.provenance, folia.Provenance)
         self.assertEqual(doc.provenance['p0'].name, 'TestSuite')
-        print(doc.xmlstring())
+        xmlref = """<FoLiA xmlns:xlink="http://www.w3.org/1999/xlink" xmlns="http://ilk.uvt.nl/folia" xml:id="test" version="2.0.0" generator="foliapy-v2.0.0">
+  <metadata type="native">
+    <annotations>
+      <text-annotation set="https://github.com/proycon/folia/blob/master/setdefinitions/text.foliaset.ttl"/>
+    </annotations>
+    <provenance>
+      <processor xml:id="p0" name="TestSuite" type="auto"/>
+    </provenance>
+  </metadata>
+</FoLiA>
+"""
+        self.assertTrue( xmlcheck(doc.xmlstring(), xmlref) )
 
 
 
