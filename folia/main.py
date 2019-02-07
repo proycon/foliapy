@@ -2768,7 +2768,6 @@ class AbstractElement(object):
 
         args = []
         if not kwargs: kwargs = {}
-        text = None #for dcoi support
         if (Class.TEXTCONTAINER or Class.PHONCONTAINER) and node.text:
             args.append(node.text)
 
@@ -2797,8 +2796,6 @@ class AbstractElement(object):
 
 
 
-        if dcoi:
-            dcoipos = dcoilemma = dcoicorrection = dcoicorrectionoriginal = None
         for key, value in node.attrib.items():
             if key[0] == '{' or key =='XMLid':
                 if key == '{http://www.w3.org/XML/1998/namespace}id' or key == 'XMLid':
@@ -2813,55 +2810,15 @@ class AbstractElement(object):
                     if key != 'href':
                         key = 'xlink' + key #xlinktype, xlinkrole, xlinklabel, xlinkshow, etc..
 
-            #D-Coi support:
-            if dcoi:
-                if Class is Word and key == 'pos':
-                    dcoipos = value
-                    continue
-                elif Class is Word and  key == 'lemma':
-                    dcoilemma = value
-                    continue
-                elif Class is Word and  key == 'correction':
-                    dcoicorrection = value #class
-                    continue
-                elif Class is Word and  key == 'original':
-                    dcoicorrectionoriginal = value
-                    continue
-                elif Class is Gap and  key == 'reason':
-                    key = 'class'
-                elif Class is Gap and  key == 'hand':
-                    key = 'annotator'
-                elif Class is Division and  key == 'type':
-                    key = 'cls'
 
             kwargs[key] = value
 
-        #D-Coi support:
-        if dcoi and TextContent in Class.ACCEPTED_DATA and node.text:
-            text = node.text.strip()
-
-            kwargs['text'] = text
-            if not AnnotationType.TOKEN in doc.annotationdefaults:
-                doc.declare(AnnotationType.TOKEN, set='http://ilk.uvt.nl/folia/sets/ilktok.foliaset')
 
         if doc.debug >= 1: print("[FoLiA DEBUG] Found " + node.tag[nslen:],file=stderr)
         instance = Class(doc, *args, **kwargs)
         #if id:
         #    if doc.debug >= 1: print >>stderr, "[FoLiA DEBUG] Adding to index: " + id
         #    doc.index[id] = instance
-        if dcoi:
-            if dcoipos:
-                if not AnnotationType.POS in doc.annotationdefaults:
-                    doc.declare(AnnotationType.POS, set='http://ilk.uvt.nl/folia/sets/cgn-legacy.foliaset')
-                instance.append( PosAnnotation(doc, cls=dcoipos) )
-            if dcoilemma:
-                if not AnnotationType.LEMMA in doc.annotationdefaults:
-                    doc.declare(AnnotationType.LEMMA, set='http://ilk.uvt.nl/folia/sets/mblem-nl.foliaset')
-                instance.append( LemmaAnnotation(doc, cls=dcoilemma) )
-            if dcoicorrection and dcoicorrectionoriginal and text:
-                if not AnnotationType.CORRECTION in doc.annotationdefaults:
-                    doc.declare(AnnotationType.CORRECTION, set='http://ilk.uvt.nl/folia/sets/dcoi-corrections.foliaset')
-                instance.correct(generate_id_in=instance, cls=dcoicorrection, original=dcoicorrectionoriginal, new=text)
 
         if doc.parsexmlcallback:
             result = doc.parsexmlcallback(instance)
