@@ -7203,7 +7203,7 @@ class Document(object):
                     standoffdoc.parentdoc = self
 
                 if self.debug >= 1:
-                    print("[FoLiA DEBUG] Found declared annotation " + subnode.tag + ". Defaults: " + repr(defaults),file=stderr)
+                    print("[FoLiA DEBUG] Found declared annotation " + subnode.tag + ". Type " + str(type) + ". Defaults: " + repr(defaults),file=stderr)
 
 
 
@@ -7268,8 +7268,10 @@ class Document(object):
                 #For FoLiA 2.0, we assume default sets for TEXT and PHON (if not explicitly declared otherwise)
                 if annotationtype == AnnotationType.TEXT:
                     set = DEFAULT_TEXT_SET
+                    if self.debug >= 1: print("[FoLiA DEBUG] No set specified for text, auto-declaring default text set", file=stderr)
                 elif annotationtype == AnnotationType.PHON:
                     set = DEFAULT_PHON_SET
+                    if self.debug >= 1: print("[FoLiA DEBUG] No set specified for phon, auto-declaring default phon set", file=stderr)
         if set is not None and not isinstance(set,str):
             raise ValueError("Set parameter for declare() must be a string")
 
