@@ -290,7 +290,12 @@ class Provenance:
         return processor
 
     def __getitem__(self, id):
-        if isinstance(id, Processor): id = id.id #let's not be too picky about whether we get an ID or a Processor instance
+        if isinstance(id, Processor):
+            id = id.id #let's not be too picky about whether we get an ID or a Processor instance
+        elif not isinstance(id, str):
+            raise Exception("Expected Processor instance or processor ID, got " + repr(id))
+
+
         for processor in self.processors:
             if processor.id == id:
                 return processor
@@ -7081,129 +7086,24 @@ class Document(object):
 
                 if 'set' in subnode.attrib and subnode.attrib['set']:
                     set = subnode.attrib['set']
-                elif PREFOLIA2:
-                    set = 'undefined'
+                    del subnode.attrib['set']
                 else:
                     set = None
-
-                if (type,set) in self.annotations:
-                    if set and set != 'undefined':
-                        #Remove any prior None or 'undefined' declarations (the latter only for FoLiA < 2):
-                        a = []
-                        for t,s in self.annotations:
-                            if not ((s == 'undefined' and PREFOLIA2) or (s is None)):
-                                a.append( (t,s) )
-                        self.annotations = a
-                        self.annotations.append( (type, set) )
-                else:
-                    self.annotations.append( (type, set) )
-
-                #Load set definition
-                if set and self.loadsetdefinitions and set not in self.setdefinitions:
-                    if set[:7] == "http://" or set[:8] == "https://" or set[:6] == "ftp://":
-                        try:
-                            self.setdefinitions[set] = SetDefinition(set,verbose=self.verbose) #will raise exception on error
-                        except DeepValidationError:
-                            print("WARNING: Set " + set + " could not be downloaded, ignoring!",file=sys.stderr) #warning and ignore
 
                 if type not in self.annotators:
                     self.annotators[type] = OrderedDict()
                 if set not in self.annotators[type]:
                     self.annotators[type][set] = []
 
+                #parse subnodes
                 for annotatornode in subnode:
                     if not isinstance(annotatornode, ElementTree._Comment): #don't trip over comments #pylint: disable=protected-access
                         if annotatornode.tag == '{' + NSFOLIA + '}annotator':
-                            self.annotators[type][set].append(Annotator(annotatornode.attrib['processor'], self))
+                             self.annotators[type][set].append(Annotator(annotatornode.attrib['processor'], self))
                         else:
                             raise ParseError("Expected <annotator>, got " + annotatornode.tag)
 
-                #Set defaults
-                if type not in self.annotationdefaults:
-                    self.annotationdefaults[type] = {}
-                defaults = {}
-                if len(self.annotators[type][set]) == 1:
-                    #There is only one annotator (FoLiA >= v2), it will be the default
-                    for annotator in self.getannotators(type, set): #should only iterate over one!
-                        defaults['processor'] = annotator.processor_id
-                elif len(self.annotators[type][set]) >= 1:
-                    #There are multiple annotators (FoLiA >= v2), there will be no defaults
-                    self.annotationdefaults[type][set] = {} #no defaults
-                else:
-                    #Fallback to FoLiA <= v1.5 behaviour; parse from attributes
-                    if type in self.annotationdefaults and set in self.annotationdefaults[type]:
-                        if 'annotator' in subnode.attrib:
-                            if not ('annotator' in self.annotationdefaults[type][set]):
-                                self.annotationdefaults[type][set]['annotator'] = subnode.attrib['annotator']
-                            elif self.annotationdefaults[type][set]['annotator'] != subnode.attrib['annotator']:
-                                del self.annotationdefaults[type][set]['annotator']
-                        if 'annotatortype' in subnode.attrib:
-                            if not ('annotatortype' in self.annotationdefaults[type][set]):
-                                self.annotationdefaults[type][set]['annotatortype'] = subnode.attrib['annotatortype']
-                            elif self.annotationdefaults[type][set]['annotatortype'] != subnode.attrib['annotatortype']:
-                                del self.annotationdefaults[type][set]['annotatortype']
-                        defaults = None
-                    else:
-                        if 'annotator' in subnode.attrib:
-                            defaults['annotator'] = subnode.attrib['annotator']
-                        if 'annotatortype' in subnode.attrib:
-                            if subnode.attrib['annotatortype'] == 'auto':
-                                defaults['annotatortype'] = AnnotatorType.AUTO
-                            else:
-                                defaults['annotatortype'] = AnnotatorType.MANUAL
-                        if 'datetime' in subnode.attrib:
-                            if isinstance(subnode.attrib['datetime'], datetime):
-                                defaults['datetime'] = subnode.attrib['datetime']
-                            else:
-                                defaults['datetime'] = parse_datetime(subnode.attrib['datetime'])
-
-                if defaults is not None:
-                    self.annotationdefaults[type][set] = defaults
-
-
-                if 'external' in subnode.attrib and subnode.attrib['external']:
-                    if self.debug >= 1:
-                        print("[FoLiA DEBUG] Loading external document: " + subnode.attrib['external'],file=stderr)
-                    if not type in self.standoffdocs:
-                        self.standoffdocs[type] = {}
-                    self.standoffdocs[type][set] = {}
-
-                    #check if it is already loaded, if multiple references are made to the same doc we reuse the instance
-                    standoffdoc = None
-                    for t in self.standoffdocs:
-                        for s in self.standoffdocs[t]:
-                            for source in self.standoffdocs[t][s]:
-                                if source == subnode.attrib['external']:
-                                    standoffdoc = self.standoffdocs[t][s]
-                                    break
-                            if standoffdoc: break
-                        if standoffdoc: break
-
-                    if not standoffdoc:
-                        if subnode.attrib['external'][:7] == 'http://' or subnode.attrib['external'][:8] == 'https://':
-                            #document is remote, download (in memory)
-                            try:
-                                f = urlopen(subnode.attrib['external'])
-                            except:
-                                raise DeepValidationError("Unable to download standoff document: " + subnode.attrib['external'])
-                            try:
-                                content = u(f.read())
-                            except IOError:
-                                raise DeepValidationError("Unable to download standoff document: " + subnode.attrib['external'])
-                            f.close()
-                            standoffdoc = Document(string=content, parentdoc=self, setdefinitions=self.setdefinitions)
-                        elif os.path.exists(subnode.attrib['external']):
-                            #document is on disk:
-                            standoffdoc = Document(file=subnode.attrib['external'], parentdoc=self, setdefinitions=self.setdefinitions)
-                        else:
-                            #document not found
-                            raise DeepValidationError("Unable to find standoff document: " + subnode.attrib['external'])
-
-                    self.standoffdocs[type][set][subnode.attrib['external']] = standoffdoc
-                    standoffdoc.parentdoc = self
-
-                if self.debug >= 1:
-                    print("[FoLiA DEBUG] Found declared annotation " + subnode.tag + ". Type " + str(type) + ". Defaults: " + repr(defaults),file=stderr)
+                self.declare(type, set, **subnode.attrib)
 
 
 
@@ -7348,10 +7248,60 @@ class Document(object):
             return processor #returns the last one
         elif not args:
             #No processors, old-style behaviour with annotator/annotatortype attributes for defaults
+            if 'datetime' in kwargs:
+                kwargs['datetime'] = parse_datetime(kwargs['datetime'])
+            elif 'annotator' in kwargs and 'annotatortype' not in kwargs:
+                kwargs['annotatortype'] = AnnotatorType.AUTO
             self.annotationdefaults[annotationtype][set] = kwargs
         else:
             #no defaults
             self.annotationdefaults[annotationtype][set] = {}
+
+        if 'external' in kwargs:
+            self.attachexternal(type,set,**kwargs)
+
+    def attachexternal(self, type, set, **kwargs):
+        if self.debug >= 1:
+            print("[FoLiA DEBUG] Loading external document: " + subnode.attrib['external'],file=stderr)
+        if not type in self.standoffdocs:
+            self.standoffdocs[type] = {}
+        self.standoffdocs[type][set] = {}
+
+        #check if it is already loaded, if multiple references are made to the same doc we reuse the instance
+        standoffdoc = None
+        for t in self.standoffdocs:
+            for s in self.standoffdocs[t]:
+                for source in self.standoffdocs[t][s]:
+                    if source == subnode.attrib['external']:
+                        standoffdoc = self.standoffdocs[t][s]
+                        break
+                if standoffdoc: break
+            if standoffdoc: break
+
+        if not standoffdoc:
+            if subnode.attrib['external'][:7] == 'http://' or subnode.attrib['external'][:8] == 'https://':
+                #document is remote, download (in memory)
+                try:
+                    f = urlopen(subnode.attrib['external'])
+                except:
+                    raise DeepValidationError("Unable to download standoff document: " + subnode.attrib['external'])
+                try:
+                    content = u(f.read())
+                except IOError:
+                    raise DeepValidationError("Unable to download standoff document: " + subnode.attrib['external'])
+                f.close()
+                standoffdoc = Document(string=content, parentdoc=self, setdefinitions=self.setdefinitions)
+            elif os.path.exists(subnode.attrib['external']):
+                #document is on disk:
+                standoffdoc = Document(file=subnode.attrib['external'], parentdoc=self, setdefinitions=self.setdefinitions)
+            else:
+                #document not found
+                raise DeepValidationError("Unable to find standoff document: " + subnode.attrib['external'])
+
+        self.standoffdocs[type][set][subnode.attrib['external']] = standoffdoc
+        standoffdoc.parentdoc = self
+
+
 
 
     def declared(self, annotationtype, set=None):
@@ -7580,9 +7530,11 @@ class Document(object):
         else:
             self.metadata = None #may be set below to ForeignData
 
+        declarations = None
         for subnode in node:
             if subnode.tag == '{' + NSFOLIA + '}annotations':
-                self.parsexmldeclarations(subnode)
+                #we defer parsing to the end of this function, as we may need to have parsed provenance first
+                declarations = subnode
             elif subnode.tag == '{' + NSFOLIA + '}provenance':
                 self.parsexmlprovenance(subnode)
             elif subnode.tag == '{' + NSFOLIA + '}meta':
@@ -7608,6 +7560,8 @@ class Document(object):
                 E = ElementMaker(namespace=NSFOLIA,nsmap={None: NSFOLIA, 'xml' : "http://www.w3.org/XML/1998/namespace"})
                 self.metadatatype = "imdi"
                 self.metadata = ForeignData(self, node=subnode)
+
+        self.parsexmldeclarations(declarations)
 
     def parsexmlprovenance(self, node):
         for subnode in node:
