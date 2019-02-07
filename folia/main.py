@@ -7261,13 +7261,15 @@ class Document(object):
         """
         if inspect.isclass(annotationtype):
             annotationtype = annotationtype.ANNOTATIONTYPE
-        if set is None and checkversion(self.version, '2.0.0') < 0:
-            set = "undefined" #only for FoLiA < v2
-        else:
-            if annotationtype == AnnotationType.TEXT:
-                set = DEFAULT_TEXT_SET
-            elif annotationtype == AnnotationType.PHON:
-                set = DEFAULT_PHON_SET
+        if set is None:
+            if checkversion(self.version, '2.0.0') < 0:
+                set = "undefined" #only for FoLiA < v2
+            else:
+                #For FoLiA 2.0, we assume default sets for TEXT and PHON (if not explicitly declared otherwise)
+                if annotationtype == AnnotationType.TEXT:
+                    set = DEFAULT_TEXT_SET
+                elif annotationtype == AnnotationType.PHON:
+                    set = DEFAULT_PHON_SET
         if set is not None and not isinstance(set,str):
             raise ValueError("Set parameter for declare() must be a string")
 
