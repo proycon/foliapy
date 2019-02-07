@@ -404,6 +404,7 @@ def parsecommonarguments(object, doc, annotationtype, required, allowed, **kwarg
     else:
         object.id = None
 
+
     if 'set' in kwargs:
         if Attrib.CLASS not in supported and not object.SETONLY:
             raise ValueError("Set is not supported on " + object.__class__.__name__)
@@ -414,20 +415,36 @@ def parsecommonarguments(object, doc, annotationtype, required, allowed, **kwarg
         else:
             object.set = kwargs['set']
         del kwargs['set']
-
-        if doc and (not (annotationtype in doc.annotationdefaults) or not (object.set in doc.annotationdefaults[annotationtype])):
-            if object.set in doc.alias_set:
-                object.set = doc.alias_set[object.set]
-            elif doc.autodeclare:
-                doc.annotations.append( (annotationtype, object.set ) )
-                doc.annotationdefaults[annotationtype] = {object.set: {} }
-            else:
-                raise ValueError("Set '" + str(object.set) + "' is used for " + object.__class__.__name__ + ", but has no declaration!")
+        if object.set in doc.alias_set:
+            object.set = doc.alias_set[object.set]
     elif annotationtype in doc.annotationdefaults and len(doc.annotationdefaults[annotationtype]) == 1:
         object.set = list(doc.annotationdefaults[annotationtype].keys())[0]
     elif Attrib.CLASS in required: #or (hasattr(object,'SETONLY') and object.SETONLY):
         raise ValueError("Set is required for " + object.__class__.__name__)
 
+    FOLIA2 = checkversion(doc.version, '2.0.0') >= 0
+    if FOLIA2 or (object.set and object.set != "undefined"):
+        #Check if an element is declared (FoLiA v2+ only)
+        #for FoLiA <2 we only check if we have a set
+        #This is a much stricter check than older FoLiA versions
+        if doc and (annotationtype not in doc.annotationdefaults or object.set not in doc.annotationdefaults[annotationtype]):
+            if doc.autodeclare:
+                #autodeclare
+                if isinstance(object, (Text,Speech)): #Body is an undeclared element
+                    pass
+                elif isinstance(object, TextContent): #FoLiA v2.0, autodeclare text
+                    if FOLIA2:
+                        if doc.debug >= 1: print("[FoLiA DEBUG] Auto-declaring Text Annotation",file=stderr)
+                        doc.declare(AnnotationType.TEXT, DEFAULT_TEXT_SET)
+                elif isinstance(object, PhonContent): #FoLiA v2.0
+                    if FOLIA2:
+                        if doc.debug >= 1: print("[FoLiA DEBUG] Auto-declaring Phonetic Annotation",file=stderr)
+                        doc.declare(AnnotationType.PHON, DEFAULT_PHON_SET)
+                else:
+                    if doc.debug >= 1: print("[FoLiA DEBUG] Auto-declaring " + object.__class__.__name__ + " with set " + str(object.set),file=stderr)
+                    doc.declare(annotationtype, object.set)
+            else:
+                raise ValueError("Set '" + str(object.set) + "' is used for " + object.__class__.__name__ + " <" + object.__class__.XMLTAG + ">, but has no declaration!")
 
     if 'class' in kwargs:
         if not Attrib.CLASS in supported:
@@ -449,14 +466,8 @@ def parsecommonarguments(object, doc, annotationtype, required, allowed, **kwarg
                     doc.annotations.append( (annotationtype, 'undefined') )
                     doc.annotationdefaults[annotationtype] = {'undefined': {} }
                 object.set = 'undefined'
-            elif isinstance(object, TextContent): #FoLiA v2.0, autodeclare text
-                if doc.debug >= 1: print("[FoLiA DEBUG] Auto-declaring Text Annotation",file=stderr)
-                doc.declare(AnnotationType.TEXT, DEFAULT_TEXT_SET)
-            elif isinstance(object, PhonContent): #FoLiA v2.0
-                if doc.debug >= 1: print("[FoLiA DEBUG] Auto-declaring Phonetic Annotation",file=stderr)
-                doc.declare(AnnotationType.TEXT, DEFAULT_PHON_SET)
         else:
-            raise ValueError("Set is required for " + object.__class__.__name__ +  ". Class '" + object.cls + "' assigned without set.")
+            raise ValueError("Set is required for " + object.__class__.__name__ + " <"+object.__class__.XMLTAG+"> . Class '" + object.cls + "' assigned without set and no default set found in declaration.")
 
 
     if 'processor' in kwargs:
