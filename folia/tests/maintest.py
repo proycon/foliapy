@@ -1281,23 +1281,6 @@ class Test02Sanity(unittest.TestCase):
         self.assertEqual( next(doc['example.text.1'].select(folia.Gap)).set, 'undefined' )
 
     def test102h_declarations(self):
-        """Sanity Check - Declarations - Double ambiguous declarations unset default"""
-        xml = """<?xml version="1.0"?>\n
-<FoLiA xmlns="http://ilk.uvt.nl/folia" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="test" version="1.5.0" generator="{generator}">
-  <metadata type="native">
-    <annotations>
-         <gap-annotation annotator="sloot" set="gap-set"/>
-         <gap-annotation annotator="proycon" set="gap-set"/>
-    </annotations>
-  </metadata>
-  <text xml:id="example.text.1">
-    <gap />
-  </text>
-</FoLiA>""".format(version=folia.FOLIAVERSION, generator='foliapy-v' + folia.LIBVERSION)
-        doc = folia.Document(string=xml)
-        self.assertRaises(folia.NoDefaultError, doc.defaultannotator, folia.AnnotationType.GAP)
-
-    def test102h2_declarations(self):
         """Sanity Check - Declarations - Ambiguous set"""
         xml = """<?xml version="1.0"?>\n
 <FoLiA xmlns="http://ilk.uvt.nl/folia" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="test" version="1.5.0" generator="{generator}">
