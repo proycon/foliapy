@@ -449,6 +449,9 @@ def parsecommonarguments(object, doc, annotationtype, required, allowed, **kwarg
                         doc.declare(annotationtype, object.set)
                 else:
                     raise ValueError("Set '" + str(object.set) + "' is used for " + object.__class__.__name__ + " <" + object.__class__.XMLTAG + ">, but has no declaration!")
+        #check for ambiguity
+        if not object.set and object.__class__.PRIMARYELEMENT and annotationtype in doc.annotationdefaults and len(doc.annotationdefaults[annotationtype]) > 1:
+            raise NoDefaultError("No set assigned for " + object.__class__.__name__ + " <" + object.__class__.XMLTAG + "> but no default available either due to multiple possible declarations: " + ", ".join([str(s) for s in doc.annotationdefaults[annotationtype].keys()]))
 
     if 'class' in kwargs:
         if not Attrib.CLASS in supported:
@@ -7167,16 +7170,19 @@ class Document(object):
         if inspect.isclass(annotationtype):
             annotationtype = annotationtype.ANNOTATIONTYPE
         if set is None:
-            if checkversion(self.version, '2.0.0') < 0:
+            #We assume default sets for TEXT and PHON (if not explicitly declared otherwise)
+            if annotationtype == AnnotationType.TEXT:
+                set = DEFAULT_TEXT_SET
+                if self.debug >= 1: print("[FoLiA DEBUG] No set specified for text, auto-declaring default text set", file=stderr)
+            elif annotationtype == AnnotationType.PHON:
+                set = DEFAULT_PHON_SET
+                if self.debug >= 1: print("[FoLiA DEBUG] No set specified for phon, auto-declaring default phon set", file=stderr)
+            elif checkversion(self.version, '2.0.0') < 0:
                 set = "undefined" #only for FoLiA < v2
-            else:
-                #For FoLiA 2.0, we assume default sets for TEXT and PHON (if not explicitly declared otherwise)
-                if annotationtype == AnnotationType.TEXT:
-                    set = DEFAULT_TEXT_SET
-                    if self.debug >= 1: print("[FoLiA DEBUG] No set specified for text, auto-declaring default text set", file=stderr)
-                elif annotationtype == AnnotationType.PHON:
-                    set = DEFAULT_PHON_SET
-                    if self.debug >= 1: print("[FoLiA DEBUG] No set specified for phon, auto-declaring default phon set", file=stderr)
+        if annotationtype in (AnnotationType.TEXT, AnnotationType.PHON) and annotationtype in self.annotationdefaults and 'undefined' in self.annotationdefaults[annotationtype]:
+            #override any 'undefined' declarations (for FoLiA <2), so
+            #we don't end up with two declarations
+            del self.annotationdefaults[annotationtype]['undefined']
         if set is not None and not isinstance(set,str):
             raise ValueError("Set parameter for declare() must be a string")
 
@@ -7206,6 +7212,10 @@ class Document(object):
                 self.set_alias[annotationtype] = {}
             self.alias_set[annotationtype][kwargs['alias']] = set
             self.set_alias[annotationtype][set] = kwargs['alias']
+
+
+        if self.debug >= 1:
+            print("[FoLiA DEBUG] Declaring " + ANNOTATIONTYPE2XML[annotationtype] + ", set " + str(set), file=stderr)
 
         #add the document main processor
         if self.processor and (not args or args[0] != self.processor):

@@ -1188,7 +1188,7 @@ class Test02Sanity(unittest.TestCase):
 </FoLiA>""".format(version=folia.FOLIAVERSION, generator='foliapy-v' + folia.LIBVERSION)
         with self.assertRaises( folia.ParseError) as cm:
             folia.Document(string=xml)
-        self.assertEqual(cm.exception.cause.__class__, ValueError)
+        self.assertEqual(cm.exception.cause.__class__, folia.NoDefaultError)
 
 
 
@@ -1297,6 +1297,23 @@ class Test02Sanity(unittest.TestCase):
         doc = folia.Document(string=xml)
         self.assertRaises(folia.NoDefaultError, doc.defaultannotator, folia.AnnotationType.GAP)
 
+    def test102h2_declarations(self):
+        """Sanity Check - Declarations - Ambiguous set"""
+        xml = """<?xml version="1.0"?>\n
+<FoLiA xmlns="http://ilk.uvt.nl/folia" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="test" version="1.5.0" generator="{generator}">
+  <metadata type="native">
+    <annotations>
+         <gap-annotation annotator="sloot" set="gap-set"/>
+         <gap-annotation annotator="proycon" set="gap-set2"/>
+    </annotations>
+  </metadata>
+  <text xml:id="example.text.1">
+    <gap />
+  </text>
+</FoLiA>""".format(version=folia.FOLIAVERSION, generator='foliapy-v' + folia.LIBVERSION)
+        with self.assertRaises( folia.ParseError) as cm:
+            folia.Document(string=xml)
+        self.assertEqual(cm.exception.cause.__class__, folia.NoDefaultError)
 
     def test102i_declarations(self):
         """Sanity Check - Declarations - miscellaneous trouble"""
