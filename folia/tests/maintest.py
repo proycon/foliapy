@@ -1022,23 +1022,8 @@ class Test02Sanity(unittest.TestCase):
 <text xml:id="test.text" />
 </FoLiA>""".format(version=folia.FOLIAVERSION, generator='foliapy-v' + folia.LIBVERSION)
         doc = folia.Document(string=xml)
-        self.assertEqual( doc.metadatatype, folia.MetaDataType.CMDI )
+        self.assertEqual( doc.metadatatype, "cmdi")
         self.assertEqual( doc.metadata.url, 'test.cmdi.xml' )
-
-    def test101b_metadataextref2(self):
-        """Sanity Check - Metadata external reference (IMDI)"""
-        xml = """<?xml version="1.0" encoding="UTF-8"?>
-<FoLiA xmlns="http://ilk.uvt.nl/folia" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="test" version="1.5.0" generator="{generator}">
-<metadata src="test.imdi.xml" type="imdi">
-<annotations>
-    <event-annotation set="test"/>
-</annotations>
-</metadata>
-<text xml:id="test.text" />
-</FoLiA>""".format(version=folia.FOLIAVERSION, generator='foliapy-v' + folia.LIBVERSION)
-        doc = folia.Document(string=xml)
-        self.assertEqual( doc.metadatatype, folia.MetaDataType.IMDI )
-        self.assertEqual( doc.metadata.url , 'test.imdi.xml' )
 
     def test101c_metadatainternal(self):
         """Sanity Check - Metadata internal (foreign data) (Dublin Core)"""
