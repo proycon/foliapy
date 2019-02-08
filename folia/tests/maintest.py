@@ -1149,7 +1149,7 @@ class Test02Sanity(unittest.TestCase):
 </FoLiA>""".format(version=folia.FOLIAVERSION, generator='foliapy-v' + folia.LIBVERSION)
         with self.assertRaises( folia.ParseError) as cm:
             folia.Document(string=xml)
-        self.assertEqual(cm.exception.cause.__class__, ValueError)
+        self.assertEqual(cm.exception.cause.__class__, folia.DeclarationError)
 
 
     def test102c_declarations(self):
@@ -1188,7 +1188,7 @@ class Test02Sanity(unittest.TestCase):
 </FoLiA>""".format(version=folia.FOLIAVERSION, generator='foliapy-v' + folia.LIBVERSION)
         with self.assertRaises( folia.ParseError) as cm:
             folia.Document(string=xml)
-        self.assertEqual(cm.exception.cause.__class__, folia.NoDefaultError)
+        self.assertEqual(cm.exception.cause.__class__, folia.DeclarationError)
 
 
 
@@ -1211,7 +1211,7 @@ class Test02Sanity(unittest.TestCase):
 </FoLiA>""".format(version=folia.FOLIAVERSION, generator='foliapy-v' + folia.LIBVERSION)
         with self.assertRaises( folia.ParseError) as cm:
             folia.Document(string=xml)
-        self.assertEqual(cm.exception.cause.__class__, ValueError)
+        self.assertEqual(cm.exception.cause.__class__, folia.DeclarationError)
 
     def test102d3_declarations(self):
         """Sanity Check - Declarations - Ignore Duplicates"""
@@ -1247,7 +1247,7 @@ class Test02Sanity(unittest.TestCase):
 </FoLiA>""".format(version=folia.FOLIAVERSION, generator='foliapy-v' + folia.LIBVERSION)
         with self.assertRaises( folia.ParseError) as cm:
             folia.Document(string=xml)
-        self.assertEqual(cm.exception.cause.__class__, ValueError)
+        self.assertEqual(cm.exception.cause.__class__, folia.DeclarationError)
 
     def test102f_declarations(self):
         """Sanity Check - Declarations - Declaration not needed"""
@@ -1296,7 +1296,7 @@ class Test02Sanity(unittest.TestCase):
 </FoLiA>""".format(version=folia.FOLIAVERSION, generator='foliapy-v' + folia.LIBVERSION)
         with self.assertRaises( folia.ParseError) as cm:
             folia.Document(string=xml)
-        self.assertEqual(cm.exception.cause.__class__, folia.NoDefaultError)
+        self.assertEqual(cm.exception.cause.__class__, folia.DeclarationError)
 
     def test102i_declarations(self):
         """Sanity Check - Declarations - miscellaneous trouble"""

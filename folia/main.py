@@ -145,6 +145,9 @@ class NoCommonAncestor(Exception):
 class NoDefaultError(Exception):
     pass
 
+class DeclarationError(Exception):
+    """Exception raised when there is an issue with missing declarations"""
+    pass
 
 class UnresolvableTextContent(Exception):
     pass
@@ -447,11 +450,13 @@ def parsecommonarguments(object, doc, annotationtype, required, allowed, **kwarg
                     else:
                         if doc.debug >= 1: print("[FoLiA DEBUG] Auto-declaring " + object.__class__.__name__ + " with set " + str(object.set),file=stderr)
                         doc.declare(annotationtype, object.set)
+                elif object.set:
+                    raise DeclarationError("Set '" + str(object.set) + "' is used for " + object.__class__.__name__ + " <" + object.__class__.XMLTAG + ">, but has no declaration!")
                 else:
-                    raise ValueError("Set '" + str(object.set) + "' is used for " + object.__class__.__name__ + " <" + object.__class__.XMLTAG + ">, but has no declaration!")
+                    raise DeclarationError("Encountered an instance without proper declaration: " + object.__class__.__name__ + " <" + object.__class__.XMLTAG + ">!")
         #check for ambiguity
         if not object.set and object.__class__.PRIMARYELEMENT and annotationtype in doc.annotationdefaults and len(doc.annotationdefaults[annotationtype]) > 1:
-            raise NoDefaultError("No set assigned for " + object.__class__.__name__ + " <" + object.__class__.XMLTAG + "> but no default available either due to multiple possible declarations: " + ", ".join([str(s) for s in doc.annotationdefaults[annotationtype].keys()]))
+            raise DeclarationError("No set assigned for " + object.__class__.__name__ + " <" + object.__class__.XMLTAG + "> but no default available either due to multiple possible declarations: " + ", ".join([str(s) for s in doc.annotationdefaults[annotationtype].keys()]))
 
     if 'class' in kwargs:
         if not Attrib.CLASS in supported:
@@ -474,7 +479,7 @@ def parsecommonarguments(object, doc, annotationtype, required, allowed, **kwarg
                     doc.annotationdefaults[annotationtype] = {'undefined': {} }
                 object.set = 'undefined'
         else:
-            raise ValueError("Set is required for " + object.__class__.__name__ + " <"+object.__class__.XMLTAG+"> . Class '" + object.cls + "' assigned without set and no default set found in declaration.")
+            raise DeclarationError("Set is required for " + object.__class__.__name__ + " <"+object.__class__.XMLTAG+"> . Class '" + object.cls + "' assigned without set and no default set found in declaration.")
 
 
     if 'processor' in kwargs:
