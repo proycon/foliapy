@@ -6899,8 +6899,12 @@ class Document(object):
                     attribs['{' + NSFOLIA + '}' + key] = value.strftime("%Y-%m-%dT%H:%M:%S") #proper iso-formatting
                 elif value:
                     attribs['{' + NSFOLIA + '}' + key] = value
+            annotators = []
+            if annotationtype in self.annotators and set in self.annotators[annotationtype]:
+                for annotator in self.annotators[annotationtype][set]:
+                    annotators.append( makeelement(E, '{'+NSFOLIA+'}annotator', processor=annotator.processor_id) )
             if label:
-                l.append( makeelement(E,'{' + NSFOLIA + '}' + label.lower() + '-annotation', **attribs) )
+                l.append( getattr(E,'{' + NSFOLIA + '}' + label.lower() + '-annotation')(*annotators, **attribs) )
             else:
                 raise Exception("Invalid annotation type")
         return l
