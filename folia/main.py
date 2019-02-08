@@ -427,7 +427,7 @@ def parsecommonarguments(object, doc, annotationtype, required, allowed, **kwarg
     elif Attrib.CLASS in required: #or (hasattr(object,'SETONLY') and object.SETONLY):
         raise ValueError("Set is required for " + object.__class__.__name__)
 
-    if doc: #we can only do this check if we have a document, we'll be overly permissive for documentless elements (so caution adviced for those)
+    if doc and annotationtype is not None: #we can only do this check if we have a document, we'll be overly permissive for documentless elements (so caution adviced for those)
         FOLIA2 = checkversion(doc.version, '2.0.0') >= 0
         if (FOLIA2 or (object.set and object.set != "undefined")) and not isinstance(object, (Text,Speech)): #Body is an undeclared element
             #Check if an element is declared (FoLiA v2+ only)
