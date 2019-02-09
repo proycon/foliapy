@@ -29,6 +29,13 @@ if [ $? -ne 0 ]; then
     GOOD=0
 fi
 
+echo "Testing all examples">&2
+$PYTHON testallexamples.py
+if [ $? -ne 0 ]; then
+    echo "Test failed!!!" >&2
+    GOOD=0
+fi
+
 cd ..
 
 if [ $GOOD -eq 1 ]; then
