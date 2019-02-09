@@ -974,7 +974,6 @@ class Test02Sanity(unittest.TestCase):
         sentiment = sentiments.annotation(folia.Statement)
         self.assertEqual( sentiment.cls , "promise")
         self.assertEqual( sentiment.annotation(folia.Source).text(), "Hij")
-        self.assertEqual( sentiment.annotation(folia.StatementRelation).text(), "had beloofd")
         self.assertEqual( sentiment.annotation(folia.Headspan).text(), "hij zou winnen")
 
     def test099_write(self):
