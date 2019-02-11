@@ -87,8 +87,8 @@ DOCSTRING_GENERIC_ATTRIBS = """    id (str): An ID for the element. IDs must be 
     contents (list): Alternative for ``*args``, exists for purely syntactic reasons.
 """
 
-DEFAULT_TEXT_SET = "https://github.com/proycon/folia/blob/master/setdefinitions/text.foliaset.ttl"
-DEFAULT_PHON_SET = "https://github.com/proycon/folia/blob/master/setdefinitions/phon.foliaset.ttl"
+DEFAULT_TEXT_SET = "https://raw.githubusercontent.com/proycon/folia/master/setdefinitions/text.foliaset.ttl"
+DEFAULT_PHON_SET = "https://raw.githubusercontent.com/proycon/folia/master/setdefinitions/phon.foliaset.ttl"
 
 ILLEGAL_UNICODE_CONTROL_CHARACTERS = {} #XML does not like unicode control characters
 for ordinal in range(0x20):
