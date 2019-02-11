@@ -59,7 +59,7 @@ FOLIAVERSION = "2.0.0"
 #The FoLiA XML namespace
 NSFOLIA = "http://ilk.uvt.nl/folia"
 
-#ElementTree.register_namespace("folia",NSFOLIA)
+ElementTree.register_namespace("folia",NSFOLIA)
 NSMAP = {None: NSFOLIA, 'xml' : "http://www.w3.org/XML/1998/namespace", 'xlink':"http://www.w3.org/1999/xlink"}
 E = ElementMaker(namespace=NSFOLIA,nsmap=NSMAP)
 RXE = ElementMaker(namespace="http://relaxng.org/ns/structure/1.0",nsmap={None:'http://relaxng.org/ns/structure/1.0' , 'folia': "http://ilk.uvt.nl/folia", 'xml' : "http://www.w3.org/XML/1998/namespace",'a':"http://relaxng.org/ns/annotation/0.9" })
@@ -779,10 +779,6 @@ def xmltreefromfile(filename):
         return ElementTree.parse(filename, ElementTree.XMLParser(collect_ids=False))
     except TypeError:
         return ElementTree.parse(filename, ElementTree.XMLParser()) #older lxml, may leak!!
-
-def makeelement(E, tagname, **kwargs):
-    """Internal function"""
-    return E._makeelement(tagname,**kwargs) #pylint: disable=protected-access
 
 
 def commonancestors(Class, *args):
@@ -2211,7 +2207,7 @@ class AbstractElement(object):
                         omitchildren.append(c2) #and skip them as elements
                         break #only one
 
-        e  = makeelement(E, '{' + NSFOLIA + '}' + self.XMLTAG, **attribs)
+        e = getattr(E, self.XMLTAG)(**attribs)
 
 
 
@@ -4398,12 +4394,11 @@ class Feature(AbstractElement):
             self.cls = self.cls.strftime("%Y-%m-%dT%H:%M:%S")
 
     def xml(self):
-        E = ElementMaker(namespace=NSFOLIA,nsmap={None: NSFOLIA, 'xml' : "http://www.w3.org/XML/1998/namespace"})
         attribs = {}
         if self.subset != self.SUBSET:
             attribs['subset'] = self.subset
         attribs['class'] =  self.cls
-        return makeelement(E,'{' + NSFOLIA + '}' + self.XMLTAG, **attribs)
+        return getattr(E, self.XMLTAG)(**attribs)
 
     def json(self,attribs=None, recurse=True, ignorelist=False):
         jsonnode= {'type': Feature.XMLTAG}
@@ -5606,7 +5601,6 @@ class WordReference(AbstractElement):
 
     def xml(self, attribs = None,elements = None, skipchildren = False):
         """Serialises the FoLiA element to XML, by returning an XML Element (in lxml.etree) for this element and all its children. For string output, consider the xmlstring() method instead."""
-        E = ElementMaker(namespace=NSFOLIA,nsmap={None: NSFOLIA, 'xml' : "http://www.w3.org/XML/1998/namespace"})
 
         if not attribs: attribs = {}
         if not elements: elements = []
@@ -5619,8 +5613,7 @@ class WordReference(AbstractElement):
             except KeyError:
                 pass
 
-        e  = makeelement(E, '{' + NSFOLIA + '}' + self.XMLTAG, **attribs)
-        return e
+        return getattr(E, self.XMLTAG)(**attribs)
 
 class SyntacticUnit(AbstractSpanAnnotation):
     """Syntactic Unit, span annotation element to be used in :class:`SyntaxLayer`"""
@@ -6872,7 +6865,6 @@ class Document(object):
     def xmldeclarations(self):
         """Internal method to generate XML nodes for all declarations"""
         l = []
-        E = ElementMaker(namespace="http://ilk.uvt.nl/folia",nsmap={None: "http://ilk.uvt.nl/folia", 'xml' : "http://www.w3.org/XML/1998/namespace"})
 
         for annotationtype, set in self.annotations:
             label = None
@@ -6906,7 +6898,7 @@ class Document(object):
             annotators = []
             if annotationtype in self.annotators and set in self.annotators[annotationtype]:
                 for annotator in self.annotators[annotationtype][set]:
-                    annotators.append( makeelement(E, '{'+NSFOLIA+'}annotator', processor=annotator.processor_id) )
+                    annotators.append( getattr(E, 'annotator')(processor=annotator.processor_id) )
             if label:
                 l.append( getattr(E,'{' + NSFOLIA + '}' + label.lower() + '-annotation')(*annotators, **attribs) )
             else:
@@ -7029,7 +7021,6 @@ class Document(object):
 
     def xmlprovenance(self):
         """Internal method to serialize provenance data to XML"""
-        E = ElementMaker(namespace="http://ilk.uvt.nl/folia",nsmap={None: "http://ilk.uvt.nl/folia", 'xml' : "http://www.w3.org/XML/1998/namespace"})
         if self.provenance:
             return [ self.provenance.xml() ]
         else:
@@ -7572,7 +7563,6 @@ class Document(object):
             elif subnode.tag == '{' + NSFOLIA + '}submetadata':
                 self.parsesubmetadata(subnode)
             elif subnode.tag == '{http://www.mpi.nl/IMDI/Schema/IMDI}METATRANSCRIPT': #backward-compatibility for old IMDI without foreign-key
-                E = ElementMaker(namespace=NSFOLIA,nsmap={None: NSFOLIA, 'xml' : "http://www.w3.org/XML/1998/namespace"})
                 self.metadatatype = "imdi"
                 self.metadata = ForeignData(self, node=subnode)
 
