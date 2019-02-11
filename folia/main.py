@@ -6741,16 +6741,12 @@ class Document(object):
             raise Exception("No filename specified")
         if filename[-4:].lower() == '.bz2':
             f = bz2.BZ2File(filename,'wb')
-            f.write(self.xmlstring().encode('utf-8'))
-            f.close()
         elif filename[-3:].lower() == '.gz':
             f = gzip.GzipFile(filename,'wb')
-            f.write(self.xmlstring().encode('utf-8'))
-            f.close()
         else:
-            f = io.open(filename,'w',encoding='utf-8')
-            f.write(self.xmlstring())
-            f.close()
+            f = open(filename,'wb')
+        f.write(ElementTree.tostring(self.xml(), xml_declaration=True, pretty_print=True, encoding='utf-8'))
+        f.close()
 
 
 
