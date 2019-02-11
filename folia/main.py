@@ -2092,6 +2092,7 @@ class AbstractElement(object):
         if self.id:
             attribs['{http://www.w3.org/XML/1998/namespace}id'] = self.id
 
+
         #Some attributes only need to be added if they are not the same as what's already set in the declaration
         if not isinstance(self, AbstractAnnotationLayer):
             if 'set' not in attribs: #do not override if overloaded function already set it

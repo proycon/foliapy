@@ -48,16 +48,19 @@ from io import StringIO, BytesIO
 from lxml import etree as ElementTree
 
 
+def xmlnorm(xml):
+    """normalize XML prior to comparison"""
+    xml = re.sub(r' version="[^"]*" generator="[^"]*"', ' version="' + folia.FOLIAVERSION + '" generator="foliapy-v' + folia.LIBVERSION + '"', xml, re.MULTILINE)
+    xml = re.sub(r'xmlns:?\w?="[^"]*"', '', xml, re.MULTILINE)
+    return xml
+
 def xmlcheck(xml,expect):
     #obj1 = lxml.objectify.fromstring(expect)
     #expect = lxml.etree.tostring(obj1)
-    f = open(os.path.join(TMPDIR, 'foliatest.fragment.expect.xml'),'w',encoding='utf-8')
-    f.write(re.sub(r' version="[^"]*" generator="[^"]*"', ' version="' + folia.FOLIAVERSION + '" generator="foliapy-v' + folia.LIBVERSION + '"', expect, re.MULTILINE))
-    f.close()
-    f = open(os.path.join(TMPDIR , 'foliatest.fragment.out.xml'),'w', encoding='utf-8')
-    #jf.write(xml)
-    f.write(re.sub(r' version="[^"]*" generator="[^"]*"', ' version="' + folia.FOLIAVERSION + '" generator="foliapy-v' + folia.LIBVERSION + '"', xml, re.MULTILINE))
-    f.close()
+    with open(os.path.join(TMPDIR, 'foliatest.fragment.expect.xml'),'w',encoding='utf-8') as f:
+        f.write(xmlnorm(xml))
+    with open(os.path.join(TMPDIR , 'foliatest.fragment.out.xml'),'w', encoding='utf-8') as f:
+        f.write(xmlnorm(xml))
 
     retcode = os.system('xmldiff -c ' + os.path.join(TMPDIR, 'foliatest.fragment.expect.xml') + ' ' + os.path.join(TMPDIR,'foliatest.fragment.out.xml'))
     passed = (retcode == 0)
