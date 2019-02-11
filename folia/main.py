@@ -2299,8 +2299,6 @@ class AbstractElement(object):
         if isinstance(s,bytes):
             s = str(s,'utf-8')
 
-        s = s.replace('ns0:','') #ugly patch to get rid of namespace prefix
-        s = s.replace(':ns0','')
         return s
 
 
@@ -6978,7 +6976,7 @@ class Document(object):
         self.done()
 
 
-        E = ElementMaker(namespace="http://ilk.uvt.nl/folia",nsmap={'xml' : "http://www.w3.org/XML/1998/namespace", 'xlink':"http://www.w3.org/1999/xlink"})
+        E = ElementMaker(namespace="http://ilk.uvt.nl/folia",nsmap={None: NSFOLIA, 'xml' : "http://www.w3.org/XML/1998/namespace", 'xlink':"http://www.w3.org/1999/xlink"})
         attribs = {}
         attribs['{http://www.w3.org/XML/1998/namespace}id'] = self.id
 
