@@ -33,6 +33,7 @@ import multiprocessing
 import bz2
 import gzip
 import random
+from socket import getfqdn
 
 
 
@@ -219,6 +220,38 @@ class Processor:
         assert isinstance(processor, Processor)
         self.processors.append(processor)
         processor.parent = self
+
+    @staticmethod
+    def create(*args, **kwargs):
+        """Creates (instantiates) a new processor and tries to detect as much as possible automatically"""
+        try:
+            executable = os.path.basename(sys.argv[0])
+            kwargs['command'] = " ".join([executable] + sys.argv[1:])
+        except:
+            executable = None
+
+        kwargs['host'] = getfqdn()
+        kwargs['begindatetime'] = datetime.now()
+        kwargs['folia_version'] = FOLIAVERSION
+        if 'USER' in os.environ:
+            kwargs['user'] = os.environ['USER']
+
+        if 'name' not in kwargs:
+            if executable:
+                kwargs['name'] = executable
+            else:
+                raise ValueError("Unable to infer a name for the processor, please specify name= parameter")
+
+        processor = Processor(**kwargs)
+
+        if 'generator' not in kwargs or not kwargs['generator']:
+            #Add a subprocessor with generator information about this FoLiA library
+            processor.append(Processor(id=processor.id+'.generator', name="foliapy", type=ProcessorType.GENERATOR, version=LIBVERSION, folia_version=FOLIAVERSION))
+        return processor
+
+
+
+
 
     @classmethod
     def parsexml(Class, node): #pylint: disable=bad-classmethod-argument
@@ -6494,6 +6527,7 @@ class Document(object):
             version (str): force a particular FoLiA version (use with caution)
             declare (list): Declare the specifies annotation types. Consists of a list or tuple of annotationtypes or (annotation,set) tuples or (annotationtype,set,processor) tuples
             processor (Processor): Register the current processor in the provenance data and use this processor in all subsequent declarations
+            reprocessor (Processor): As above, but will take pro-active ownership of any declarations already present but not tied to a processor yet
             debug (bool): Boolean to enable/disable debug
         """
 
@@ -6516,6 +6550,9 @@ class Document(object):
         self.metadatatype = "native"
         self.provenance = Provenance()
         self.processor = None
+        if 'reprocessor' in kwargs and kwargs['reprocessor']:
+            assert isinstance(kwargs['reprocessor'], Processor)
+            self.processor = kwargs['reprocessor']
 
         self.submetadata = OrderedDict()
         self.submetadatatype = {}
@@ -6585,9 +6622,6 @@ class Document(object):
         if self.deepvalidation:
             self.loadsetdefinitions = True
 
-        if 'processor' in kwargs and kwargs['processor']:
-            assert isinstance(kwargs['processor'], Processor)
-            self.processor = kwargs['processor']
 
         if 'textvalidation' in kwargs:
             self.textvalidation = bool(kwargs['textvalidation'])
@@ -6662,6 +6696,10 @@ class Document(object):
         if self.mode != Mode.XPATH:
             #XML Tree is now obsolete (only needed when partially loaded for xpath queries), free memory
             self.tree = None
+
+        if 'processor' in kwargs and kwargs['processor']:
+            assert isinstance(kwargs['processor'], Processor)
+            self.processor = kwargs['processor']
 
         if self.processor:
             #Add the processor to the provenance chain
