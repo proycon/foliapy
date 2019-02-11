@@ -58,6 +58,10 @@ FOLIAVERSION = "2.0.0"
 #The FoLiA XML namespace
 NSFOLIA = "http://ilk.uvt.nl/folia"
 
+#ElementTree.register_namespace("folia",NSFOLIA)
+NSMAP = {None: NSFOLIA, 'xml' : "http://www.w3.org/XML/1998/namespace", 'xlink':"http://www.w3.org/1999/xlink"}
+E = ElementMaker(namespace=NSFOLIA,nsmap=NSMAP)
+RXE = ElementMaker(namespace="http://relaxng.org/ns/structure/1.0",nsmap={None:'http://relaxng.org/ns/structure/1.0' , 'folia': "http://ilk.uvt.nl/folia", 'xml' : "http://www.w3.org/XML/1998/namespace",'a':"http://relaxng.org/ns/annotation/0.9" })
 
 nslen = len(NSFOLIA) + 2
 
@@ -237,7 +241,6 @@ class Processor:
         raise ValueError("Invalid node passed" + node.tag)
 
     def xml(self):
-        E = ElementMaker(namespace=NSFOLIA,nsmap={None: NSFOLIA, 'xml' : "http://www.w3.org/XML/1998/namespace"})
         attribs = {}
         attribs['{http://www.w3.org/XML/1998/namespace}id'] = self.id
         for key in ('name','type', 'version','document_version', 'folia_version','command','host','user','begindatetime','enddatetime', 'resourcelink'):
@@ -340,7 +343,6 @@ class Provenance:
             raise ValueError("No processors")
 
     def xml(self):
-        E = ElementMaker(namespace=NSFOLIA,nsmap={None: NSFOLIA, 'xml' : "http://www.w3.org/XML/1998/namespace"})
         processors = [ processor.xml() for processor in self ]
         return E.provenance(*processors)
 
@@ -2054,7 +2056,6 @@ class AbstractElement(object):
         See also:
             :meth:`AbstractElement.xmlstring` - for direct string output
         """
-        E = ElementMaker(namespace=NSFOLIA,nsmap={None: NSFOLIA, 'xml' : "http://www.w3.org/XML/1998/namespace"})
 
         if not attribs: attribs = {}
         if not elements: elements = []
@@ -2064,26 +2065,26 @@ class AbstractElement(object):
 
         #Some attributes only need to be added if they are not the same as what's already set in the declaration
         if not isinstance(self, AbstractAnnotationLayer):
-            if '{' + NSFOLIA + '}set' not in attribs: #do not override if overloaded function already set it
+            if 'set' not in attribs: #do not override if overloaded function already set it
                 try:
                     if self.set:
                         if not self.ANNOTATIONTYPE in self.doc.annotationdefaults or len(self.doc.annotationdefaults[self.ANNOTATIONTYPE]) != 1 or list(self.doc.annotationdefaults[self.ANNOTATIONTYPE].keys())[0] != self.set:
                             if self.set != None:
                                 if self.ANNOTATIONTYPE in self.doc.set_alias and self.set in self.doc.set_alias[self.ANNOTATIONTYPE]:
-                                    attribs['{' + NSFOLIA + '}set'] = self.doc.set_alias[self.ANNOTATIONTYPE][self.set] #use alias instead
+                                    attribs['set'] = self.doc.set_alias[self.ANNOTATIONTYPE][self.set] #use alias instead
                                 else:
-                                    attribs['{' + NSFOLIA + '}set'] = self.set
+                                    attribs['set'] = self.set
                 except AttributeError:
                     pass
 
-        if '{' + NSFOLIA + '}class' not in attribs: #do not override if caller already set it
+        if 'class' not in attribs: #do not override if caller already set it
             try:
                 if self.cls:
-                    attribs['{' + NSFOLIA + '}class'] = self.cls
+                    attribs['class'] = self.cls
             except AttributeError:
                 pass
 
-        if '{' + NSFOLIA + '}processor' not in attribs: #do not override if caller already set it
+        if 'processor' not in attribs: #do not override if caller already set it
             if self.ANNOTATIONTYPE in self.doc.annotators and self.set in self.doc.annotators[self.ANNOTATIONTYPE] and self.doc.annotators[self.ANNOTATIONTYPE][self.set]:
                 #there are new-style (FoLiA v1.6) annotators (pointing to processors in provenance data)
 
@@ -2091,62 +2092,62 @@ class AbstractElement(object):
                 if has_default:
                     assert self.doc.annotationdefaults[self.ANNOTATIONTYPE][self.set]['processor'] == self.processor.id
                 else:
-                    attribs['{' + NSFOLIA + '}processor'] = self.processor.id
+                    attribs['processor'] = self.processor.id
 
-        if '{' + NSFOLIA + '}annotator' not in attribs and not self.processor: #do not override if caller already set it
+        if 'annotator' not in attribs and not self.processor: #do not override if caller already set it
             try:
                 if self.annotator and ((not (self.ANNOTATIONTYPE in self.doc.annotationdefaults)) or (not ( 'annotator' in self.doc.annotationdefaults[self.ANNOTATIONTYPE][self.set])) or (self.annotator != self.doc.annotationdefaults[self.ANNOTATIONTYPE][self.set]['annotator'])):
-                    attribs['{' + NSFOLIA + '}annotator'] = self.annotator
+                    attribs['annotator'] = self.annotator
                 if self.annotatortype and ((not (self.ANNOTATIONTYPE in self.doc.annotationdefaults)) or (not ('annotatortype' in self.doc.annotationdefaults[self.ANNOTATIONTYPE][self.set])) or (self.annotatortype != self.doc.annotationdefaults[self.ANNOTATIONTYPE][self.set]['annotatortype'])):
                     if self.annotatortype == AnnotatorType.AUTO:
-                        attribs['{' + NSFOLIA + '}annotatortype'] = 'auto'
+                        attribs['annotatortype'] = 'auto'
                     elif self.annotatortype == AnnotatorType.MANUAL:
-                        attribs['{' + NSFOLIA + '}annotatortype'] = 'manual'
+                        attribs['annotatortype'] = 'manual'
             except AttributeError:
                 pass
 
-        if '{' + NSFOLIA + '}confidence' not in attribs: #do not override if caller already set it
+        if 'confidence' not in attribs: #do not override if caller already set it
             if self.confidence:
-                attribs['{' + NSFOLIA + '}confidence'] = str(self.confidence)
+                attribs['confidence'] = str(self.confidence)
 
-        if '{' + NSFOLIA + '}n' not in attribs: #do not override if caller already set it
+        if 'n' not in attribs: #do not override if caller already set it
             if self.n:
-                attribs['{' + NSFOLIA + '}n'] = str(self.n)
+                attribs['n'] = str(self.n)
 
-        if '{' + NSFOLIA + '}auth' not in attribs: #do not override if caller already set it
+        if 'auth' not in attribs: #do not override if caller already set it
             try:
                 if not self.AUTH or not self.auth: #(former is static, latter isn't)
-                    attribs['{' + NSFOLIA + '}auth'] = 'no'
+                    attribs['auth'] = 'no'
             except AttributeError:
                 pass
 
-        if '{' + NSFOLIA + '}datetime' not in attribs: #do not override if caller already set it
+        if 'datetime' not in attribs: #do not override if caller already set it
             if self.datetime and ((not (self.ANNOTATIONTYPE in self.doc.annotationdefaults)) or (not ( 'datetime' in self.doc.annotationdefaults[self.ANNOTATIONTYPE][self.set])) or (self.datetime != self.doc.annotationdefaults[self.ANNOTATIONTYPE][self.set]['datetime'])):
-                attribs['{' + NSFOLIA + '}datetime'] = self.datetime.strftime("%Y-%m-%dT%H:%M:%S")
+                attribs['datetime'] = self.datetime.strftime("%Y-%m-%dT%H:%M:%S")
 
-        if '{' + NSFOLIA + '}src' not in attribs: #do not override if caller already set it
+        if 'src' not in attribs: #do not override if caller already set it
             if self.src:
-                attribs['{' + NSFOLIA + '}src'] = self.src
+                attribs['src'] = self.src
 
-        if '{' + NSFOLIA + '}speaker' not in attribs: #do not override if caller already set it
+        if 'speaker' not in attribs: #do not override if caller already set it
             if self.speaker:
-                attribs['{' + NSFOLIA + '}speaker'] = self.speaker
+                attribs['speaker'] = self.speaker
 
-        if '{' + NSFOLIA + '}begintime' not in attribs: #do not override if caller already set it
+        if 'begintime' not in attribs: #do not override if caller already set it
             if self.begintime:
-                attribs['{' + NSFOLIA + '}begintime'] = "%02d:%02d:%02d.%03d" % self.begintime
+                attribs['begintime'] = "%02d:%02d:%02d.%03d" % self.begintime
 
-        if '{' + NSFOLIA + '}endtime' not in attribs: #do not override if caller already set it
+        if 'endtime' not in attribs: #do not override if caller already set it
             if self.endtime:
-                attribs['{' + NSFOLIA + '}endtime'] = "%02d:%02d:%02d.%03d" % self.endtime
+                attribs['endtime'] = "%02d:%02d:%02d.%03d" % self.endtime
 
-        if '{' + NSFOLIA + '}textclass' not in attribs: #do not override if caller already set it
+        if 'textclass' not in attribs: #do not override if caller already set it
             if self.textclass and self.textclass != "current":
-                attribs['{' + NSFOLIA + '}textclass'] = self.textclass
+                attribs['textclass'] = self.textclass
 
-        if '{' + NSFOLIA + '}metadata' not in attribs: #do not override if caller already set it
+        if 'metadata' not in attribs: #do not override if caller already set it
             if self.metadata:
-                attribs['{' + NSFOLIA + '}metadata'] = self.metadata
+                attribs['metadata'] = self.metadata
 
         if self.XLINK:
             if self.href:
@@ -2295,11 +2296,7 @@ class AbstractElement(object):
 
         Returns:
             str: a string with XML representation for this element and all its children"""
-        s = ElementTree.tostring(self.xml(), xml_declaration=False, pretty_print=pretty_print, encoding='utf-8')
-        if isinstance(s,bytes):
-            s = str(s,'utf-8')
-
-        return s
+        return str(ElementTree.tostring(self.xml(), xml_declaration=False, pretty_print=pretty_print, encoding='utf-8'),'utf-8')
 
 
     def select(self, Class, set=None, recursive=True,  ignore=True, node=None): #pylint: disable=bad-classmethod-argument,redefined-builtin
@@ -2602,7 +2599,6 @@ class AbstractElement(object):
     def relaxng(cls, includechildren=True,extraattribs = None, extraelements=None, origclass = None):
         """Returns a RelaxNG definition for this element (as an XML element (lxml.etree) rather than a string)"""
 
-        E = ElementMaker(namespace="http://relaxng.org/ns/structure/1.0",nsmap={None:'http://relaxng.org/ns/structure/1.0' , 'folia': "http://ilk.uvt.nl/folia", 'xml' : "http://www.w3.org/XML/1998/namespace",'a':"http://relaxng.org/ns/annotation/0.9" })
 
         if origclass: cls = origclass
 
@@ -2620,67 +2616,67 @@ class AbstractElement(object):
 
         attribs = [ ]
         if cls.REQUIRED_ATTRIBS and Attrib.ID in cls.REQUIRED_ATTRIBS:
-            attribs.append( E.attribute(E.data(type='ID',datatypeLibrary='http://www.w3.org/2001/XMLSchema-datatypes'),name='id', ns="http://www.w3.org/XML/1998/namespace") )
+            attribs.append( RXE.attribute(RXE.data(type='ID',datatypeLibrary='http://www.w3.org/2001/XMLSchema-datatypes'),name='id', ns="http://www.w3.org/XML/1998/namespace") )
         elif Attrib.ID in cls.OPTIONAL_ATTRIBS:
-            attribs.append( E.optional( E.attribute(E.data(type='ID',datatypeLibrary='http://www.w3.org/2001/XMLSchema-datatypes'), name='id', ns="http://www.w3.org/XML/1998/namespace") ) )
+            attribs.append( RXE.optional( RXE.attribute(RXE.data(type='ID',datatypeLibrary='http://www.w3.org/2001/XMLSchema-datatypes'), name='id', ns="http://www.w3.org/XML/1998/namespace") ) )
         if Attrib.CLASS in cls.REQUIRED_ATTRIBS:
-            attribs.append( E.attribute(E.data(type='string',datatypeLibrary='http://www.w3.org/2001/XMLSchema-datatypes'),name='class') )
-            attribs.append( E.optional( E.attribute( E.data(type='string',datatypeLibrary='http://www.w3.org/2001/XMLSchema-datatypes'),name='set' ) ) )
+            attribs.append( RXE.attribute(RXE.data(type='string',datatypeLibrary='http://www.w3.org/2001/XMLSchema-datatypes'),name='class') )
+            attribs.append( RXE.optional( RXE.attribute( RXE.data(type='string',datatypeLibrary='http://www.w3.org/2001/XMLSchema-datatypes'),name='set' ) ) )
         elif Attrib.CLASS in cls.OPTIONAL_ATTRIBS:
-            attribs.append( E.optional( E.attribute(E.data(type='string',datatypeLibrary='http://www.w3.org/2001/XMLSchema-datatypes'),name='class') ) )
-            attribs.append( E.optional( E.attribute(E.data(type='string',datatypeLibrary='http://www.w3.org/2001/XMLSchema-datatypes'), name='set' ) ) )
+            attribs.append( RXE.optional( RXE.attribute(RXE.data(type='string',datatypeLibrary='http://www.w3.org/2001/XMLSchema-datatypes'),name='class') ) )
+            attribs.append( RXE.optional( RXE.attribute(RXE.data(type='string',datatypeLibrary='http://www.w3.org/2001/XMLSchema-datatypes'), name='set' ) ) )
         if Attrib.ANNOTATOR in cls.REQUIRED_ATTRIBS or Attrib.ANNOTATOR in cls.OPTIONAL_ATTRIBS:
             #FoLiA without provenance
-            attribs.append( E.optional( E.attribute(E.data(type='string',datatypeLibrary='http://www.w3.org/2001/XMLSchema-datatypes'), name='annotator') ) )
-            attribs.append( E.optional( E.attribute(name='annotatortype') ) )
+            attribs.append( RXE.optional( RXE.attribute(RXE.data(type='string',datatypeLibrary='http://www.w3.org/2001/XMLSchema-datatypes'), name='annotator') ) )
+            attribs.append( RXE.optional( RXE.attribute(name='annotatortype') ) )
             #FoLiA >2.0 provenance
-            attribs.append( E.optional( E.attribute(E.data(type='IDREF',datatypeLibrary='http://www.w3.org/2001/XMLSchema-datatypes'), name='processor') ) )
+            attribs.append( RXE.optional( RXE.attribute(RXE.data(type='IDREF',datatypeLibrary='http://www.w3.org/2001/XMLSchema-datatypes'), name='processor') ) )
         if Attrib.CONFIDENCE in cls.REQUIRED_ATTRIBS:
-            attribs.append(  E.attribute(E.data(type='double',datatypeLibrary='http://www.w3.org/2001/XMLSchema-datatypes'), name='confidence') )
+            attribs.append(  RXE.attribute(RXE.data(type='double',datatypeLibrary='http://www.w3.org/2001/XMLSchema-datatypes'), name='confidence') )
         elif Attrib.CONFIDENCE in cls.OPTIONAL_ATTRIBS:
-            attribs.append(  E.optional( E.attribute(E.data(type='double',datatypeLibrary='http://www.w3.org/2001/XMLSchema-datatypes'), name='confidence') ) )
+            attribs.append(  RXE.optional( RXE.attribute(RXE.data(type='double',datatypeLibrary='http://www.w3.org/2001/XMLSchema-datatypes'), name='confidence') ) )
         if Attrib.N in cls.REQUIRED_ATTRIBS:
-            attribs.append( E.attribute( E.data(type='string',datatypeLibrary='http://www.w3.org/2001/XMLSchema-datatypes'),name='n') )
+            attribs.append( RXE.attribute( RXE.data(type='string',datatypeLibrary='http://www.w3.org/2001/XMLSchema-datatypes'),name='n') )
         elif Attrib.N in cls.OPTIONAL_ATTRIBS:
-            attribs.append( E.optional( E.attribute( E.data(type='string',datatypeLibrary='http://www.w3.org/2001/XMLSchema-datatypes'),name='n') ) )
+            attribs.append( RXE.optional( RXE.attribute( RXE.data(type='string',datatypeLibrary='http://www.w3.org/2001/XMLSchema-datatypes'),name='n') ) )
         if Attrib.DATETIME in cls.REQUIRED_ATTRIBS:
-            attribs.append( E.attribute(E.data(type='dateTime',datatypeLibrary='http://www.w3.org/2001/XMLSchema-datatypes'), name='datetime') )
+            attribs.append( RXE.attribute(RXE.data(type='dateTime',datatypeLibrary='http://www.w3.org/2001/XMLSchema-datatypes'), name='datetime') )
         elif Attrib.DATETIME in cls.OPTIONAL_ATTRIBS:
-            attribs.append( E.optional( E.attribute( E.data(type='dateTime',datatypeLibrary='http://www.w3.org/2001/XMLSchema-datatypes'),  name='datetime') ) )
+            attribs.append( RXE.optional( RXE.attribute( RXE.data(type='dateTime',datatypeLibrary='http://www.w3.org/2001/XMLSchema-datatypes'),  name='datetime') ) )
         if Attrib.BEGINTIME in cls.REQUIRED_ATTRIBS:
-            attribs.append(E.attribute(name='begintime') )
+            attribs.append(RXE.attribute(name='begintime') )
         elif Attrib.BEGINTIME in cls.OPTIONAL_ATTRIBS:
-            attribs.append( E.optional( E.attribute(name='begintime') ) )
+            attribs.append( RXE.optional( RXE.attribute(name='begintime') ) )
         if Attrib.ENDTIME in cls.REQUIRED_ATTRIBS:
-            attribs.append(E.attribute(name='endtime') )
+            attribs.append(RXE.attribute(name='endtime') )
         elif Attrib.ENDTIME in cls.OPTIONAL_ATTRIBS:
-            attribs.append( E.optional( E.attribute(name='endtime') ) )
+            attribs.append( RXE.optional( RXE.attribute(name='endtime') ) )
         if Attrib.SRC in cls.REQUIRED_ATTRIBS:
-            attribs.append(E.attribute(E.data(type='anyURI',datatypeLibrary='http://www.w3.org/2001/XMLSchema-datatypes'),name='src') )
+            attribs.append(RXE.attribute(RXE.data(type='anyURI',datatypeLibrary='http://www.w3.org/2001/XMLSchema-datatypes'),name='src') )
         elif Attrib.SRC in cls.OPTIONAL_ATTRIBS:
-            attribs.append( E.optional( E.attribute(E.data(type='anyURI',datatypeLibrary='http://www.w3.org/2001/XMLSchema-datatypes'),name='src') ) )
+            attribs.append( RXE.optional( RXE.attribute(RXE.data(type='anyURI',datatypeLibrary='http://www.w3.org/2001/XMLSchema-datatypes'),name='src') ) )
         if Attrib.SPEAKER in cls.REQUIRED_ATTRIBS:
-            attribs.append(E.attribute(E.data(type='string',datatypeLibrary='http://www.w3.org/2001/XMLSchema-datatypes'), name='speaker') )
+            attribs.append(RXE.attribute(RXE.data(type='string',datatypeLibrary='http://www.w3.org/2001/XMLSchema-datatypes'), name='speaker') )
         elif Attrib.SPEAKER in cls.OPTIONAL_ATTRIBS:
-            attribs.append( E.optional( E.attribute(E.data(type='string',datatypeLibrary='http://www.w3.org/2001/XMLSchema-datatypes'),name='speaker') ) )
+            attribs.append( RXE.optional( RXE.attribute(RXE.data(type='string',datatypeLibrary='http://www.w3.org/2001/XMLSchema-datatypes'),name='speaker') ) )
         if Attrib.TEXTCLASS in cls.REQUIRED_ATTRIBS:
-            attribs.append(E.attribute(name='textclass') )
+            attribs.append(RXE.attribute(name='textclass') )
         elif Attrib.TEXTCLASS in cls.OPTIONAL_ATTRIBS:
-            attribs.append( E.optional( E.attribute(name='textclass') ) )
+            attribs.append( RXE.optional( RXE.attribute(name='textclass') ) )
         if Attrib.METADATA in cls.REQUIRED_ATTRIBS:
-            attribs.append(E.attribute(name='metadata') )
+            attribs.append(RXE.attribute(name='metadata') )
         elif Attrib.METADATA in cls.OPTIONAL_ATTRIBS:
-            attribs.append( E.optional( E.attribute(name='metadata') ) )
+            attribs.append( RXE.optional( RXE.attribute(name='metadata') ) )
         if cls.XLINK:
             attribs += [ #loose interpretation of specs, not checking whether xlink combinations are valid
-                    E.optional(E.attribute(name='href',ns="http://www.w3.org/1999/xlink"),E.attribute(name='type',ns="http://www.w3.org/1999/xlink") ),
-                    E.optional(E.attribute(name='role',ns="http://www.w3.org/1999/xlink")),
-                    E.optional(E.attribute(name='title',ns="http://www.w3.org/1999/xlink")),
-                    E.optional(E.attribute(name='label',ns="http://www.w3.org/1999/xlink")),
-                    E.optional(E.attribute(name='show',ns="http://www.w3.org/1999/xlink")),
+                    RXE.optional(RXE.attribute(name='href',ns="http://www.w3.org/1999/xlink"),RXE.attribute(name='type',ns="http://www.w3.org/1999/xlink") ),
+                    RXE.optional(RXE.attribute(name='role',ns="http://www.w3.org/1999/xlink")),
+                    RXE.optional(RXE.attribute(name='title',ns="http://www.w3.org/1999/xlink")),
+                    RXE.optional(RXE.attribute(name='label',ns="http://www.w3.org/1999/xlink")),
+                    RXE.optional(RXE.attribute(name='show',ns="http://www.w3.org/1999/xlink")),
             ]
 
-        attribs.append( E.optional( E.attribute( name='auth' ) ) )
+        attribs.append( RXE.optional( RXE.attribute( name='auth' ) ) )
 
 
 
@@ -2688,16 +2684,16 @@ class AbstractElement(object):
             for e in extraattribs:
                 attribs.append(e) #s
 
-        attribs.append( E.ref(name="allow_foreign_attributes") )
+        attribs.append( RXE.ref(name="allow_foreign_attributes") )
 
 
         elements = [] #(including attributes)
         if cls.TEXTCONTAINER or cls.PHONCONTAINER:
-            elements.append( E.text())
-            #We actually want to require non-empty text (E.text() is not sufficient)
+            elements.append( RXE.text())
+            #We actually want to require non-empty text (RXE.text() is not sufficient)
             #but this is not solved yet, see https://github.com/proycon/folia/issues/19
-            #elements.append( E.data(E.param(r".+",name="pattern"),type='string'))
-            #elements.append( E.data(E.param(r"(.|\n|\r)*\S+(.|\n|\r)*",name="pattern"),type='string'))
+            #elements.append( RXE.data(RXE.param(r".+",name="pattern"),type='string'))
+            #elements.append( RXE.data(RXE.param(r"(.|\n|\r)*\S+(.|\n|\r)*",name="pattern"),type='string'))
         done = {}
         if includechildren and cls.ACCEPTED_DATA: #pylint: disable=too-many-nested-blocks
             for c in cls.ACCEPTED_DATA:
@@ -2708,30 +2704,30 @@ class AbstractElement(object):
                                 try:
                                     if c2.XMLTAG and c2.XMLTAG not in done:
                                         if c2.OCCURRENCES == 1:
-                                            elements.append( E.optional( E.ref(name=c2.XMLTAG) ) )
+                                            elements.append( RXE.optional( RXE.ref(name=c2.XMLTAG) ) )
                                         else:
-                                            elements.append( E.zeroOrMore( E.ref(name=c2.XMLTAG) ) )
-                                            elements += list(c2.relaxng_backwards(E))
+                                            elements.append( RXE.zeroOrMore( RXE.ref(name=c2.XMLTAG) ) )
+                                            elements += list(c2.relaxng_backwards())
                                         done[c2.XMLTAG] = True
                                 except AttributeError:
                                     continue
                         except TypeError:
                             pass
                 elif issubclass(c, Feature) and c.SUBSET:
-                    attribs.append( E.optional( E.attribute(name=c.SUBSET)))  #features as attributes
+                    attribs.append( RXE.optional( RXE.attribute(name=c.SUBSET)))  #features as attributes
                 else:
                     try:
                         if c.XMLTAG and c.XMLTAG not in done:
                             if cls.REQUIRED_DATA and c in cls.REQUIRED_DATA:
                                 if c.OCCURRENCES == 1:
-                                    elements.append( E.ref(name=c.XMLTAG) )
+                                    elements.append( RXE.ref(name=c.XMLTAG) )
                                 else:
-                                    elements.append( E.oneOrMore( E.ref(name=c.XMLTAG) ) )
+                                    elements.append( RXE.oneOrMore( RXE.ref(name=c.XMLTAG) ) )
                             elif c.OCCURRENCES == 1:
-                                elements.append( E.optional( E.ref(name=c.XMLTAG) ) )
+                                elements.append( RXE.optional( RXE.ref(name=c.XMLTAG) ) )
                             else:
-                                elements.append( E.zeroOrMore( E.ref(name=c.XMLTAG) ) )
-                                elements += list(c.relaxng_backwards(E))
+                                elements.append( RXE.zeroOrMore( RXE.ref(name=c.XMLTAG) ) )
+                                elements += list(c.relaxng_backwards())
 
                             done[c.XMLTAG] = True
                     except AttributeError:
@@ -2743,24 +2739,23 @@ class AbstractElement(object):
 
         if elements:
             if len(elements) > 1:
-                attribs.append( E.interleave(*elements) )
+                attribs.append( RXE.interleave(*elements) )
             else:
                 attribs.append( *elements )
 
         if not attribs:
-            attribs.append( E.empty() )
+            attribs.append( RXE.empty() )
 
         if cls.XMLTAG in ('desc','comment'):
-            return E.define( E.element(E.text(), *(preamble + attribs), **{'name': cls.XMLTAG}), name=cls.XMLTAG, ns=NSFOLIA)
+            return RXE.define( RXE.element(RXE.text(), *(preamble + attribs), **{'name': cls.XMLTAG}), name=cls.XMLTAG, ns=NSFOLIA)
         else:
-            return E.define( E.element(*(preamble + attribs), **{'name': cls.XMLTAG}), name=cls.XMLTAG, ns=NSFOLIA)
+            return RXE.define( RXE.element(*(preamble + attribs), **{'name': cls.XMLTAG}), name=cls.XMLTAG, ns=NSFOLIA)
 
     @classmethod
-    def relaxng_backwards(cls, E = None):
+    def relaxng_backwards(cls):
         """internal helper function for backward compatibility"""
-        if E is None: E = ElementMaker(namespace="http://relaxng.org/ns/structure/1.0",nsmap={None:'http://relaxng.org/ns/structure/1.0' , 'folia': "http://ilk.uvt.nl/folia", 'xml' : "http://www.w3.org/XML/1998/namespace",'a':"http://relaxng.org/ns/annotation/0.9" })
         if cls.XMLTAG in OLDTAGS_REVERSE:
-            yield E.zeroOrMore( E.ref(name=OLDTAGS_REVERSE[cls.XMLTAG]))
+            yield RXE.zeroOrMore( RXE.ref(name=OLDTAGS_REVERSE[cls.XMLTAG]))
 
 
 
@@ -2818,8 +2813,8 @@ class AbstractElement(object):
 
 
         for key, value in node.attrib.items():
-            if key[0] == '{' or key =='XMLid':
-                if key == '{http://www.w3.org/XML/1998/namespace}id' or key == 'XMLid':
+            if key[0] == '{':
+                if key == '{http://www.w3.org/XML/1998/namespace}id':
                     key = 'id'
                 elif key.startswith( '{' + NSFOLIA + '}'):
                     key = key[nslen:]
@@ -3487,9 +3482,8 @@ class AbstractTextMarkup(AbstractElement):
 
     @classmethod
     def relaxng(cls, includechildren=True,extraattribs = None, extraelements=None):
-        E = ElementMaker(namespace="http://relaxng.org/ns/structure/1.0",nsmap={None:'http://relaxng.org/ns/structure/1.0' , 'folia': "http://ilk.uvt.nl/folia", 'xml' : "http://www.w3.org/XML/1998/namespace",'a':"http://relaxng.org/ns/annotation/0.9" })
         if not extraattribs: extraattribs = []
-        extraattribs.append( E.optional(E.attribute(name='id' ))) #id reference
+        extraattribs.append( RXE.optional(RXE.attribute(name='id' ))) #id reference
         return super(AbstractTextMarkup, cls).relaxng(includechildren, extraattribs, extraelements)
 
 
@@ -3538,9 +3532,8 @@ class TextMarkupCorrection(AbstractTextMarkup):
 
     @classmethod
     def relaxng(cls, includechildren=True,extraattribs = None, extraelements=None):
-        E = ElementMaker(namespace="http://relaxng.org/ns/structure/1.0",nsmap={None:'http://relaxng.org/ns/structure/1.0' , 'folia': "http://ilk.uvt.nl/folia", 'xml' : "http://www.w3.org/XML/1998/namespace",'a':"http://relaxng.org/ns/annotation/0.9" })
         if not extraattribs: extraattribs = []
-        extraattribs.append( E.optional(E.attribute(name='original' )))
+        extraattribs.append( RXE.optional(RXE.attribute(name='original' )))
         return super(TextMarkupCorrection, cls).relaxng(includechildren, extraattribs, extraelements)
 
 
@@ -3730,21 +3723,15 @@ class TextContent(AbstractContentAnnotation):
         """See :meth:`AbstractElement.xml`"""
         attribs = {}
         if not self.offset is None:
-            attribs['{' + NSFOLIA + '}offset'] = str(self.offset)
+            attribs['offset'] = str(self.offset)
         if self.parent and self.ref:
-            attribs['{' + NSFOLIA + '}ref'] = self.ref
+            attribs['ref'] = self.ref
 
-        #if self.cls != 'current' and not (self.cls == 'original' and any( isinstance(x, Original) for x in self.ancestors() )  ):
-        #    attribs['{' + NSFOLIA + '}class'] = self.cls
-        #else:
-        #    if '{' + NSFOLIA + '}class' in attribs:
-        #        del attribs['{' + NSFOLIA + '}class']
-        #return E.t(self.value, **attribs)
 
         e = super(TextContent,self).xml(attribs,elements,skipchildren)
-        if '{' + NSFOLIA + '}class' in e.attrib and e.attrib['{' + NSFOLIA + '}class'] == "current":
+        if 'class' in e.attrib and e.attrib['class'] == "current":
             #delete 'class=current'
-            del e.attrib['{' + NSFOLIA + '}class']
+            del e.attrib['class']
 
         return e
 
@@ -3760,10 +3747,9 @@ class TextContent(AbstractContentAnnotation):
 
     @classmethod
     def relaxng(cls, includechildren=True,extraattribs = None, extraelements=None):
-        E = ElementMaker(namespace="http://relaxng.org/ns/structure/1.0",nsmap={None:'http://relaxng.org/ns/structure/1.0' , 'folia': "http://ilk.uvt.nl/folia", 'xml' : "http://www.w3.org/XML/1998/namespace",'a':"http://relaxng.org/ns/annotation/0.9" })
         if not extraattribs: extraattribs = []
-        extraattribs.append( E.optional(E.attribute(name='offset' )))
-        extraattribs.append( E.optional(E.attribute(name='ref' )))
+        extraattribs.append( RXE.optional(RXE.attribute(name='offset' )))
+        extraattribs.append( RXE.optional(RXE.attribute(name='ref' )))
         return super(TextContent, cls).relaxng(includechildren, extraattribs, extraelements)
 
 
@@ -3952,21 +3938,15 @@ class PhonContent(AbstractContentAnnotation):
     def xml(self, attribs = None,elements = None, skipchildren = False):
         attribs = {}
         if not self.offset is None:
-            attribs['{' + NSFOLIA + '}offset'] = str(self.offset)
+            attribs['offset'] = str(self.offset)
         if self.parent and self.ref:
-            attribs['{' + NSFOLIA + '}ref'] = self.ref
+            attribs['ref'] = self.ref
 
-        #if self.cls != 'current' and not (self.cls == 'original' and any( isinstance(x, Original) for x in self.ancestors() )  ):
-        #    attribs['{' + NSFOLIA + '}class'] = self.cls
-        #else:
-        #    if '{' + NSFOLIA + '}class' in attribs:
-        #        del attribs['{' + NSFOLIA + '}class']
-        #return E.t(self.value, **attribs)
 
         e = super(PhonContent,self).xml(attribs,elements,skipchildren)
-        if '{' + NSFOLIA + '}class' in e.attrib and e.attrib['{' + NSFOLIA + '}class'] == "current":
+        if 'class' in e.attrib and e.attrib['class'] == "current":
             #delete 'class=current'
-            del e.attrib['{' + NSFOLIA + '}class']
+            del e.attrib['class']
 
         return e
 
@@ -3981,10 +3961,9 @@ class PhonContent(AbstractContentAnnotation):
 
     @classmethod
     def relaxng(cls, includechildren=True,extraattribs = None, extraelements=None):
-        E = ElementMaker(namespace="http://relaxng.org/ns/structure/1.0",nsmap={None:'http://relaxng.org/ns/structure/1.0' , 'folia': "http://ilk.uvt.nl/folia", 'xml' : "http://www.w3.org/XML/1998/namespace",'a':"http://relaxng.org/ns/annotation/0.9" })
         if not extraattribs: extraattribs = []
-        extraattribs.append( E.optional(E.attribute(name='offset' )))
-        extraattribs.append( E.optional(E.attribute(name='ref' )))
+        extraattribs.append( RXE.optional(RXE.attribute(name='offset' )))
+        extraattribs.append( RXE.optional(RXE.attribute(name='ref' )))
         return super(PhonContent, cls).relaxng(includechildren, extraattribs, extraelements)
 
 class Content(AbstractHigherOrderAnnotation):     #used for raw content, subelement for Gap
@@ -4016,7 +3995,6 @@ class Content(AbstractHigherOrderAnnotation):     #used for raw content, subelem
         return self.value
 
     def xml(self, attribs = None,elements = None, skipchildren = False):
-        E = ElementMaker(namespace=NSFOLIA,nsmap={None: NSFOLIA, 'xml' : "http://www.w3.org/XML/1998/namespace"})
 
         if not attribs:
             attribs = {}
@@ -4033,8 +4011,7 @@ class Content(AbstractHigherOrderAnnotation):     #used for raw content, subelem
 
     @classmethod
     def relaxng(cls, includechildren=True,extraattribs = None, extraelements=None):
-        E = ElementMaker(namespace="http://relaxng.org/ns/structure/1.0",nsmap={None:'http://relaxng.org/ns/structure/1.0' , 'folia': "http://ilk.uvt.nl/folia", 'xml' : "http://www.w3.org/XML/1998/namespace"})
-        return E.define( E.element(E.text(), name=cls.XMLTAG), name=cls.XMLTAG, ns=NSFOLIA)
+        return RXE.define( RXE.element(RXE.text(), name=cls.XMLTAG), name=cls.XMLTAG, ns=NSFOLIA)
 
     @classmethod
     def parsexml(Class, node, doc, **kwargs):#pylint: disable=bad-classmethod-argument
@@ -4120,20 +4097,19 @@ class Linebreak(AbstractStructureElement, AbstractTextMarkup): #this element has
     def xml(self, attribs = None,elements = None, skipchildren = False):
         if attribs is None: attribs = {}
         if self.linenr is not None:
-            attribs['{' + NSFOLIA + '}linenr'] = str(self.linenr)
+            attribs['linenr'] = str(self.linenr)
         if self.pagenr is not None:
-            attribs['{' + NSFOLIA + '}pagenr'] = str(self.pagenr)
+            attribs['pagenr'] = str(self.pagenr)
         if self.newpage:
-            attribs['{' + NSFOLIA + '}newpage'] = "yes"
+            attribs['newpage'] = "yes"
         return super(Linebreak, self).xml(attribs,elements,skipchildren)
 
     @classmethod
     def relaxng(cls, includechildren=True,extraattribs = None, extraelements=None):
-        E = ElementMaker(namespace="http://relaxng.org/ns/structure/1.0",nsmap={None:'http://relaxng.org/ns/structure/1.0' , 'folia': "http://ilk.uvt.nl/folia", 'xml' : "http://www.w3.org/XML/1998/namespace"})
         attribs = []
-        attribs.append(E.optional(E.attribute(name='pagenr')))
-        attribs.append(E.optional(E.attribute(name='linenr')))
-        attribs.append(E.optional(E.attribute(name='newpage')))
+        attribs.append(RXE.optional(RXE.attribute(name='pagenr')))
+        attribs.append(RXE.optional(RXE.attribute(name='linenr')))
+        attribs.append(RXE.optional(RXE.attribute(name='newpage')))
         return super(Linebreak,cls).relaxng(includechildren,attribs,extraelements)
 
 class Whitespace(AbstractStructureElement):
@@ -4293,11 +4269,10 @@ class Word(AbstractStructureElement, AllowCorrections):
 
     @classmethod
     def relaxng(cls, includechildren=True,extraattribs = None, extraelements=None):
-        E = ElementMaker(namespace="http://relaxng.org/ns/structure/1.0",nsmap={None:'http://relaxng.org/ns/structure/1.0' , 'folia': "http://ilk.uvt.nl/folia", 'xml' : "http://www.w3.org/XML/1998/namespace"})
         if not extraattribs:
-            extraattribs = [ E.optional(E.attribute(name='space')) ]
+            extraattribs = [ RXE.optional(RXE.attribute(name='space')) ]
         else:
-            extraattribs.append( E.optional(E.attribute(name='space')) )
+            extraattribs.append( RXE.optional(RXE.attribute(name='space')) )
         return AbstractStructureElement.relaxng(includechildren, extraattribs, extraelements, cls)
 
 
@@ -4393,8 +4368,8 @@ class Feature(AbstractElement):
         E = ElementMaker(namespace=NSFOLIA,nsmap={None: NSFOLIA, 'xml' : "http://www.w3.org/XML/1998/namespace"})
         attribs = {}
         if self.subset != self.SUBSET:
-            attribs['{' + NSFOLIA + '}subset'] = self.subset
-        attribs['{' + NSFOLIA + '}class'] =  self.cls
+            attribs['subset'] = self.subset
+        attribs['class'] =  self.cls
         return makeelement(E,'{' + NSFOLIA + '}' + self.XMLTAG, **attribs)
 
     def json(self,attribs=None, recurse=True, ignorelist=False):
@@ -4405,8 +4380,7 @@ class Feature(AbstractElement):
 
     @classmethod
     def relaxng(cls, includechildren=True, extraattribs = None, extraelements=None):
-        E = ElementMaker(namespace="http://relaxng.org/ns/structure/1.0",nsmap={None:'http://relaxng.org/ns/structure/1.0' , 'folia': "http://ilk.uvt.nl/folia", 'xml' : "http://www.w3.org/XML/1998/namespace"})
-        return E.define( E.element(E.attribute(name='subset'), E.attribute(name='class'),name=cls.XMLTAG), name=cls.XMLTAG,ns=NSFOLIA)
+        return RXE.define( RXE.element(RXE.attribute(name='subset'), RXE.attribute(name='class'),name=cls.XMLTAG), name=cls.XMLTAG,ns=NSFOLIA)
 
     def deepvalidation(self):
         """Perform deep validation of this element.
@@ -4448,14 +4422,13 @@ class AbstractSpanAnnotation(AbstractElement, AllowGenerateID, AllowCorrections)
     def xml(self, attribs = None,elements = None, skipchildren = False):
         """See :meth:`AbstractElement.xml`"""
         if not attribs: attribs = {}
-        E = ElementMaker(namespace="http://ilk.uvt.nl/folia",nsmap={None: "http://ilk.uvt.nl/folia", 'xml' : "http://www.w3.org/XML/1998/namespace"})
         e = super(AbstractSpanAnnotation,self).xml(attribs, elements, True)
         for child in self:
             if isinstance(child, Word) or isinstance(child, Morpheme) or isinstance(child, Phoneme):
                 #Include REFERENCES to word items instead of word items themselves
-                attribs['{' + NSFOLIA + '}id'] = child.id
+                attribs['id'] = child.id
                 if child.PRINTABLE and child.hastext(self.textclass):
-                    attribs['{' + NSFOLIA + '}t'] = child.text(self.textclass)
+                    attribs['t'] = child.text(self.textclass)
                 e.append( E.wref(**attribs) )
             elif not (isinstance(child, Feature) and child.SUBSET): #Don't add pre-defined features, they are already added as attributes
                 e.append( child.xml() )
@@ -4831,10 +4804,9 @@ class AbstractAnnotationLayer(AbstractElement, AllowGenerateID, AllowCorrections
     @classmethod
     def relaxng(cls, includechildren=True,extraattribs = None, extraelements=None, origclass = None):
         """Returns a RelaxNG definition for this element (as an XML element (lxml.etree) rather than a string)"""
-        E = ElementMaker(namespace="http://relaxng.org/ns/structure/1.0",nsmap={None:'http://relaxng.org/ns/structure/1.0' , 'folia': "http://ilk.uvt.nl/folia", 'xml' : "http://www.w3.org/XML/1998/namespace",'a':"http://relaxng.org/ns/annotation/0.9" })
         if not extraattribs:
             extraattribs = []
-        extraattribs.append(E.optional(E.attribute(E.text(), name='set')) )
+        extraattribs.append(RXE.optional(RXE.attribute(RXE.text(), name='set')) )
         return AbstractElement.relaxng(includechildren, extraattribs, extraelements, cls)
 
     def deepvalidation(self):
@@ -4934,11 +4906,10 @@ class Reference(AbstractStructureElement):
 
     @classmethod
     def relaxng(cls, includechildren=True,extraattribs = None, extraelements=None):
-        E = ElementMaker(namespace="http://relaxng.org/ns/structure/1.0",nsmap={None:'http://relaxng.org/ns/structure/1.0' , 'folia': "http://ilk.uvt.nl/folia", 'xml' : "http://www.w3.org/XML/1998/namespace",'a':"http://relaxng.org/ns/annotation/0.9" })
         if not extraattribs: extraattribs = []
-        extraattribs.append( E.optional(E.attribute(name='id'))) #id reference
-        extraattribs.append( E.optional(E.attribute(name='type' )))
-        extraattribs.append( E.optional(E.attribute(name='format' )))
+        extraattribs.append( RXE.optional(RXE.attribute(name='id'))) #id reference
+        extraattribs.append( RXE.optional(RXE.attribute(name='type' )))
+        extraattribs.append( RXE.optional(RXE.attribute(name='format' )))
         return super(Reference, cls).relaxng(includechildren, extraattribs, extraelements)
 
 class LinkReference(AbstractElement):
@@ -4989,8 +4960,7 @@ class LinkReference(AbstractElement):
 
     @classmethod
     def relaxng(cls, includechildren=True,extraattribs = None, extraelements=None):
-        E = ElementMaker(namespace="http://relaxng.org/ns/structure/1.0",nsmap={None:'http://relaxng.org/ns/structure/1.0' , 'folia': "http://ilk.uvt.nl/folia", 'xml' : "http://www.w3.org/XML/1998/namespace"})
-        return E.define( E.element(E.attribute(E.text(), name='id'), E.optional(E.attribute(E.text(), name='t')), E.optional(E.attribute(E.text(), name='type')), name=cls.XMLTAG), name=cls.XMLTAG, ns=NSFOLIA)
+        return RXE.define( RXE.element(RXE.attribute(RXE.text(), name='id'), RXE.optional(RXE.attribute(RXE.text(), name='t')), RXE.optional(RXE.attribute(RXE.text(), name='type')), name=cls.XMLTAG), name=cls.XMLTAG, ns=NSFOLIA)
 
     def resolve(self, context=None, documents={}):
         if not context or not hasattr(context, 'href') or not context.href:
@@ -5004,8 +4974,6 @@ class LinkReference(AbstractElement):
                 raise DocumentNotLoaded()
 
     def xml(self, attribs = None,elements = None, skipchildren = False):
-        E = ElementMaker(namespace=NSFOLIA,nsmap={None: NSFOLIA, 'xml' : "http://www.w3.org/XML/1998/namespace"})
-
         if not attribs:
             attribs = {}
         attribs['id'] = self.id
@@ -5063,9 +5031,8 @@ class Relation(AbstractElement):
 
     @classmethod
     def relaxng(cls, includechildren=True,extraattribs = None, extraelements=None):
-        E = ElementMaker(namespace="http://relaxng.org/ns/structure/1.0",nsmap={None:'http://relaxng.org/ns/structure/1.0' , 'folia': "http://ilk.uvt.nl/folia", 'xml' : "http://www.w3.org/XML/1998/namespace"})
         if extraattribs is None: extraattribs = []
-        extraattribs.append(E.optional(E.attribute(name="format")))
+        extraattribs.append(RXE.optional(RXE.attribute(name="format")))
         return super(Relation,cls).relaxng(includechildren, extraattribs, extraelements)
 
 Alignment = Relation #backward compatibility for FoLiA < 2
@@ -5112,10 +5079,9 @@ class Suggestion(AbstractCorrectionChild):
 
     @classmethod
     def relaxng(cls, includechildren=True,extraattribs = None, extraelements=None):
-        E = ElementMaker(namespace="http://relaxng.org/ns/structure/1.0",nsmap={None:'http://relaxng.org/ns/structure/1.0' , 'folia': "http://ilk.uvt.nl/folia", 'xml' : "http://www.w3.org/XML/1998/namespace",'a':"http://relaxng.org/ns/annotation/0.9" })
         if not extraattribs: extraattribs = []
-        extraattribs.append( E.optional(E.attribute(name='split' )))
-        extraattribs.append( E.optional(E.attribute(name='merge' )))
+        extraattribs.append( RXE.optional(RXE.attribute(name='split' )))
+        extraattribs.append( RXE.optional(RXE.attribute(name='merge' )))
         return super(Suggestion, cls).relaxng(includechildren, extraattribs, extraelements)
 
     def json(self, attribs = None, recurse=True,ignorelist=False):
@@ -5561,8 +5527,7 @@ class External(AbstractHigherOrderAnnotation):
 
     @classmethod
     def relaxng(cls, includechildren=True,extraattribs = None, extraelements=None):
-        E = ElementMaker(namespace="http://relaxng.org/ns/structure/1.0",nsmap={None:'http://relaxng.org/ns/structure/1.0' , 'folia': "http://ilk.uvt.nl/folia", 'xml' : "http://www.w3.org/XML/1998/namespace"})
-        return E.define( E.element(E.attribute(E.text(), name='src'), E.optional(E.attribute(E.text(), name='include')), name=cls.XMLTAG), name=cls.XMLTAG, ns=NSFOLIA)
+        return RXE.define( RXE.element(RXE.attribute(RXE.text(), name='src'), RXE.optional(RXE.attribute(RXE.text(), name='include')), name=cls.XMLTAG), name=cls.XMLTAG, ns=NSFOLIA)
 
 
     def select(self, Class, set=None, recursive=True,  ignore=True, node=None):
@@ -5603,8 +5568,7 @@ class WordReference(AbstractElement):
 
     @classmethod
     def relaxng(cls, includechildren=True,extraattribs = None, extraelements=None):
-        E = ElementMaker(namespace="http://relaxng.org/ns/structure/1.0",nsmap={None:'http://relaxng.org/ns/structure/1.0' , 'folia': "http://ilk.uvt.nl/folia", 'xml' : "http://www.w3.org/XML/1998/namespace"})
-        return E.define( E.element(E.attribute(E.text(), name='id'), E.optional(E.attribute(E.text(), name='t')), name=cls.XMLTAG), name=cls.XMLTAG, ns=NSFOLIA)
+        return RXE.define( RXE.element(RXE.attribute(RXE.text(), name='id'), RXE.optional(RXE.attribute(RXE.text(), name='t')), name=cls.XMLTAG), name=cls.XMLTAG, ns=NSFOLIA)
 
 
     def xml(self, attribs = None,elements = None, skipchildren = False):
@@ -6236,8 +6200,7 @@ class ForeignData(AbstractHigherOrderAnnotation):
 
     @classmethod
     def relaxng(cls, includechildren=True,extraattribs = None, extraelements=None):
-        E = ElementMaker(namespace="http://relaxng.org/ns/structure/1.0",nsmap={None:'http://relaxng.org/ns/structure/1.0' , 'folia': "http://ilk.uvt.nl/folia", 'xml' : "http://www.w3.org/XML/1998/namespace"})
-        return E.define( E.element(E.ref(name="any_content"), name=cls.XMLTAG), name=cls.XMLTAG, ns=NSFOLIA)
+        return RXE.define( RXE.element(RXE.ref(name="any_content"), name=cls.XMLTAG), name=cls.XMLTAG, ns=NSFOLIA)
 
 
 
@@ -6893,19 +6856,19 @@ class Document(object):
 
             attribs = {}
             if set and (set != 'undefined' or checkversion(self.version,'2.0.0') >= 0):
-                attribs['{' + NSFOLIA + '}set'] = set
+                attribs['set'] = set
 
 
             for key, value in self.annotationdefaults[annotationtype][set].items():
                 if key == 'annotatortype':
                     if value == AnnotatorType.MANUAL:
-                        attribs['{' + NSFOLIA + '}' + key] = 'manual'
+                        attribs[key] = 'manual'
                     elif value == AnnotatorType.AUTO:
-                        attribs['{' + NSFOLIA + '}' + key] = 'auto'
+                        attribs[key] = 'auto'
                 elif key == 'datetime':
-                    attribs['{' + NSFOLIA + '}' + key] = value.strftime("%Y-%m-%dT%H:%M:%S") #proper iso-formatting
+                    attribs[key] = value.strftime("%Y-%m-%dT%H:%M:%S") #proper iso-formatting
                 elif value:
-                    attribs['{' + NSFOLIA + '}' + key] = value
+                    attribs[key] = value
             annotators = []
             if annotationtype in self.annotators and set in self.annotators[annotationtype]:
                 for annotator in self.annotators[annotationtype][set]:
@@ -6976,7 +6939,6 @@ class Document(object):
         self.done()
 
 
-        E = ElementMaker(namespace="http://ilk.uvt.nl/folia",nsmap={None: NSFOLIA, 'xml' : "http://www.w3.org/XML/1998/namespace", 'xlink':"http://www.w3.org/1999/xlink"})
         attribs = {}
         attribs['{http://www.w3.org/XML/1998/namespace}id'] = self.id
 
@@ -6988,12 +6950,14 @@ class Document(object):
         attribs['generator'] = 'foliapy-v' + LIBVERSION
 
         metadataattribs = {}
-        metadataattribs['{' + NSFOLIA + '}type'] = self.metadatatype
+        metadataattribs['type'] = self.metadatatype
 
         if isinstance(self.metadata, ExternalMetaData):
-            metadataattribs['{' + NSFOLIA + '}src'] = self.metadata.url
+            metadataattribs['src'] = self.metadata.url
 
-        e = E.FoLiA(
+
+        e = E.FoLiA(**attribs)
+        e.append(
             E.metadata(
                 E.annotations(
                     *self.xmldeclarations()
@@ -7002,7 +6966,7 @@ class Document(object):
                 *self.xmlmetadata(),
                 **metadataattribs
             )
-            , **attribs)
+        )
         for text in self.data:
             e.append(text.xml())
         return e
@@ -7041,7 +7005,6 @@ class Document(object):
 
     def xmlmetadata(self):
         """Internal method to serialize metadata to XML"""
-        E = ElementMaker(namespace="http://ilk.uvt.nl/folia",nsmap={None: "http://ilk.uvt.nl/folia", 'xml' : "http://www.w3.org/XML/1998/namespace"})
         elements = []
         if self.metadatatype == "native":
             if isinstance(self.metadata, NativeMetaData):
@@ -7644,13 +7607,7 @@ class Document(object):
                 try:
                     self.id = node.attrib['{http://www.w3.org/XML/1998/namespace}id']
                 except KeyError:
-                    try:
-                        self.id = node.attrib['XMLid']
-                    except KeyError:
-                        try:
-                            self.id = node.attrib['id']
-                        except KeyError:
-                            raise Exception("FoLiA Document has no ID!")
+                    raise Exception("FoLiA Document has no ID!")
                 if 'version' in node.attrib and not self.force_version:
                     self.version = node.attrib['version']
                 elif not self.force_version:
@@ -7832,13 +7789,7 @@ class Document(object):
 
     def xmlstring(self):
         """Return the XML representation of the document as a string."""
-        s = ElementTree.tostring(self.xml(), xml_declaration=True, pretty_print=True, encoding='utf-8')
-        if isinstance(s,bytes):
-            s = str(s,'utf-8')
-
-        s = s.replace('ns0:','') #ugly patch to get rid of namespace prefix
-        s = s.replace(':ns0','')
-        return s
+        return str(ElementTree.tostring(self.xml(), xml_declaration=True, pretty_print=True, encoding='utf-8'),'utf-8')
 
 
     def __unicode__(self):
@@ -7986,29 +7937,28 @@ class CorpusProcessor(object):
 
 
 def relaxng_declarations():
-    E = ElementMaker(namespace="http://relaxng.org/ns/structure/1.0",nsmap={None:'http://relaxng.org/ns/structure/1.0' , 'folia': NSFOLIA, 'xml' : "http://www.w3.org/XML/1998/namespace"})
     for key in vars(AnnotationType).keys():
         if key[0] != '_':
-            yield E.element(
-                E.optional( E.attribute(E.data(type='string',datatypeLibrary='http://www.w3.org/2001/XMLSchema-datatypes'), name='set') ),
-                E.optional( E.attribute(E.data(type='string',datatypeLibrary='http://www.w3.org/2001/XMLSchema-datatypes'), name='alias') ),
-                E.optional( E.attribute(E.data(type='string',datatypeLibrary='http://www.w3.org/2001/XMLSchema-datatypes'), name='annotator') ), #pre-provenance, FoLiA <2.0
-                E.optional( E.attribute(E.data(type='string',datatypeLibrary='http://www.w3.org/2001/XMLSchema-datatypes'), name='annotatortype') ), #pre-provenance, FoLiA <2.0
-                E.optional( E.attribute(E.data(type='dateTime',datatypeLibrary='http://www.w3.org/2001/XMLSchema-datatypes'), name='datetime') ), #pre-provenance, FoLiA <2.0
-                E.zeroOrMore(
-                    E.element(E.attribute(E.data(type='IDREF',datatypeLibrary='http://www.w3.org/2001/XMLSchema-datatypes'), name="processor"), name="annotator")
+            yield RXE.element(
+                RXE.optional( RXE.attribute(RXE.data(type='string',datatypeLibrary='http://www.w3.org/2001/XMLSchema-datatypes'), name='set') ),
+                RXE.optional( RXE.attribute(RXE.data(type='string',datatypeLibrary='http://www.w3.org/2001/XMLSchema-datatypes'), name='alias') ),
+                RXE.optional( RXE.attribute(RXE.data(type='string',datatypeLibrary='http://www.w3.org/2001/XMLSchema-datatypes'), name='annotator') ), #pre-provenance, FoLiA <2.0
+                RXE.optional( RXE.attribute(RXE.data(type='string',datatypeLibrary='http://www.w3.org/2001/XMLSchema-datatypes'), name='annotatortype') ), #pre-provenance, FoLiA <2.0
+                RXE.optional( RXE.attribute(RXE.data(type='dateTime',datatypeLibrary='http://www.w3.org/2001/XMLSchema-datatypes'), name='datetime') ), #pre-provenance, FoLiA <2.0
+                RXE.zeroOrMore(
+                    RXE.element(RXE.attribute(RXE.data(type='IDREF',datatypeLibrary='http://www.w3.org/2001/XMLSchema-datatypes'), name="processor"), name="annotator")
                 )
                 , name=key.lower() + '-annotation')
             #backward compatibility with FoLiA 1.5
             if key.lower() in OLDTAGS_REVERSE:
-                yield E.element(
-                    E.optional( E.attribute(E.data(type='string',datatypeLibrary='http://www.w3.org/2001/XMLSchema-datatypes'), name='set') ),
-                    E.optional( E.attribute(E.data(type='string',datatypeLibrary='http://www.w3.org/2001/XMLSchema-datatypes'), name='alias') ),
-                    E.optional( E.attribute(E.data(type='string',datatypeLibrary='http://www.w3.org/2001/XMLSchema-datatypes'), name='annotator') ), #pre-provenance, FoLiA <2.0
-                    E.optional( E.attribute(E.data(type='string',datatypeLibrary='http://www.w3.org/2001/XMLSchema-datatypes'), name='annotatortype') ), #pre-provenance, FoLiA <2.0
-                    E.optional( E.attribute(E.data(type='dateTime',datatypeLibrary='http://www.w3.org/2001/XMLSchema-datatypes'), name='datetime') ), #pre-provenance, FoLiA <2.0
-                    E.zeroOrMore(
-                        E.element(E.attribute(E.data(type='IDREF',datatypeLibrary='http://www.w3.org/2001/XMLSchema-datatypes'), name="processor"), name="annotator")
+                yield RXE.element(
+                    RXE.optional( RXE.attribute(RXE.data(type='string',datatypeLibrary='http://www.w3.org/2001/XMLSchema-datatypes'), name='set') ),
+                    RXE.optional( RXE.attribute(RXE.data(type='string',datatypeLibrary='http://www.w3.org/2001/XMLSchema-datatypes'), name='alias') ),
+                    RXE.optional( RXE.attribute(RXE.data(type='string',datatypeLibrary='http://www.w3.org/2001/XMLSchema-datatypes'), name='annotator') ), #pre-provenance, FoLiA <2.0
+                    RXE.optional( RXE.attribute(RXE.data(type='string',datatypeLibrary='http://www.w3.org/2001/XMLSchema-datatypes'), name='annotatortype') ), #pre-provenance, FoLiA <2.0
+                    RXE.optional( RXE.attribute(RXE.data(type='dateTime',datatypeLibrary='http://www.w3.org/2001/XMLSchema-datatypes'), name='datetime') ), #pre-provenance, FoLiA <2.0
+                    RXE.zeroOrMore(
+                        RXE.element(RXE.attribute(RXE.data(type='IDREF',datatypeLibrary='http://www.w3.org/2001/XMLSchema-datatypes'), name="processor"), name="annotator")
                     )
                     , name=OLDTAGS_REVERSE[key.lower()] + '-annotation')
 
@@ -8023,76 +7973,75 @@ def relaxng(filename=None):
     """
     #TODO: Generate documentation INSIDE the RelaxNG (I did something similar for CLAM XML) (relates to #43)
     #TODO: Add data types #27
-    E = ElementMaker(namespace="http://relaxng.org/ns/structure/1.0",nsmap={None:'http://relaxng.org/ns/structure/1.0' , 'folia': NSFOLIA, 'xml' : "http://www.w3.org/XML/1998/namespace"})
-    grammar = E.grammar( E.start( E.element( #FoLiA
-                E.attribute(name='id',ns="http://www.w3.org/XML/1998/namespace"),
-                E.optional( E.attribute(name='version') ),
-                E.optional( E.attribute(name='generator') ),
-                E.element( #metadata
-                    E.optional(E.attribute(name='type')),
-                    E.optional(E.attribute(name='src')),
-                    E.element( E.zeroOrMore( E.choice( *relaxng_declarations() ) ) ,name='annotations'),
-                    E.optional(E.element( E.zeroOrMore( E.ref(name="processor")) ,name='provenance')),
-                    E.zeroOrMore(
-                        E.element(E.attribute(name='id'), E.text(), name='meta'),
+    grammar = RXE.grammar( RXE.start( RXE.element( #FoLiA
+                RXE.attribute(name='id',ns="http://www.w3.org/XML/1998/namespace"),
+                RXE.optional( RXE.attribute(name='version') ),
+                RXE.optional( RXE.attribute(name='generator') ),
+                RXE.element( #metadata
+                    RXE.optional(RXE.attribute(name='type')),
+                    RXE.optional(RXE.attribute(name='src')),
+                    RXE.element( RXE.zeroOrMore( RXE.choice( *relaxng_declarations() ) ) ,name='annotations'),
+                    RXE.optional(RXE.element( RXE.zeroOrMore( RXE.ref(name="processor")) ,name='provenance')),
+                    RXE.zeroOrMore(
+                        RXE.element(RXE.attribute(name='id'), RXE.text(), name='meta'),
                     ),
-                    E.zeroOrMore(
-                        E.ref(name="foreign-data"),
+                    RXE.zeroOrMore(
+                        RXE.ref(name="foreign-data"),
                     ),
-                    E.zeroOrMore(
-                        E.element( #submetadata
-                            E.attribute(name='id',ns="http://www.w3.org/XML/1998/namespace"),
-                            E.optional(E.attribute(name='type')),
-                            E.optional(E.attribute(name='src')),
-                            E.zeroOrMore(
-                                E.element(E.attribute(name='id'), E.text(), name='meta'),
+                    RXE.zeroOrMore(
+                        RXE.element( #submetadata
+                            RXE.attribute(name='id',ns="http://www.w3.org/XML/1998/namespace"),
+                            RXE.optional(RXE.attribute(name='type')),
+                            RXE.optional(RXE.attribute(name='src')),
+                            RXE.zeroOrMore(
+                                RXE.element(RXE.attribute(name='id'), RXE.text(), name='meta'),
                             ),
-                            E.zeroOrMore(
-                                E.ref(name="foreign-data"),
+                            RXE.zeroOrMore(
+                                RXE.ref(name="foreign-data"),
                             ),
                             name="submetadata"
                         )
                     ),
-                    #E.optional(
-                    #    E.ref(name='METATRANSCRIPT')
+                    #RXE.optional(
+                    #    RXE.ref(name='METATRANSCRIPT')
                     #),
                     name='metadata',
                     #ns=NSFOLIA,
                 ),
-                E.interleave(
-                    E.zeroOrMore(
-                        E.ref(name='text'),
+                RXE.interleave(
+                    RXE.zeroOrMore(
+                        RXE.ref(name='text'),
                     ),
-                    E.zeroOrMore(
-                        E.ref(name='speech'),
+                    RXE.zeroOrMore(
+                        RXE.ref(name='speech'),
                     ),
                 ),
                 name='FoLiA',
                 ns = NSFOLIA
             ) ),
             #definitions needed for ForeignData (allow any content) - see http://www.microhowto.info/howto/match_arbitrary_content_using_relax_ng.html
-            E.define( E.interleave(E.zeroOrMore(E.ref(name="any_element")),E.text()), name="any_content"),
-            E.define( E.element(E.anyName(), E.zeroOrMore(E.ref(name="any_attribute")), E.zeroOrMore(E.ref(name="any_content"))), name="any_element"),
-            E.define( E.attribute(E.anyName()), name="any_attribute"),
+            RXE.define( RXE.interleave(RXE.zeroOrMore(RXE.ref(name="any_element")),RXE.text()), name="any_content"),
+            RXE.define( RXE.element(RXE.anyName(), RXE.zeroOrMore(RXE.ref(name="any_attribute")), RXE.zeroOrMore(RXE.ref(name="any_content"))), name="any_element"),
+            RXE.define( RXE.attribute(RXE.anyName()), name="any_attribute"),
             #Definition for allowing alien-namespace attributes on any element
-            E.define( E.zeroOrMore(E.attribute(E.anyName(getattr(E,'except')(E.nsName(),E.nsName(ns=""),E.nsName(ns="http://www.w3.org/XML/1998/namespace"),E.nsName(ns="http://www.w3.org/1999/xlink"))))), name="allow_foreign_attributes"),
+            RXE.define( RXE.zeroOrMore(RXE.attribute(RXE.anyName(getattr(RXE,'except')(RXE.nsName(),RXE.nsName(ns=""),RXE.nsName(ns="http://www.w3.org/XML/1998/namespace"),RXE.nsName(ns="http://www.w3.org/1999/xlink"))))), name="allow_foreign_attributes"),
             #Definition for processors (provenance)
-            E.define(
-                E.element(
-                    E.attribute(E.data(type='ID',datatypeLibrary='http://www.w3.org/2001/XMLSchema-datatypes'), name='id',ns="http://www.w3.org/XML/1998/namespace"),
-                    E.optional(E.attribute(E.data(type='string',datatypeLibrary='http://www.w3.org/2001/XMLSchema-datatypes'), name='name')),
-                    E.optional(E.attribute(E.data(type='string',datatypeLibrary='http://www.w3.org/2001/XMLSchema-datatypes'), name='type')),
-                    E.optional(E.attribute(E.data(type='string',datatypeLibrary='http://www.w3.org/2001/XMLSchema-datatypes'), name='version')),
-                    E.optional(E.attribute(E.data(type='string',datatypeLibrary='http://www.w3.org/2001/XMLSchema-datatypes'), name='document_version')),
-                    E.optional(E.attribute(E.data(type='string',datatypeLibrary='http://www.w3.org/2001/XMLSchema-datatypes'), name='command')),
-                    E.optional(E.attribute(E.data(type='string',datatypeLibrary='http://www.w3.org/2001/XMLSchema-datatypes'), name='host')),
-                    E.optional(E.attribute(E.data(type='string',datatypeLibrary='http://www.w3.org/2001/XMLSchema-datatypes'), name='user')),
-                    E.optional(E.attribute(E.data(type='string',datatypeLibrary='http://www.w3.org/2001/XMLSchema-datatypes'), name='folia_version')),
-                    E.optional(E.attribute(E.data(type='dateTime',datatypeLibrary='http://www.w3.org/2001/XMLSchema-datatypes'), name='begindatetime')),
-                    E.optional(E.attribute(E.data(type='dateTime',datatypeLibrary='http://www.w3.org/2001/XMLSchema-datatypes'), name='enddatetime')),
-                    E.interleave(
-                        E.zeroOrMore(E.element(E.attribute(name='id'), E.text(), name='meta')),
-                        E.zeroOrMore(E.ref(name="processor")),
+            RXE.define(
+                RXE.element(
+                    RXE.attribute(RXE.data(type='ID',datatypeLibrary='http://www.w3.org/2001/XMLSchema-datatypes'), name='id',ns="http://www.w3.org/XML/1998/namespace"),
+                    RXE.optional(RXE.attribute(RXE.data(type='string',datatypeLibrary='http://www.w3.org/2001/XMLSchema-datatypes'), name='name')),
+                    RXE.optional(RXE.attribute(RXE.data(type='string',datatypeLibrary='http://www.w3.org/2001/XMLSchema-datatypes'), name='type')),
+                    RXE.optional(RXE.attribute(RXE.data(type='string',datatypeLibrary='http://www.w3.org/2001/XMLSchema-datatypes'), name='version')),
+                    RXE.optional(RXE.attribute(RXE.data(type='string',datatypeLibrary='http://www.w3.org/2001/XMLSchema-datatypes'), name='document_version')),
+                    RXE.optional(RXE.attribute(RXE.data(type='string',datatypeLibrary='http://www.w3.org/2001/XMLSchema-datatypes'), name='command')),
+                    RXE.optional(RXE.attribute(RXE.data(type='string',datatypeLibrary='http://www.w3.org/2001/XMLSchema-datatypes'), name='host')),
+                    RXE.optional(RXE.attribute(RXE.data(type='string',datatypeLibrary='http://www.w3.org/2001/XMLSchema-datatypes'), name='user')),
+                    RXE.optional(RXE.attribute(RXE.data(type='string',datatypeLibrary='http://www.w3.org/2001/XMLSchema-datatypes'), name='folia_version')),
+                    RXE.optional(RXE.attribute(RXE.data(type='dateTime',datatypeLibrary='http://www.w3.org/2001/XMLSchema-datatypes'), name='begindatetime')),
+                    RXE.optional(RXE.attribute(RXE.data(type='dateTime',datatypeLibrary='http://www.w3.org/2001/XMLSchema-datatypes'), name='enddatetime')),
+                    RXE.interleave(
+                        RXE.zeroOrMore(RXE.element(RXE.attribute(name='id'), RXE.text(), name='meta')),
+                        RXE.zeroOrMore(RXE.ref(name="processor")),
                     )
                 , name="processor")
             , name="processor", ns=NSFOLIA),
