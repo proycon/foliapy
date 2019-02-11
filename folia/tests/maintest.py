@@ -1353,9 +1353,9 @@ class Test02Sanity(unittest.TestCase):
         text.append( folia.Gap(doc, set='other-set', cls='Z' ) )
 
         gaps = list(text.select(folia.Gap))
-        self.assertEqual( gaps[0].xmlstring(), '<gap xmlns="http://ilk.uvt.nl/folia" class="X" set="gap-set"/>' )
-        self.assertEqual( gaps[1].xmlstring(), '<gap xmlns="http://ilk.uvt.nl/folia" class="Y" set="other-set"/>' )
-        self.assertEqual( gaps[2].xmlstring(), '<gap xmlns="http://ilk.uvt.nl/folia" class="Z" set="other-set"/>' )
+        self.assertTrue( xmlcheck(gaps[0].xmlstring(), '<gap class="X" set="gap-set"/>') )
+        self.assertTrue( xmlcheck(gaps[1].xmlstring(), '<gap class="Y" set="other-set"/>') )
+        self.assertTrue( xmlcheck(gaps[2].xmlstring(), '<gap class="Z" set="other-set"/>') )
 
 
     def test102k_declarations(self):
@@ -2291,7 +2291,7 @@ class Test04Edit(unittest.TestCase):
 
         w.settext('1 & 1 > 0')
         self.assertEqual(w.text(), '1 & 1 > 0')
-        self.assertEqual(w.textcontent().xmlstring(), '<t xmlns="http://ilk.uvt.nl/folia">1 &amp; 1 &gt; 0</t>')
+        self.assertTrue(xmlcheck(w.textcontent().xmlstring(), '<t>1 &amp; 1 &gt; 0</t>'))
 
     def test018a_sentencetext(self):
         """Edit Check - Altering sentence text (untokenised by definition)"""
