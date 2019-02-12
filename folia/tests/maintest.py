@@ -198,7 +198,7 @@ class Test_Provenance(unittest.TestCase):
         xmlref = """<FoLiA xmlns:xlink="http://www.w3.org/1999/xlink" xmlns="http://ilk.uvt.nl/folia" xml:id="test" version="2.0.0" generator="foliapy-v2.0.0">
   <metadata type="native">
     <annotations>
-      <text-annotation set="https://github.com/proycon/folia/blob/master/setdefinitions/text.foliaset.ttl"/>
+      <text-annotation set="https://raw.githubusercontent.com/proycon/folia/master/setdefinitions/text.foliaset.ttl"/>
     </annotations>
     <provenance>
       <processor xml:id="p0" name="TestSuite" type="auto"/>
