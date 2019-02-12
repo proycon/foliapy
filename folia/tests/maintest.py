@@ -238,6 +238,34 @@ class Test_Provenance(unittest.TestCase):
             xmlref = f.read()
         self.assertTrue( xmlcheck(doc.xmlstring(), xmlref) )
 
+    def test005c_create_flat_explicit_multi(self):
+        """Provenance - Create a document with flat processors - Explicit multiple processor assignment"""
+        doc = folia.Document(id="test")
+        doc.declare(folia.AnnotationType.TOKEN, "adhoc", folia.Processor("SomeTokeniser", id="p0.1",version=1))
+        doc.declare(folia.AnnotationType.SENTENCE, "adhoc", folia.Processor("SentenceSplitter", id="p0.2",version=1))
+        #we declare some extra processors (even though we don't really use them), but this means the annotations will need to serialise an explicit processor= attribute
+        doc.declare(folia.AnnotationType.TOKEN, "adhoc", folia.Processor("SomeOtherTokeniser", id="p0.3",version=1))
+        doc.declare(folia.AnnotationType.SENTENCE, "adhoc", folia.Processor("OtherSentenceSplitter", id="p0.4",version=1))
+        body = doc.append(folia.Text)
+        sentence = body.append(folia.Sentence, processor="p0.2")
+        w = sentence.append(folia.Word, "hello", processor="p0.1")
+        sentence.append(folia.Word, "world", processor="p0.1")
+        self.assertEqual(w.processor, doc.provenance["p0.1"])
+        with open(os.path.join(FOLIAPATH,'examples/tests/provenance-flat-explicit.2.0.0.folia.xml'),'r',encoding='utf-8') as f: #not a typo, 'implicit' refers to the fact annotation don't get a processor attribute
+            xmlref = f.read()
+        self.assertTrue( xmlcheck(doc.xmlstring(), xmlref) )
+
+    def test005d_create_flat_implicit_multi(self):
+        """Provenance - Create a document with flat processors - Implicit multiple processor assignment (impossible)"""
+        doc = folia.Document(id="test")
+        doc.declare(folia.AnnotationType.TOKEN, "adhoc", folia.Processor("SomeTokeniser", id="p0.1",version=1))
+        doc.declare(folia.AnnotationType.SENTENCE, "adhoc", folia.Processor("SentenceSplitter", id="p0.2",version=1))
+        #we declare some extra processors (even though we don't really use them), but this means the annotations will need to serialise an explicit processor= attribute
+        doc.declare(folia.AnnotationType.TOKEN, "adhoc", folia.Processor("SomeOtherTokeniser", id="p0.3",version=1))
+        doc.declare(folia.AnnotationType.SENTENCE, "adhoc", folia.Processor("OtherSentenceSplitter", id="p0.4",version=1))
+        body = doc.append(folia.Text)
+        sentence = body.append(folia.Sentence, processor="p0.2") #ok, explicit processor
+        self.assertRaises( folia.NoDefaultError, sentence.append, folia.Word, "hello") #exception, implicit processor is ambiguous
 
     def test006_create_nested(self):
         """Provenance - Create a document with a nested processors (implicit)"""
@@ -251,6 +279,7 @@ class Test_Provenance(unittest.TestCase):
         self.assertEqual(w.processor, doc.provenance["p0.1"]) #even though implicit, the processor attribute should be there!!!
         with open(os.path.join(FOLIAPATH,'examples/tests/provenance-nested-implicit.2.0.0.folia.xml'),'r',encoding='utf-8') as f: #not a typo, 'implicit' refers to the fact annotation don't get a processor attribute
             xmlref = f.read()
+        self.assertTrue( xmlcheck(doc.xmlstring(), xmlref) )
 
 ###################### OLD TESTS ##########################
 

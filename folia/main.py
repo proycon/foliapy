@@ -723,10 +723,13 @@ class AbstractElement(object):
                 if kwargs['annotatortype'] != self.processor.type:
                     raise ValueError("Annotatortype attribute " + kwargs['annotatortype'] + " does not equal processor type (" + self.processor.type + ")")
             del kwargs['processor']
-        elif doc and annotationtype in doc.annotators and self.set in doc.annotators[annotationtype] and len(doc.annotators[annotationtype][self.set]) == 1:
-            #assign the default processor
-            for processor in doc.getprocessors(annotationtype, self.set): #should only iterate over one!
-                self.processor = processor
+        elif doc and annotationtype in doc.annotators and self.set in doc.annotators[annotationtype] and doc.annotators[annotationtype][self.set]:
+            l = len(doc.annotators[annotationtype][self.set])
+            if l == 1:
+                for processor in doc.getprocessors(annotationtype, self.set): #should only iterate over one!
+                    self.processor = processor
+            elif l > 1:
+                raise NoDefaultError("No processor specified for " + self.__class__.__name__ + " <" + self.__class__.XMLTAG + ">, but the presence of multiple declarations prevent assigning a default")
 
         if self.processor is None:
             #old behavour without provenance (FoLiA <= 1.5)
