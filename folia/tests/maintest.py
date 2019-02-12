@@ -219,39 +219,8 @@ class Test_Provenance(unittest.TestCase):
         w = sentence.append(folia.Word, "hello", processor="p0.1")
         sentence.append(folia.Word, "world", processor="p0.1")
         self.assertEqual(w.processor, doc.provenance["p0.1"])
-        xmlref = """<?xml version='1.0' encoding='utf-8'?>
-<FoLiA xmlns:xlink="http://www.w3.org/1999/xlink" xmlns="http://ilk.uvt.nl/folia" xml:id="test" version="2.0.0" generator="foliapy-v2.0.0">
-  <metadata type="native">
-    <annotations>
-      <text-annotation set="https://raw.githubusercontent.com/proycon/folia/master/setdefinitions/text.foliaset.ttl"/>
-      <token-annotation set="adhoc" processor="p0.1">
-        <annotator processor="p0.1"/>
-      </token-annotation>
-      <sentence-annotation set="adhoc" processor="p0.2">
-        <annotator processor="p0.2"/>
-      </sentence-annotation>
-    </annotations>
-    <provenance>
-      <processor xml:id="p0.1" name="SomeTokeniser" type="auto" version="1">
-        <processor xml:id="p0.1.generator" name="foliapy" type="generator" version="2.0.0" folia_version="2.0.0"/>
-      </processor>
-      <processor xml:id="p0.2" name="SentenceSplitter" type="auto" version="1">
-        <processor xml:id="p0.2.generator" name="foliapy" type="generator" version="2.0.0" folia_version="2.0.0"/>
-      </processor>
-    </provenance>
-  </metadata>
-  <text xml:id="test.text.1">
-    <s xml:id="test.text.1.s.1">
-      <w xml:id="test.text.1.s.1.w.1">
-        <t>hello</t>
-      </w>
-      <w xml:id="test.text.1.s.1.w.2">
-        <t>world</t>
-      </w>
-    </s>
-  </text>
-</FoLiA>
-"""
+        with open(os.path.join(FOLIAPATH,'examples/tests/provenance-flat-implicit.2.0.0.folia.xml'),'r',encoding='utf-8') as f: #not a typo, 'implicit' refers to the fact annotation don't get a processor attribute
+            xmlref = f.read()
         self.assertTrue( xmlcheck(doc.xmlstring(), xmlref) )
 
     def test005b_create_flat_implicit(self):
@@ -265,39 +234,8 @@ class Test_Provenance(unittest.TestCase):
         sentence.append(folia.Word, "world")
         self.assertEqual(w.processor, doc.provenance["p0.1"]) #even though implicit, the processor attribute should be there!!!
         #This reference is identical to the previous test
-        xmlref = """<?xml version='1.0' encoding='utf-8'?>
-<FoLiA xmlns:xlink="http://www.w3.org/1999/xlink" xmlns="http://ilk.uvt.nl/folia" xml:id="test" version="2.0.0" generator="foliapy-v2.0.0">
-  <metadata type="native">
-    <annotations>
-      <text-annotation set="https://raw.githubusercontent.com/proycon/folia/master/setdefinitions/text.foliaset.ttl"/>
-      <token-annotation set="adhoc" processor="p0.1">
-        <annotator processor="p0.1"/>
-      </token-annotation>
-      <sentence-annotation set="adhoc" processor="p0.2">
-        <annotator processor="p0.2"/>
-      </sentence-annotation>
-    </annotations>
-    <provenance>
-      <processor xml:id="p0.1" name="SomeTokeniser" type="auto" version="1">
-        <processor xml:id="p0.1.generator" name="foliapy" type="generator" version="2.0.0" folia_version="2.0.0"/>
-      </processor>
-      <processor xml:id="p0.2" name="SentenceSplitter" type="auto" version="1">
-        <processor xml:id="p0.2.generator" name="foliapy" type="generator" version="2.0.0" folia_version="2.0.0"/>
-      </processor>
-    </provenance>
-  </metadata>
-  <text xml:id="test.text.1">
-    <s xml:id="test.text.1.s.1">
-      <w xml:id="test.text.1.s.1.w.1">
-        <t>hello</t>
-      </w>
-      <w xml:id="test.text.1.s.1.w.2">
-        <t>world</t>
-      </w>
-    </s>
-  </text>
-</FoLiA>
-"""
+        with open(os.path.join(FOLIAPATH,'examples/tests/provenance-flat-implicit.2.0.0.folia.xml'),'r',encoding='utf-8') as f:
+            xmlref = f.read()
         self.assertTrue( xmlcheck(doc.xmlstring(), xmlref) )
 
 
@@ -311,44 +249,8 @@ class Test_Provenance(unittest.TestCase):
         w = sentence.append(folia.Word, "hello")
         sentence.append(folia.Word, "world")
         self.assertEqual(w.processor, doc.provenance["p0.1"]) #even though implicit, the processor attribute should be there!!!
-        xmlref = """<?xml version='1.0' encoding='utf-8'?>
-<FoLiA xmlns:xlink="http://www.w3.org/1999/xlink" xmlns="http://ilk.uvt.nl/folia" xml:id="test" version="2.0.0" generator="foliapy-v2.0.0">
-  <metadata type="native">
-    <annotations>
-      <text-annotation set="https://raw.githubusercontent.com/proycon/folia/master/setdefinitions/text.foliaset.ttl" processor="p0">
-        <annotator processor="p0"/>
-      </text-annotation>
-      <token-annotation set="adhoc" processor="p0.1">
-        <annotator processor="p0.1"/>
-      </token-annotation>
-      <sentence-annotation set="adhoc" processor="p0.2">
-        <annotator processor="p0.2"/>
-      </sentence-annotation>
-    </annotations>
-    <provenance>
-      <processor xml:id="p0" name="TestSuite" type="auto">
-        <processor xml:id="p0.1" name="SomeTokeniser" type="auto" version="1">
-          <processor xml:id="p0.1.generator" name="foliapy" type="generator" version="2.0.0" folia_version="2.0.0"/>
-        </processor>
-        <processor xml:id="p0.2" name="SentenceSplitter" type="auto" version="1">
-          <processor xml:id="p0.2.generator" name="foliapy" type="generator" version="2.0.0" folia_version="2.0.0"/>
-        </processor>
-      </processor>
-    </provenance>
-  </metadata>
-  <text xml:id="test.text.1">
-    <s xml:id="test.text.1.s.1">
-      <w xml:id="test.text.1.s.1.w.1">
-        <t>hello</t>
-      </w>
-      <w xml:id="test.text.1.s.1.w.2">
-        <t>world</t>
-      </w>
-    </s>
-  </text>
-</FoLiA>
-"""
-
+        with open(os.path.join(FOLIAPATH,'examples/tests/provenance-nested-implicit.2.0.0.folia.xml'),'r',encoding='utf-8') as f: #not a typo, 'implicit' refers to the fact annotation don't get a processor attribute
+            xmlref = f.read()
 
 ###################### OLD TESTS ##########################
 
