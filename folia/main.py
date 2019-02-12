@@ -203,9 +203,9 @@ class Processor:
         if type not in (ProcessorType.MANUAL, ProcessorType.AUTO, ProcessorType.GENERATOR, ProcessorType.DATASOURCE): #superset of AnnotatorType
             raise ParseError("Invalid processor type: " + str(type))
         self.type = type
-        self.version = version
-        self.folia_version = folia_version
-        self.document_version = document_version
+        self.version = str(version) if version is not None else None
+        self.folia_version = str(folia_version) if folia_version is not None else None
+        self.document_version = str(document_version) if document_version is not None else None
         self.command = command
         self.host = host
         self.user = user
@@ -895,6 +895,7 @@ class AbstractElement(object):
             print("   @id           = ", repr(self.id),file=stderr)
             print("   @set          = ", repr(self.set),file=stderr)
             print("   @class        = ", repr(self.cls),file=stderr)
+            print("   @processor    = ", repr(self.processor),file=stderr)
             print("   @annotator    = ", repr(self.annotator),file=stderr)
             print("   @annotatortype= ", repr(self.annotatortype),file=stderr)
             print("   @confidence   = ", repr(self.confidence),file=stderr)
@@ -2120,7 +2121,7 @@ class AbstractElement(object):
 
         if 'processor' not in attribs: #do not override if caller already set it
             if self.ANNOTATIONTYPE in self.doc.annotators and self.set in self.doc.annotators[self.ANNOTATIONTYPE] and self.doc.annotators[self.ANNOTATIONTYPE][self.set]:
-                #there are new-style (FoLiA v1.6) annotators (pointing to processors in provenance data)
+                #there are new-style (FoLiA v2) annotators (pointing to processors in provenance data)
 
                 has_default = (self.ANNOTATIONTYPE in self.doc.annotationdefaults) and (self.set in self.doc.annotationdefaults[self.ANNOTATIONTYPE]) and 'processor' in self.doc.annotationdefaults[self.ANNOTATIONTYPE][self.set]
                 if has_default:
@@ -7219,6 +7220,12 @@ class Document(object):
                 args = list(args)
             args.insert(0, self.processor)
 
+
+        if 'processor' in kwargs:
+            #just some flexibility in case the user used processor= instead of a direct positional argument
+            args.append(kwargs['processor'])
+            del kwargs['processor']
+
         context = None
         return_processors = []
         for i, processor in enumerate(args):
@@ -7235,8 +7242,10 @@ class Document(object):
             leaf = i == len(args) - 1
             if leaf:
                 #An annotator is a reference to a processor, make the reference only if it is not already there
-                annotator_new = any( a.processor_id == processor.id for a in self.annotators[annotationtype][set] )
+                annotator_new = all( a.processor_id != processor.id for a in self.annotators[annotationtype][set] )
                 if annotator_new:
+                    if self.debug >= 1:
+                        print("[FoLiA DEBUG] Adding annotator for " + ANNOTATIONTYPE2XML[annotationtype] + " to processor  " + processor.name + ", ID " + processor.id, file=stderr)
                     self.annotators[annotationtype][set].append(Annotator(processor.id, self))
 
             if processor_new:
@@ -7245,13 +7254,19 @@ class Document(object):
                     processor.append(Processor(id=processor.id+'.generator', name="foliapy", type=ProcessorType.GENERATOR, version=LIBVERSION, folia_version=FOLIAVERSION))
                 if context:
                     #add processor to existing context in provenance chain
+                    if self.debug >= 1:
+                        print("[FoLiA DEBUG] Adding new processor " + processor.name + ", ID " + processor.id + " as child of existing processor " + context.id, file=stderr)
                     context.append(processor)
                 else:
                     #add processor to provenance chain
+                    if self.debug >= 1:
+                        print("[FoLiA DEBUG] Adding new processor " + processor.name + ", ID " + processor.id, file=stderr)
                     self.provenance.append(processor)
             return_processors.append(processor)
             context = processor
 
+        if 'external' in kwargs:
+            self.attachexternal(type,set,**kwargs)
 
         #Set defaults
         if len(self.annotators[annotationtype][set]) == 1 and args:
@@ -7268,8 +7283,6 @@ class Document(object):
             #no defaults
             self.annotationdefaults[annotationtype][set] = {}
 
-        if 'external' in kwargs:
-            self.attachexternal(type,set,**kwargs)
 
     def attachexternal(self, type, set, **kwargs):
         if self.debug >= 1:
