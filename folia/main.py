@@ -414,322 +414,6 @@ def parsetime(s):
         raise ValueError("Invalid timestamp, must be in HH:MM:SS.mmm format: " + s)
 
 
-def parsecommonarguments(object, doc, annotationtype, required, allowed, **kwargs):
-    """Internal function to parse common FoLiA attributes and sets up the instance accordingly. Do not invoke directly."""
-
-    object.doc = doc #The FoLiA root document
-
-    if required is None:
-        required = tuple()
-    if allowed is None:
-        allowed = tuple()
-
-    supported = required + allowed
-
-
-    if 'generate_id_in' in kwargs:
-        try:
-            kwargs['id'] = kwargs['generate_id_in'].generate_id(object.__class__)
-        except GenerateIDException:
-            pass #ID could not be generated, just skip
-        del kwargs['generate_id_in']
-
-
-
-    if 'id' in kwargs:
-        if Attrib.ID not in supported:
-            raise ValueError("ID is not supported on " + object.__class__.__name__)
-        isncname(kwargs['id'])
-        object.id = kwargs['id']
-        del kwargs['id']
-    elif Attrib.ID in required:
-        raise ValueError("ID is required for " + object.__class__.__name__)
-    else:
-        object.id = None
-
-
-    if 'set' in kwargs:
-        if Attrib.CLASS not in supported and not object.SETONLY:
-            raise ValueError("Set is not supported on " + object.__class__.__name__)
-        if not kwargs['set'] and checkversion(doc.version, '2.0.0') < 0:
-            object.set ="undefined" #FoLiA <2.0 allowed a 'default' undefined set, FoLiA 2.0 doesn't
-        elif not kwargs['set']:
-            object.set = None
-        else:
-            object.set = kwargs['set']
-        del kwargs['set']
-        if doc and object.set and object.set in doc.alias_set:
-            object.set = doc.alias_set[object.set]
-    elif annotationtype in doc.annotationdefaults and len(doc.annotationdefaults[annotationtype]) == 1:
-        object.set = list(doc.annotationdefaults[annotationtype].keys())[0]
-    elif Attrib.CLASS in required: #or (hasattr(object,'SETONLY') and object.SETONLY):
-        raise ValueError("Set is required for " + object.__class__.__name__)
-
-    if doc and annotationtype is not None: #we can only do this check if we have a document, we'll be overly permissive for documentless elements (so caution adviced for those)
-        FOLIA2 = checkversion(doc.version, '2.0.0') >= 0
-        if (FOLIA2 or (object.set and object.set != "undefined")) and not isinstance(object, (Text,Speech)): #Body is an undeclared element
-            #Check if an element is declared (FoLiA v2+ only)
-            #for FoLiA <2 we only check if we have a set
-            #This is a much stricter check than older FoLiA versions
-            if doc and (annotationtype not in doc.annotationdefaults or object.set not in doc.annotationdefaults[annotationtype]):
-                if doc.autodeclare:
-                    #autodeclare
-                    if isinstance(object, TextContent): #FoLiA v2.0, autodeclare text
-                        if FOLIA2:
-                            if doc.debug >= 1: print("[FoLiA DEBUG] Auto-declaring Text Annotation",file=stderr)
-                            doc.declare(AnnotationType.TEXT, DEFAULT_TEXT_SET)
-                    elif isinstance(object, PhonContent): #FoLiA v2.0
-                        if FOLIA2:
-                            if doc.debug >= 1: print("[FoLiA DEBUG] Auto-declaring Phonetic Annotation",file=stderr)
-                            doc.declare(AnnotationType.PHON, DEFAULT_PHON_SET)
-                    else:
-                        if doc.debug >= 1: print("[FoLiA DEBUG] Auto-declaring " + object.__class__.__name__ + " with set " + str(object.set),file=stderr)
-                        doc.declare(annotationtype, object.set)
-                elif object.set:
-                    raise DeclarationError("Set '" + str(object.set) + "' is used for " + object.__class__.__name__ + " <" + object.__class__.XMLTAG + ">, but has no declaration!")
-                else:
-                    raise DeclarationError("Encountered an instance without proper declaration: " + object.__class__.__name__ + " <" + object.__class__.XMLTAG + ">!")
-        #check for ambiguity
-        if not object.set and object.__class__.PRIMARYELEMENT and annotationtype in doc.annotationdefaults and len(doc.annotationdefaults[annotationtype]) > 1:
-            raise DeclarationError("No set assigned for " + object.__class__.__name__ + " <" + object.__class__.XMLTAG + "> but no default available either due to multiple possible declarations: " + ", ".join([str(s) for s in doc.annotationdefaults[annotationtype].keys()]))
-
-    if 'class' in kwargs:
-        if not Attrib.CLASS in supported:
-            raise ValueError("Class is not supported for " + object.__class__.__name__)
-        object.cls = kwargs['class']
-        del kwargs['class']
-    elif 'cls' in kwargs:
-        if not Attrib.CLASS in supported:
-            raise ValueError("Class is not supported on " + object.__class__.__name__)
-        object.cls = kwargs['cls']
-        del kwargs['cls']
-    elif Attrib.CLASS in required:
-        raise ValueError("Class is required for " + object.__class__.__name__)
-
-    if object.cls and not object.set:
-        if doc and doc.autodeclare:
-            if checkversion(doc.version, '2.0.0') < 0: #'undefined' set only for FoLiA < 2.0.0
-                if (annotationtype, 'undefined') not in doc.annotations:
-                    doc.annotations.append( (annotationtype, 'undefined') )
-                    doc.annotationdefaults[annotationtype] = {'undefined': {} }
-                object.set = 'undefined'
-        else:
-            raise DeclarationError("Set is required for " + object.__class__.__name__ + " <"+object.__class__.XMLTAG+"> . Class '" + object.cls + "' assigned without set and no default set found in declaration.")
-
-
-    if 'processor' in kwargs:
-        if Attrib.ANNOTATOR not in supported:   #(ANNOTATOR attribute also subsumes Processor)
-            raise ValueError("Processor is not supported for " + object.__class__.__name__)
-        if isinstance(kwargs['processor'], Processor):
-            object.processor = kwargs['processor']
-        else:
-            object.processor = doc.provenance[kwargs['processor']]
-        #Both processor and annotator are specified! This is valid only if the annotator equals the processor name!
-        if 'annotator' in kwargs and kwargs.annotator:
-            if kwargs['annotator'] != object.processor.name:
-                raise ValueError("Annotator attribute " + kwargs['annotator'] + " does not equal processor name (" + object.processor.name + ")")
-        if 'annotatortype' in kwargs and kwargs.annotator:
-            if kwargs['annotatortype'] != object.processor.type:
-                raise ValueError("Annotatortype attribute " + kwargs['annotatortype'] + " does not equal processor type (" + object.processor.type + ")")
-        del kwargs['processor']
-    elif doc and annotationtype in doc.annotators and object.set in doc.annotators[annotationtype] and len(doc.annotators[annotationtype][object.set]) == 1:
-        #assign the default processor
-        for processor in doc.getprocessors(annotationtype, object.set): #should only iterate over one!
-            object.processor = processor
-
-    if object.processor is None:
-        #old behavour without provenance (FoLiA <= 1.5)
-        if 'annotator' in kwargs:
-            if Attrib.ANNOTATOR not in supported:
-                raise ValueError("Annotator is not supported for " + object.__class__.__name__)
-            object.annotator = kwargs['annotator']
-            del kwargs['annotator']
-        elif doc and annotationtype in doc.annotationdefaults and object.set in doc.annotationdefaults[annotationtype] and 'annotator' in doc.annotationdefaults[annotationtype][object.set]:
-            object.annotator = doc.annotationdefaults[annotationtype][object.set]['annotator']
-        elif Attrib.ANNOTATOR in required:
-            raise ValueError("Annotator is required for " + object.__class__.__name__)
-
-
-        if 'annotatortype' in kwargs:
-            if not Attrib.ANNOTATOR in supported:
-                raise ValueError("Annotatortype is not supported for " + object.__class__.__name__)
-            if kwargs['annotatortype'] == AnnotatorType.AUTO:
-                object.annotatortype = AnnotatorType.AUTO
-            elif kwargs['annotatortype']  == AnnotatorType.MANUAL:
-                object.annotatortype = AnnotatorType.MANUAL
-            else:
-                raise ValueError("annotatortype must be 'auto' or 'manual', got "  + repr(kwargs['annotatortype']))
-            del kwargs['annotatortype']
-        elif doc and annotationtype in doc.annotationdefaults and object.set in doc.annotationdefaults[annotationtype] and 'annotatortype' in doc.annotationdefaults[annotationtype][object.set]:
-            object.annotatortype = doc.annotationdefaults[annotationtype][object.set]['annotatortype']
-        elif Attrib.ANNOTATOR in required:
-            raise ValueError("Annotatortype is required for " + object.__class__.__name__)
-
-
-    if 'confidence' in kwargs:
-        if not Attrib.CONFIDENCE in supported:
-            raise ValueError("Confidence is not supported")
-        if kwargs['confidence'] is not None:
-            try:
-                object.confidence = float(kwargs['confidence'])
-                assert object.confidence >= 0.0 and object.confidence <= 1.0
-            except:
-                raise ValueError("Confidence must be a floating point number between 0 and 1, got " + repr(kwargs['confidence']) )
-        del kwargs['confidence']
-    elif Attrib.CONFIDENCE in required:
-        raise ValueError("Confidence is required for " + object.__class__.__name__)
-
-
-
-    if 'n' in kwargs:
-        if not Attrib.N in supported:
-            raise ValueError("N is not supported for " + object.__class__.__name__)
-        object.n = kwargs['n']
-        del kwargs['n']
-    elif Attrib.N in required:
-        raise ValueError("N is required for " + object.__class__.__name__)
-
-    if 'datetime' in kwargs:
-        if not Attrib.DATETIME in supported:
-            raise ValueError("Datetime is not supported")
-        if isinstance(kwargs['datetime'], datetime):
-            object.datetime = kwargs['datetime']
-        else:
-
-            #try:
-            object.datetime = parse_datetime(kwargs['datetime'])
-            #except:
-            #    raise ValueError("Unable to parse datetime: " + str(repr(kwargs['datetime'])))
-        del kwargs['datetime']
-    elif doc and annotationtype in doc.annotationdefaults and object.set in doc.annotationdefaults[annotationtype] and 'datetime' in doc.annotationdefaults[annotationtype][object.set]:
-        object.datetime = doc.annotationdefaults[annotationtype][object.set]['datetime']
-    elif Attrib.DATETIME in required:
-        raise ValueError("Datetime is required for " + object.__class__.__name__)
-
-    if 'src' in kwargs:
-        if not Attrib.SRC in supported:
-            raise ValueError("Source is not supported for " + object.__class__.__name__)
-        object.src = kwargs['src']
-        del kwargs['src']
-    elif Attrib.SRC in required:
-        raise ValueError("Source is required for " + object.__class__.__name__)
-
-    if 'begintime' in kwargs:
-        if not Attrib.BEGINTIME in supported:
-            raise ValueError("Begintime is not supported for " + object.__class__.__name__)
-        object.begintime = parsetime(kwargs['begintime'])
-        del kwargs['begintime']
-    elif Attrib.BEGINTIME in required:
-        raise ValueError("Begintime is required for " + object.__class__.__name__)
-
-    if 'endtime' in kwargs:
-        if not Attrib.ENDTIME in supported:
-            raise ValueError("Endtime is not supported for " + object.__class__.__name__)
-        object.endtime = parsetime(kwargs['endtime'])
-        del kwargs['endtime']
-    elif Attrib.ENDTIME in required:
-        raise ValueError("Endtime is required for " + object.__class__.__name__)
-
-
-    if 'speaker' in kwargs:
-        if not Attrib.SPEAKER in supported:
-            raise ValueError("Speaker is not supported for " + object.__class__.__name__)
-        object.speaker = kwargs['speaker']
-        del kwargs['speaker']
-    elif Attrib.SPEAKER in required:
-        raise ValueError("Speaker is required for " + object.__class__.__name__)
-
-    if 'auth' in kwargs:
-        if kwargs['auth'] in ('no','false'):
-            object.auth = False
-        else:
-            object.auth = bool(kwargs['auth'])
-        del kwargs['auth']
-    else:
-        object.auth = object.__class__.AUTH
-
-
-
-    if 'text' in kwargs:
-        if kwargs['text']:
-            object.settext(kwargs['text'])
-        del kwargs['text']
-
-    if 'phon' in kwargs:
-        if kwargs['phon']:
-            object.setphon(kwargs['phon'])
-        del kwargs['phon']
-
-    if 'textclass' in kwargs:
-        if not Attrib.TEXTCLASS in supported:
-            raise ValueError("Textclass is not supported for " + object.__class__.__name__)
-        object.textclass = kwargs['textclass']
-        del kwargs['textclass']
-    else:
-        if Attrib.TEXTCLASS in supported:
-            object.textclass = "current"
-
-    if 'metadata' in kwargs:
-        if not Attrib.METADATA in supported:
-            raise ValueError("Metadata is not supported for " + object.__class__.__name__)
-        object.metadata = kwargs['metadata']
-        if doc:
-            try:
-                doc.submetadata[kwargs['metadata']]
-            except KeyError:
-                raise KeyError("No such metadata defined: " + kwargs['metadata'])
-        del kwargs['metadata']
-
-    if object.XLINK:
-        if 'href' in kwargs:
-            object.href =kwargs['href']
-            del kwargs['href']
-        if 'xlinktype' in kwargs:
-            object.xlinktype = kwargs['xlinktype']
-            del kwargs['xlinktype']
-        if 'xlinkrole' in kwargs:
-            object.xlinkrole = kwargs['xlinkrole']
-            del kwargs['xlinkrole']
-        if 'xlinklabel' in kwargs:
-            object.xlinklabel = kwargs['xlinklabel']
-            del kwargs['xlinklabel']
-        if 'xlinkshow' in kwargs:
-            object.xlinkshow = kwargs['xlinkshow']
-            del kwargs['xlinklabel']
-        if 'xlinktitle' in kwargs:
-            object.xlinktitle = kwargs['xlinktitle']
-            del kwargs['xlinktitle']
-
-    if doc and doc.debug >= 2:
-        print("   @id           = ", repr(object.id),file=stderr)
-        print("   @set          = ", repr(object.set),file=stderr)
-        print("   @class        = ", repr(object.cls),file=stderr)
-        print("   @annotator    = ", repr(object.annotator),file=stderr)
-        print("   @annotatortype= ", repr(object.annotatortype),file=stderr)
-        print("   @confidence   = ", repr(object.confidence),file=stderr)
-        print("   @n            = ", repr(object.n),file=stderr)
-        print("   @datetime     = ", repr(object.datetime),file=stderr)
-
-
-
-    #set index
-    if object.id and doc:
-        if object.id in doc.index:
-            if doc.debug >= 1: print("[FoLiA DEBUG] Duplicate ID not permitted:" + object.id,file=stderr)
-            raise DuplicateIDError("Duplicate ID not permitted: " + object.id)
-        else:
-            if doc.debug >= 1: print("[FoLiA DEBUG] Adding to index: " + object.id,file=stderr)
-            doc.index[object.id] = object
-
-    #Parse feature attributes (shortcut for feature specification for some elements)
-    for c in object.ACCEPTED_DATA:
-        if issubclass(c, Feature):
-            if c.SUBSET in kwargs:
-                if kwargs[c.SUBSET]:
-                    object.append(c,cls=kwargs[c.SUBSET])
-                del kwargs[c.SUBSET]
-
-    return kwargs
 
 def norm_spaces(s):
     """Normalize spaces, splits on whitespace (\n\r\t\s) and rejoins (faster than a s/\s+// regexp)"""
@@ -872,7 +556,7 @@ class AbstractElement(object):
         self.data = []
 
 
-        kwargs = parsecommonarguments(self, doc, self.ANNOTATIONTYPE, self.REQUIRED_ATTRIBS, self.OPTIONAL_ATTRIBS,**kwargs)
+        kwargs = self.parsecommonarguments(doc, **kwargs)
         for child in args:
             self.append(child)
         if 'contents' in kwargs:
@@ -917,6 +601,326 @@ class AbstractElement(object):
     #    self.doc = None
     #    self.parent = None
     #    del self.data
+
+    def parsecommonarguments(self, doc, **kwargs):
+        """Internal function to parse common FoLiA attributes and sets up the instance accordingly. Do not invoke directly."""
+
+        self.doc = doc #The FoLiA root document
+        annotationtype = self.ANNOTATIONTYPE
+        required = self.REQUIRED_ATTRIBS
+        allowed = self.OPTIONAL_ATTRIBS
+
+        if required is None:
+            required = tuple()
+        if allowed is None:
+            allowed = tuple()
+
+        supported = required + allowed
+
+
+        if 'generate_id_in' in kwargs:
+            try:
+                kwargs['id'] = kwargs['generate_id_in'].generate_id(self.__class__)
+            except GenerateIDException:
+                pass #ID could not be generated, just skip
+            del kwargs['generate_id_in']
+
+
+
+        if 'id' in kwargs:
+            if Attrib.ID not in supported:
+                raise ValueError("ID is not supported on " + self.__class__.__name__)
+            isncname(kwargs['id'])
+            self.id = kwargs['id']
+            del kwargs['id']
+        elif Attrib.ID in required:
+            raise ValueError("ID is required for " + self.__class__.__name__)
+        else:
+            self.id = None
+
+
+        if 'set' in kwargs:
+            if Attrib.CLASS not in supported and not self.SETONLY:
+                raise ValueError("Set is not supported on " + self.__class__.__name__)
+            if not kwargs['set'] and checkversion(doc.version, '2.0.0') < 0:
+                self.set ="undefined" #FoLiA <2.0 allowed a 'default' undefined set, FoLiA 2.0 doesn't
+            elif not kwargs['set']:
+                self.set = None
+            else:
+                self.set = kwargs['set']
+            del kwargs['set']
+            if doc and self.set and self.set in doc.alias_set:
+                self.set = doc.alias_set[self.set]
+        elif annotationtype in doc.annotationdefaults and len(doc.annotationdefaults[annotationtype]) == 1:
+            self.set = list(doc.annotationdefaults[annotationtype].keys())[0]
+        elif Attrib.CLASS in required: #or (hasattr(self,'SETONLY') and self.SETONLY):
+            raise ValueError("Set is required for " + self.__class__.__name__)
+
+        if doc and annotationtype is not None: #we can only do this check if we have a document, we'll be overly permissive for documentless elements (so caution adviced for those)
+            FOLIA2 = checkversion(doc.version, '2.0.0') >= 0
+            if (FOLIA2 or (self.set and self.set != "undefined")) and not isinstance(self, (Text,Speech)): #Body is an undeclared element
+                #Check if an element is declared (FoLiA v2+ only)
+                #for FoLiA <2 we only check if we have a set
+                #This is a much stricter check than older FoLiA versions
+                if doc and (annotationtype not in doc.annotationdefaults or self.set not in doc.annotationdefaults[annotationtype]):
+                    if doc.autodeclare:
+                        #autodeclare
+                        if isinstance(self, TextContent): #FoLiA v2.0, autodeclare text
+                            if FOLIA2:
+                                if doc.debug >= 1: print("[FoLiA DEBUG] Auto-declaring Text Annotation",file=stderr)
+                                doc.declare(AnnotationType.TEXT, DEFAULT_TEXT_SET)
+                        elif isinstance(self, PhonContent): #FoLiA v2.0
+                            if FOLIA2:
+                                if doc.debug >= 1: print("[FoLiA DEBUG] Auto-declaring Phonetic Annotation",file=stderr)
+                                doc.declare(AnnotationType.PHON, DEFAULT_PHON_SET)
+                        else:
+                            if doc.debug >= 1: print("[FoLiA DEBUG] Auto-declaring " + self.__class__.__name__ + " with set " + str(self.set),file=stderr)
+                            doc.declare(annotationtype, self.set)
+                    elif self.set:
+                        raise DeclarationError("Set '" + str(self.set) + "' is used for " + self.__class__.__name__ + " <" + self.__class__.XMLTAG + ">, but has no declaration!")
+                    else:
+                        raise DeclarationError("Encountered an instance without proper declaration: " + self.__class__.__name__ + " <" + self.__class__.XMLTAG + ">!")
+            #check for ambiguity
+            if not self.set and self.__class__.PRIMARYELEMENT and annotationtype in doc.annotationdefaults and len(doc.annotationdefaults[annotationtype]) > 1:
+                raise DeclarationError("No set assigned for " + self.__class__.__name__ + " <" + self.__class__.XMLTAG + "> but no default available either due to multiple possible declarations: " + ", ".join([str(s) for s in doc.annotationdefaults[annotationtype].keys()]))
+
+        if 'class' in kwargs:
+            if not Attrib.CLASS in supported:
+                raise ValueError("Class is not supported for " + self.__class__.__name__)
+            self.cls = kwargs['class']
+            del kwargs['class']
+        elif 'cls' in kwargs:
+            if not Attrib.CLASS in supported:
+                raise ValueError("Class is not supported on " + self.__class__.__name__)
+            self.cls = kwargs['cls']
+            del kwargs['cls']
+        elif Attrib.CLASS in required:
+            raise ValueError("Class is required for " + self.__class__.__name__)
+
+        if self.cls and not self.set:
+            if doc and doc.autodeclare:
+                if checkversion(doc.version, '2.0.0') < 0: #'undefined' set only for FoLiA < 2.0.0
+                    if (annotationtype, 'undefined') not in doc.annotations:
+                        doc.annotations.append( (annotationtype, 'undefined') )
+                        doc.annotationdefaults[annotationtype] = {'undefined': {} }
+                    self.set = 'undefined'
+            else:
+                raise DeclarationError("Set is required for " + self.__class__.__name__ + " <"+self.__class__.XMLTAG+"> . Class '" + self.cls + "' assigned without set and no default set found in declaration.")
+
+
+        if 'processor' in kwargs:
+            if Attrib.ANNOTATOR not in supported:   #(ANNOTATOR attribute also subsumes Processor)
+                raise ValueError("Processor is not supported for " + self.__class__.__name__)
+            if isinstance(kwargs['processor'], Processor):
+                self.processor = kwargs['processor']
+            else:
+                self.processor = doc.provenance[kwargs['processor']]
+            #Both processor and annotator are specified! This is valid only if the annotator equals the processor name!
+            if 'annotator' in kwargs and kwargs.annotator:
+                if kwargs['annotator'] != self.processor.name:
+                    raise ValueError("Annotator attribute " + kwargs['annotator'] + " does not equal processor name (" + self.processor.name + ")")
+            if 'annotatortype' in kwargs and kwargs.annotator:
+                if kwargs['annotatortype'] != self.processor.type:
+                    raise ValueError("Annotatortype attribute " + kwargs['annotatortype'] + " does not equal processor type (" + self.processor.type + ")")
+            del kwargs['processor']
+        elif doc and annotationtype in doc.annotators and self.set in doc.annotators[annotationtype] and len(doc.annotators[annotationtype][self.set]) == 1:
+            #assign the default processor
+            for processor in doc.getprocessors(annotationtype, self.set): #should only iterate over one!
+                self.processor = processor
+
+        if self.processor is None:
+            #old behavour without provenance (FoLiA <= 1.5)
+            if 'annotator' in kwargs:
+                if Attrib.ANNOTATOR not in supported:
+                    raise ValueError("Annotator is not supported for " + self.__class__.__name__)
+                self.annotator = kwargs['annotator']
+                del kwargs['annotator']
+            elif doc and annotationtype in doc.annotationdefaults and self.set in doc.annotationdefaults[annotationtype] and 'annotator' in doc.annotationdefaults[annotationtype][self.set]:
+                self.annotator = doc.annotationdefaults[annotationtype][self.set]['annotator']
+            elif Attrib.ANNOTATOR in required:
+                raise ValueError("Annotator is required for " + self.__class__.__name__)
+
+
+            if 'annotatortype' in kwargs:
+                if not Attrib.ANNOTATOR in supported:
+                    raise ValueError("Annotatortype is not supported for " + self.__class__.__name__)
+                if kwargs['annotatortype'] == AnnotatorType.AUTO:
+                    self.annotatortype = AnnotatorType.AUTO
+                elif kwargs['annotatortype']  == AnnotatorType.MANUAL:
+                    self.annotatortype = AnnotatorType.MANUAL
+                else:
+                    raise ValueError("annotatortype must be 'auto' or 'manual', got "  + repr(kwargs['annotatortype']))
+                del kwargs['annotatortype']
+            elif doc and annotationtype in doc.annotationdefaults and self.set in doc.annotationdefaults[annotationtype] and 'annotatortype' in doc.annotationdefaults[annotationtype][self.set]:
+                self.annotatortype = doc.annotationdefaults[annotationtype][self.set]['annotatortype']
+            elif Attrib.ANNOTATOR in required:
+                raise ValueError("Annotatortype is required for " + self.__class__.__name__)
+
+
+        if 'confidence' in kwargs:
+            if not Attrib.CONFIDENCE in supported:
+                raise ValueError("Confidence is not supported")
+            if kwargs['confidence'] is not None:
+                try:
+                    self.confidence = float(kwargs['confidence'])
+                    assert self.confidence >= 0.0 and self.confidence <= 1.0
+                except:
+                    raise ValueError("Confidence must be a floating point number between 0 and 1, got " + repr(kwargs['confidence']) )
+            del kwargs['confidence']
+        elif Attrib.CONFIDENCE in required:
+            raise ValueError("Confidence is required for " + self.__class__.__name__)
+
+
+
+        if 'n' in kwargs:
+            if not Attrib.N in supported:
+                raise ValueError("N is not supported for " + self.__class__.__name__)
+            self.n = kwargs['n']
+            del kwargs['n']
+        elif Attrib.N in required:
+            raise ValueError("N is required for " + self.__class__.__name__)
+
+        if 'datetime' in kwargs:
+            if not Attrib.DATETIME in supported:
+                raise ValueError("Datetime is not supported")
+            if isinstance(kwargs['datetime'], datetime):
+                self.datetime = kwargs['datetime']
+            else:
+
+                #try:
+                self.datetime = parse_datetime(kwargs['datetime'])
+                #except:
+                #    raise ValueError("Unable to parse datetime: " + str(repr(kwargs['datetime'])))
+            del kwargs['datetime']
+        elif doc and annotationtype in doc.annotationdefaults and self.set in doc.annotationdefaults[annotationtype] and 'datetime' in doc.annotationdefaults[annotationtype][self.set]:
+            self.datetime = doc.annotationdefaults[annotationtype][self.set]['datetime']
+        elif Attrib.DATETIME in required:
+            raise ValueError("Datetime is required for " + self.__class__.__name__)
+
+        if 'src' in kwargs:
+            if not Attrib.SRC in supported:
+                raise ValueError("Source is not supported for " + self.__class__.__name__)
+            self.src = kwargs['src']
+            del kwargs['src']
+        elif Attrib.SRC in required:
+            raise ValueError("Source is required for " + self.__class__.__name__)
+
+        if 'begintime' in kwargs:
+            if not Attrib.BEGINTIME in supported:
+                raise ValueError("Begintime is not supported for " + self.__class__.__name__)
+            self.begintime = parsetime(kwargs['begintime'])
+            del kwargs['begintime']
+        elif Attrib.BEGINTIME in required:
+            raise ValueError("Begintime is required for " + self.__class__.__name__)
+
+        if 'endtime' in kwargs:
+            if not Attrib.ENDTIME in supported:
+                raise ValueError("Endtime is not supported for " + self.__class__.__name__)
+            self.endtime = parsetime(kwargs['endtime'])
+            del kwargs['endtime']
+        elif Attrib.ENDTIME in required:
+            raise ValueError("Endtime is required for " + self.__class__.__name__)
+
+
+        if 'speaker' in kwargs:
+            if not Attrib.SPEAKER in supported:
+                raise ValueError("Speaker is not supported for " + self.__class__.__name__)
+            self.speaker = kwargs['speaker']
+            del kwargs['speaker']
+        elif Attrib.SPEAKER in required:
+            raise ValueError("Speaker is required for " + self.__class__.__name__)
+
+        if 'auth' in kwargs:
+            if kwargs['auth'] in ('no','false'):
+                self.auth = False
+            else:
+                self.auth = bool(kwargs['auth'])
+            del kwargs['auth']
+        else:
+            self.auth = self.__class__.AUTH
+
+
+
+        if 'text' in kwargs:
+            if kwargs['text']:
+                self.settext(kwargs['text'])
+            del kwargs['text']
+
+        if 'phon' in kwargs:
+            if kwargs['phon']:
+                self.setphon(kwargs['phon'])
+            del kwargs['phon']
+
+        if 'textclass' in kwargs:
+            if not Attrib.TEXTCLASS in supported:
+                raise ValueError("Textclass is not supported for " + self.__class__.__name__)
+            self.textclass = kwargs['textclass']
+            del kwargs['textclass']
+        else:
+            if Attrib.TEXTCLASS in supported:
+                self.textclass = "current"
+
+        if 'metadata' in kwargs:
+            if not Attrib.METADATA in supported:
+                raise ValueError("Metadata is not supported for " + self.__class__.__name__)
+            self.metadata = kwargs['metadata']
+            if doc:
+                try:
+                    doc.submetadata[kwargs['metadata']]
+                except KeyError:
+                    raise KeyError("No such metadata defined: " + kwargs['metadata'])
+            del kwargs['metadata']
+
+        if self.XLINK:
+            if 'href' in kwargs:
+                self.href =kwargs['href']
+                del kwargs['href']
+            if 'xlinktype' in kwargs:
+                self.xlinktype = kwargs['xlinktype']
+                del kwargs['xlinktype']
+            if 'xlinkrole' in kwargs:
+                self.xlinkrole = kwargs['xlinkrole']
+                del kwargs['xlinkrole']
+            if 'xlinklabel' in kwargs:
+                self.xlinklabel = kwargs['xlinklabel']
+                del kwargs['xlinklabel']
+            if 'xlinkshow' in kwargs:
+                self.xlinkshow = kwargs['xlinkshow']
+                del kwargs['xlinklabel']
+            if 'xlinktitle' in kwargs:
+                self.xlinktitle = kwargs['xlinktitle']
+                del kwargs['xlinktitle']
+
+        if doc and doc.debug >= 2:
+            print("   @id           = ", repr(self.id),file=stderr)
+            print("   @set          = ", repr(self.set),file=stderr)
+            print("   @class        = ", repr(self.cls),file=stderr)
+            print("   @annotator    = ", repr(self.annotator),file=stderr)
+            print("   @annotatortype= ", repr(self.annotatortype),file=stderr)
+            print("   @confidence   = ", repr(self.confidence),file=stderr)
+            print("   @n            = ", repr(self.n),file=stderr)
+            print("   @datetime     = ", repr(self.datetime),file=stderr)
+
+
+
+        #set index
+        if self.id and doc:
+            if self.id in doc.index:
+                if doc.debug >= 1: print("[FoLiA DEBUG] Duplicate ID not permitted:" + self.id,file=stderr)
+                raise DuplicateIDError("Duplicate ID not permitted: " + self.id)
+            else:
+                if doc.debug >= 1: print("[FoLiA DEBUG] Adding to index: " + self.id,file=stderr)
+                doc.index[self.id] = self
+
+        #Parse feature attributes (shortcut for feature specification for some elements)
+        for c in self.ACCEPTED_DATA:
+            if issubclass(c, Feature):
+                if c.SUBSET in kwargs:
+                    if kwargs[c.SUBSET]:
+                        self.append(c,cls=kwargs[c.SUBSET])
+                    del kwargs[c.SUBSET]
+
+        return kwargs
 
 
     def description(self):
