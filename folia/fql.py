@@ -35,8 +35,8 @@ MASK_LITERAL = 1
 MASK_EXPRESSION = 2
 MAXEXPANSION = 99
 
-FOLIAVERSION = '1.5.0'
-FQLVERSION = '0.4.1'
+FOLIAVERSION = folia.FOLIAVERSION
+FQLVERSION = '0.5.0'
 
 class SyntaxError(Exception):
     pass
@@ -1384,10 +1384,11 @@ def getassignments(q, i, assignments,  focus=None):
 
 
 def getprocessor(q,i):
-    if q.kw(i, ('PROCESSOR',)):
-        assignments = {"annotatortype": "auto"}
+    if q.kw(i, 'PROCESSOR'):
+        assignments = {"id": "fql." + ("%08x" % random.getrandbits(16)), "type": "auto", "folia_version": FOLIAVERSION}
         l = len(q)
         sub = False
+        i += 1
         while i < l:
             if q.kw(i, "IN"):
                 assignments['parent'] = q[i+1]
@@ -1395,7 +1396,7 @@ def getprocessor(q,i):
             elif q.kw(i, "NONE"):
                 assignments['reset'] = True
                 i += 1
-            elif q.kw(i, ('id','version', 'document_version', 'command', 'host', 'user', 'folia_version', 'resourcelink')):
+            elif q.kw(i, ('id','name','version', 'document_version', 'command', 'host', 'user', 'folia_version', 'resourcelink')):
                 if q[i+1] == 'NONE':
                     assignments[q[i]] = None
                 else:
@@ -1927,7 +1928,7 @@ class Query(object):
 
             self.declarations.append( (Class, decset, defaults)  )
         elif q.kw(i,"PROCESSOR"):
-            processor,i = self.getprocessor(q,i)
+            processor, i = getprocessor(q,i)
             self.processors.append(processor)
 
 
@@ -1973,15 +1974,17 @@ class Query(object):
                         processor = existing_processor
                     except KeyError:
                         #processor is new, instantiate and add to provenance chain
+                        procname = processor['name']
+                        del processor['name']
                         if 'parent' in processor:
                             #processor is a subprocessor,
                             if debug: print("[FQL EVALUATION DEBUG] Adding processor ", processor['name'], ", ID=", processor['id'],"as child of", processor['parent'], file=sys.stderr)
                             parent_processor = doc.provenance[processor['parent']]
-                            processor = folia.Processor(processor['name'], **self.processor)
+                            processor = folia.Processor(procname, **processor)
                             parent_processor.append(processor)
                         else:
                             if debug: print("[FQL EVALUATION DEBUG] Adding processor ", processor['name'], ", ID=", processor['id'],file=sys.stderr)
-                            processor = folia.Processor(processor['name'], **self.processor)
+                            processor = folia.Processor(procname, **processor)
                             doc.provenance.append(processor)
                     doc.processor = processor
 

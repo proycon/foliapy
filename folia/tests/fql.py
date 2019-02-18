@@ -170,7 +170,7 @@ Qdelete_correction = "DELETE correction ID \"correctionexample.s.1.w.2.correctio
 Qdelete_structural_correction = "DELETE correction ID \"correctionexample.s.3.correction.1\" RESTORE ORIGINAL RETURN ancestor-focus"
 Qdelete_structural_correction2 = "DELETE correction ID \"correctionexample.s.3.correction.2\" RESTORE ORIGINAL RETURN ancestor-focus"
 
-Qprovenance = "PROCESSOR name=\"test\" type=\"auto\""
+Qprovenance = "PROCESSOR id \"test.pos\" name \"test\" type \"auto\" ADD pos OF \"https://raw.githubusercontent.com/proycon/folia/master/setdefinitions/universal-pos.foliaset.ttl\" WITH class \"NOUN\" FOR w ID \"example.p.1.s.1.w.2\"" #declaration is implied
 
 
 class Test1UnparsedQuery(unittest.TestCase):
@@ -1017,11 +1017,16 @@ class Test4Evaluation(unittest.TestCase):
 
 class Test5Provenance(unittest.TestCase):
     def setUp(self):
-        self.doc = folia.Document(file=os.path.join(FOLIAPATH, 'example','tokens-structure.2.0.0.folia.xml'))
+        self.doc = folia.Document(file=os.path.join(FOLIAPATH, 'examples','tokens-structure.2.0.0.folia.xml'))
 
-    #def test1_addprocessor(self):
-    #    q = fql.Query(Qprovenance)
-    #    results = q(self.doc)
+    def test1_addprocessor(self):
+        q = fql.Query(Qprovenance)
+        results = q(self.doc)
+        self.assertIsInstance(results[0], folia.PosAnnotation)
+        self.assertEqual(results[0].cls, "NOUN")
+        doc = results[0].doc
+        self.assertEqual(doc.provenance['test.pos'].name, 'test')
+        self.assertEqual(doc.provenance['test.pos'].type, folia.ProcessorType.AUTO)
 
 
 if os.path.exists("folia-repo"):
