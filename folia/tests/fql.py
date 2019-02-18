@@ -170,6 +170,8 @@ Qdelete_correction = "DELETE correction ID \"correctionexample.s.1.w.2.correctio
 Qdelete_structural_correction = "DELETE correction ID \"correctionexample.s.3.correction.1\" RESTORE ORIGINAL RETURN ancestor-focus"
 Qdelete_structural_correction2 = "DELETE correction ID \"correctionexample.s.3.correction.2\" RESTORE ORIGINAL RETURN ancestor-focus"
 
+Qprovenance = "PROCESSOR name=\"test\" type=\"auto\""
+
 
 class Test1UnparsedQuery(unittest.TestCase):
 
@@ -1013,6 +1015,15 @@ class Test4Evaluation(unittest.TestCase):
         self.assertEqual(results[0][1].text(), "on")
         self.assertEqual(results[0][2].text(), "weer")
 
+class Test5Provenance(unittest.TestCase):
+    def setUp(self):
+        self.doc = folia.Document(file=os.path.join(FOLIAPATH, 'example','tokens-structure.2.0.0.folia.xml'))
+
+    #def test1_addprocessor(self):
+    #    q = fql.Query(Qprovenance)
+    #    results = q(self.doc)
+
+
 if os.path.exists("folia-repo"):
     FOLIAPATH = "folia-repo"
 elif os.path.exists("../folia-repo"):
@@ -1022,11 +1033,11 @@ elif os.path.exists("../../folia-repo"):
 else:
     raise Exception("FoLiA repository not found, did you run git submodule init and are you in the test directory?")
 
-f = io.open(os.path.join(FOLIAPATH, 'examples/full-legacy.1.5.folia.xml'), 'r',encoding='utf-8')
+f = io.open(os.path.join(FOLIAPATH, 'examples','full-legacy.1.5.folia.xml'), 'r',encoding='utf-8')
 FOLIAEXAMPLE = f.read()
 f.close()
 
-f = io.open(os.path.join(FOLIAPATH, 'examples/corrections.0.12.folia.xml'), 'r',encoding='utf-8')
+f = io.open(os.path.join(FOLIAPATH, 'examples','corrections.0.12.folia.xml'), 'r',encoding='utf-8')
 FOLIACORRECTIONEXAMPLE = f.read()
 f.close()
 

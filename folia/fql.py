@@ -1384,11 +1384,19 @@ def getassignments(q, i, assignments,  focus=None):
 
 
 def getprocessor(q,i, parentprocessor=None):
-    if q.kw(i, ('PROCESSOR','SUBPROCESSOR')):
+    if q.kw(i, ('PROCESSOR',)):
         assignments = {"annotatortype": "auto"}
         l = len(q)
+        sub = False
         while i < l:
-            if q.kw(i, ('id','version', 'document_version', 'command', 'host', 'user', 'folia_version', 'resourcelink')):
+            if q.kw(i, "SUB"):
+                sub = True
+                i += 1
+            elif q.kw(i, "PARENT"):
+                return parentprocessor, i+1
+            elif q.kw(i, "NONE"):
+                return None, i+1
+            elif q.kw(i, ('id','version', 'document_version', 'command', 'host', 'user', 'folia_version', 'resourcelink')):
                 if q[i+1] == 'NONE':
                     assignments[q[i]] = None
                 else:
@@ -1406,7 +1414,7 @@ def getprocessor(q,i, parentprocessor=None):
                 else:
                     raise SyntaxError("Invalid value for annotatortype: " + str(q[i+1]))
                 i+=2
-            elif q.kw(i, 'begindatetime', 'enddatetime'):
+            elif q.kw(i, ('begindatetime', 'enddatetime')):
                 if q[i+1] == "now":
                     assignments[q[i]] = datetime.datetime.now()
                 elif q[i+1] == "NONE":
@@ -1426,7 +1434,7 @@ def getprocessor(q,i, parentprocessor=None):
                 if not assignments:
                     raise SyntaxError("Expected assignments after PROCESSOR statement, but no valid attribute found, got  " + str(q[i]) + " at position " + str(i) + " in: " +  str(q))
                 break
-        return folia.Processor(assignments['name'], type=assignments.get('type',None), id=assignments.get('id',None), version=assignments.get('version',None), document_version=assignments.get('document_version',None), folia_version=assignments.get('folia_version',None), command=assignments.get('command',None), host=assignments.get('host',None), user=assignments.get('user',None), begindatetime=assignments.get('begindatetime',None), enddatetime=assignments.get('enddatetime',None), resourcelink=assignments.get('resourcelink',None), parent=parentprocessor)
+        return folia.Processor(assignments['name'], type=assignments.get('type',None), id=assignments.get('id',None), version=assignments.get('version',None), document_version=assignments.get('document_version',None), folia_version=assignments.get('folia_version',None), command=assignments.get('command',None), host=assignments.get('host',None), user=assignments.get('user',None), begindatetime=assignments.get('begindatetime',None), enddatetime=assignments.get('enddatetime',None), resourcelink=assignments.get('resourcelink',None), parent=parentprocessor if sub else None)
     else:
         raise SyntaxError("Expected PROCESSOR, got " + str(q[i]) + " in: " + str(q))
 
@@ -1920,7 +1928,7 @@ class Query(object):
 
             self.declarations.append( (Class, decset, defaults)  )
         elif q.kw(i,"PROCESSOR"):
-            self.processor,i = getprocessor(q,i)
+            self.processor,i = getprocessor(q,i, self.processor)
 
 
         if i < l:
