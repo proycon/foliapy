@@ -1383,19 +1383,18 @@ def getassignments(q, i, assignments,  focus=None):
     return i
 
 
-def getprocessor(q,i, parentprocessor=None):
+def getprocessor(q,i):
     if q.kw(i, ('PROCESSOR',)):
         assignments = {"annotatortype": "auto"}
         l = len(q)
         sub = False
         while i < l:
-            if q.kw(i, "SUB"):
-                sub = True
-                i += 1
-            elif q.kw(i, "PARENT"):
-                return parentprocessor, i+1
+            if q.kw(i, "IN"):
+                assignments['parent'] = q[i+1]
+                i += 2
             elif q.kw(i, "NONE"):
-                return None, i+1
+                assignments['reset'] = True
+                i += 1
             elif q.kw(i, ('id','version', 'document_version', 'command', 'host', 'user', 'folia_version', 'resourcelink')):
                 if q[i+1] == 'NONE':
                     assignments[q[i]] = None
@@ -1434,7 +1433,7 @@ def getprocessor(q,i, parentprocessor=None):
                 if not assignments:
                     raise SyntaxError("Expected assignments after PROCESSOR statement, but no valid attribute found, got  " + str(q[i]) + " at position " + str(i) + " in: " +  str(q))
                 break
-        return folia.Processor(assignments['name'], type=assignments.get('type',None), id=assignments.get('id',None), version=assignments.get('version',None), document_version=assignments.get('document_version',None), folia_version=assignments.get('folia_version',None), command=assignments.get('command',None), host=assignments.get('host',None), user=assignments.get('user',None), begindatetime=assignments.get('begindatetime',None), enddatetime=assignments.get('enddatetime',None), resourcelink=assignments.get('resourcelink',None), parent=parentprocessor if sub else None)
+        return assignments, i
     else:
         raise SyntaxError("Expected PROCESSOR, got " + str(q[i]) + " in: " + str(q))
 
@@ -1895,7 +1894,7 @@ class Query(object):
         self.request = copy(context.request)
         self.defaults = copy(context.defaults)
         self.defaultsets = copy(context.defaultsets)
-        self.processor = copy(context.processor)
+        self.processors = []
         self.parse(q)
 
     def parse(self, q, i=0):
@@ -1928,7 +1927,8 @@ class Query(object):
 
             self.declarations.append( (Class, decset, defaults)  )
         elif q.kw(i,"PROCESSOR"):
-            self.processor,i = getprocessor(q,i, self.processor)
+            processor,i = self.getprocessor(q,i)
+            self.processors.append(processor)
 
 
         if i < l:
@@ -1960,6 +1960,30 @@ class Query(object):
         self.doc = doc
 
         if debug: print("[FQL EVALUATION DEBUG] Query  - Starting on document ", doc.id,file=sys.stderr)
+
+        if self.processors:
+            for processor in self.processors:
+                if 'reset' in processor:
+                    doc.processor = None
+                else:
+                    try:
+                        if debug: print("[FQL EVALUATION DEBUG] Selecting processor with ID ", processor['id'],file=sys.stderr)
+                        existing_processor = doc.provenance[processor['id']] #processor already exists
+                        existing_processor.update(**processor)
+                        processor = existing_processor
+                    except KeyError:
+                        #processor is new, instantiate and add to provenance chain
+                        if 'parent' in processor:
+                            #processor is a subprocessor,
+                            if debug: print("[FQL EVALUATION DEBUG] Adding processor ", processor['name'], ", ID=", processor['id'],"as child of", processor['parent'], file=sys.stderr)
+                            parent_processor = doc.provenance[processor['parent']]
+                            processor = folia.Processor(processor['name'], **self.processor)
+                            parent_processor.append(processor)
+                        else:
+                            if debug: print("[FQL EVALUATION DEBUG] Adding processor ", processor['name'], ", ID=", processor['id'],file=sys.stderr)
+                            processor = folia.Processor(processor['name'], **self.processor)
+                            doc.provenance.append(processor)
+                    doc.processor = processor
 
         if self.declarations:
             for Class, decset, defaults in self.declarations:
