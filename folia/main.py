@@ -216,6 +216,13 @@ class Processor:
         self.resourcelink = resourcelink
         self.parent = parent
 
+    def update(self, **kwargs):
+        for key, value in kwargs:
+            if key in ('type','command','host','user','begindatetime','enddatetime','resourcelink') and value:
+                setattr(self, key, value)
+            elif key in ('version','folia_version','document_version') and value:
+                setattr(self, key, str(value))
+
     def append(self, processor):
         assert isinstance(processor, Processor)
         self.processors.append(processor)
