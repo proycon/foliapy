@@ -172,6 +172,7 @@ Qdelete_structural_correction2 = "DELETE correction ID \"correctionexample.s.3.c
 
 Qprovenance = "PROCESSOR id \"test.pos\" name \"test\" type \"auto\" ADD pos OF \"https://raw.githubusercontent.com/proycon/folia/master/setdefinitions/universal-pos.foliaset.ttl\" WITH class \"NOUN\" FOR w ID \"example.p.1.s.1.w.2\"" #declaration is implied
 
+Qprovenance_nested = "PROCESSOR id \"test\" name \"test\" PROCESSOR IN \"test\" id \"test.pos\" name \"test.pos\" type \"auto\" ADD pos OF \"https://raw.githubusercontent.com/proycon/folia/master/setdefinitions/universal-pos.foliaset.ttl\" WITH class \"NOUN\" FOR w ID \"example.p.1.s.1.w.2\""
 
 class Test1UnparsedQuery(unittest.TestCase):
 
@@ -1027,6 +1028,20 @@ class Test5Provenance(unittest.TestCase):
         doc = results[0].doc
         self.assertEqual(doc.provenance['test.pos'].name, 'test')
         self.assertEqual(doc.provenance['test.pos'].type, folia.ProcessorType.AUTO)
+        self.assertEqual(results[0].processor,doc.provenance['test.pos'])
+
+    def test1_addprocessor_nested(self):
+        q = fql.Query(Qprovenance_nested)
+        results = q(self.doc)
+        self.assertIsInstance(results[0], folia.PosAnnotation)
+        self.assertEqual(results[0].cls, "NOUN")
+        doc = results[0].doc
+        self.assertEqual(doc.provenance['test'].name, 'test')
+        self.assertEqual(doc.provenance['test'].type, folia.ProcessorType.AUTO)
+        self.assertEqual(doc.provenance['test.pos'].name, 'test.pos')
+        self.assertEqual(doc.provenance['test.pos'].type, folia.ProcessorType.AUTO)
+        self.assertEqual(doc.provenance['test'].processors, [doc.provenance['test.pos']])
+        self.assertEqual(results[0].processor,doc.provenance['test.pos'])
 
 
 if os.path.exists("folia-repo"):

@@ -1903,33 +1903,36 @@ class Query(object):
             q = UnparsedQuery(q)
 
         l = len(q)
-        if q.kw(i,"DECLARE"):
-            try:
-                Class = folia.XML2CLASS[q[i+1]]
-            except:
-                raise SyntaxError("DECLARE statement expects a FoLiA element, got: " + str(q[i+1]))
+        while i < l:
+            if q.kw(i,"DECLARE"):
+                try:
+                    Class = folia.XML2CLASS[q[i+1]]
+                except:
+                    raise SyntaxError("DECLARE statement expects a FoLiA element, got: " + str(q[i+1]))
 
-            if not Class.ANNOTATIONTYPE:
-                raise SyntaxError("DECLARE statement for undeclarable element type: " + str(q[i+1]))
+                if not Class.ANNOTATIONTYPE:
+                    raise SyntaxError("DECLARE statement for undeclarable element type: " + str(q[i+1]))
 
-            i += 2
+                i += 2
 
-            defaults = {}
-            decset = None
-            if q.kw(i,"OF") and q[i+1]:
-                i += 1
-                decset = q[i]
-                i += 1
-                if q.kw(i,"WITH"):
-                    i = getassignments(q,i+1,defaults)
+                defaults = {}
+                decset = None
+                if q.kw(i,"OF") and q[i+1]:
+                    i += 1
+                    decset = q[i]
+                    i += 1
+                    if q.kw(i,"WITH"):
+                        i = getassignments(q,i+1,defaults)
 
-            if not decset:
-                raise SyntaxError("DECLARE statement must state a set")
+                if not decset:
+                    raise SyntaxError("DECLARE statement must state a set")
 
-            self.declarations.append( (Class, decset, defaults)  )
-        elif q.kw(i,"PROCESSOR"):
-            processor, i = getprocessor(q,i)
-            self.processors.append(processor)
+                self.declarations.append( (Class, decset, defaults)  )
+            elif q.kw(i,"PROCESSOR"):
+                processor, i = getprocessor(q,i)
+                self.processors.append(processor)
+            else:
+                break
 
 
         if i < l:
