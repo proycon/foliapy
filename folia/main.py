@@ -4157,6 +4157,64 @@ class Linebreak(AbstractStructureElement, AbstractTextMarkup): #this element has
         attribs.append(RXE.optional(RXE.attribute(name='newpage')))
         return super(Linebreak,cls).relaxng(includechildren,attribs,extraelements)
 
+class Hyphbreak(AbstractTextMarkup):
+    """Hyphenation break element, signals a hyphenised linebreak in a word"""
+
+    def __init__(self, doc, *args, **kwargs):
+        if 'linenr' in kwargs:
+            self.linenr = kwargs['linenr']
+            del kwargs['linenr']
+        else:
+            self.linenr = None
+        if 'pagenr' in kwargs:
+            self.pagenr = kwargs['pagenr']
+            del kwargs['pagenr']
+        else:
+            self.pagenr = None
+        if 'newpage' in kwargs and kwargs['newpage']:
+            self.newpage = True
+            del kwargs['newpage']
+        else:
+            self.newpage = False
+        super(Hyphbreak, self).__init__(doc, *args, **kwargs)
+
+    def text(self, cls='current', retaintokenisation=False, previousdelimiter="", strict=False, correctionhandling=None, normalize_spaces=False):
+        return ""
+
+    @classmethod
+    def parsexml(Class, node, doc):#pylint: disable=bad-classmethod-argument
+        kwargs = {}
+        if 'linenr' in node.attrib:
+            kwargs['linenr'] = node.attrib['linenr']
+        if 'pagenr' in node.attrib:
+            kwargs['pagenr'] = node.attrib['pagenr']
+        if 'newpage' in node.attrib and node.attrib['newpage'] == 'yes':
+            kwargs['newpage'] = True
+        br = Linebreak(doc, **kwargs)
+        if '{http://www.w3.org/1999/xlink}href' in node.attrib:
+            br.href = node.attrib['{http://www.w3.org/1999/xlink}href']
+        if '{http://www.w3.org/1999/xlink}type' in node.attrib:
+            br.xlinktype = node.attrib['{http://www.w3.org/1999/xlink}type']
+        return br
+
+    def xml(self, attribs = None,elements = None, skipchildren = False):
+        if attribs is None: attribs = {}
+        if self.linenr is not None:
+            attribs['linenr'] = str(self.linenr)
+        if self.pagenr is not None:
+            attribs['pagenr'] = str(self.pagenr)
+        if self.newpage:
+            attribs['newpage'] = "yes"
+        return super(Hyphbreak, self).xml(attribs,elements,skipchildren)
+
+    @classmethod
+    def relaxng(cls, includechildren=True,extraattribs = None, extraelements=None):
+        attribs = []
+        attribs.append(RXE.optional(RXE.attribute(name='pagenr')))
+        attribs.append(RXE.optional(RXE.attribute(name='linenr')))
+        attribs.append(RXE.optional(RXE.attribute(name='newpage')))
+        return super(Hyphbreak,cls).relaxng(includechildren,attribs,extraelements)
+
 class Whitespace(AbstractStructureElement):
     """Whitespace element, signals a vertical whitespace"""
 
