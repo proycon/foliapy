@@ -4536,6 +4536,17 @@ class AbstractSpanAnnotation(AbstractElement, AllowGenerateID, AllowCorrections)
                 e.append( child.xml() )
         return e
 
+    @classmethod
+    def accepts(Parentclass, Class, raiseexceptions=True, parentinstance=None):
+        #constrain inline annotations under span annotations (requires groupannotation="yes" in declaration, may be autodeclared here)
+        if issubclass(Class, AbstractInlineAnnotation):
+            if parentinstance is not None and parentinstance.doc:
+                if parentinstance.doc.autodeclare:
+                    parentinstance.doc.groupannotations[parentinstance.ANNOTATIONTYPE][parentinstance.set] = True
+                    return True
+                else:
+                    return parentinstance.doc.groupannotations[parentinstance.ANNOTATIONTYPE][parentinstance.set]
+        return super(AbstractSpanAnnotation,Parentclass).accepts(Class, raiseexceptions, parentinstance)
 
     def append(self, child, *args, **kwargs):
         """See :meth:`AbstractElement.append`"""
@@ -6969,6 +6980,11 @@ class Document(object):
                     attribs[key] = value.strftime("%Y-%m-%dT%H:%M:%S") #proper iso-formatting
                 elif value:
                     attribs[key] = value
+
+            if annotationtypeisspan(annotationtype):
+                if self.groupannotations[annotationtype][set]:
+                    attribs["groupannotations"] = "yes"
+
             annotators = []
             if annotationtype in self.annotators and set in self.annotators[annotationtype]:
                 for annotator in self.annotators[annotationtype][set]:
@@ -7262,8 +7278,15 @@ class Document(object):
             self.annotationdefaults[annotationtype] = {}
         if annotationtype not in self.annotators:
             self.annotators[annotationtype] = OrderedDict()
+        if annotationtype not in self.groupannotations:
+            self.groupannotations[annotationtype] = {}
         if set not in self.annotators[annotationtype]:
             self.annotators[annotationtype][set] = []
+        if annotationtypeisspan( annotationtype): #for span annotation only
+            if set not in self.groupannotations[annotationtype]:
+                self.groupannotations[annotationtype][set] = False #default
+            if 'groupannotations' in kwargs and kwargs['groupannotations'] in ("yes","true",True,1):
+                self.groupannotations[annotationtype][set] = True
         if 'alias' in kwargs:
             if annotationtype in self.set_alias and set in self.set_alias[annotationtype] and self.set_alias[annotationtype][set] != kwargs['alias']:
                 raise ValueError("Redeclaring set " + set + " with another alias ('"+kwargs['alias']+"') is not allowed!")
@@ -7277,6 +7300,8 @@ class Document(object):
                 self.set_alias[annotationtype] = {}
             self.alias_set[annotationtype][kwargs['alias']] = set
             self.set_alias[annotationtype][set] = kwargs['alias']
+
+
 
 
         if self.debug >= 1:
@@ -8404,7 +8429,8 @@ def isncname(name):
                 raise ValueError('Invalid XML NCName identifier: ' + name + ' (at position ' + str(i+1)+')')
     return True
 
-
+def annotationtypeisspan(annotationtype):
+    return issubclass(XML2CLASS[ANNOTATIONTYPE2XML[annotationtype]], AbstractSpanAnnotation)
 
 def validate(filename,schema=None,deep=False):
     if not os.path.exists(filename):
