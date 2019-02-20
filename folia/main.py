@@ -116,7 +116,7 @@ class Attrib:
 #foliaspec:annotationtype
 #Defines all annotation types (as part of the AnnotationType enumeration)
 class AnnotationType:
-    TEXT, TOKEN, DIVISION, PARAGRAPH, HEAD, LIST, FIGURE, WHITESPACE, LINEBREAK, SENTENCE, POS, LEMMA, DOMAIN, SENSE, SYNTAX, CHUNKING, ENTITY, CORRECTION, ERRORDETECTION, PHON, SUBJECTIVITY, MORPHOLOGICAL, EVENT, DEPENDENCY, TIMESEGMENT, GAP, QUOTE, NOTE, REFERENCE, RELATION, SPANRELATION, COREFERENCE, SEMROLE, METRIC, LANG, STRING, TABLE, STYLE, PART, UTTERANCE, ENTRY, TERM, DEFINITION, EXAMPLE, PHONOLOGICAL, PREDICATE, OBSERVATION, SENTIMENT, STATEMENT, ALTERNATIVE, RAWCONTENT, COMMENT, DESCRIPTION = range(53)
+    TEXT, TOKEN, DIVISION, PARAGRAPH, HEAD, LIST, FIGURE, WHITESPACE, LINEBREAK, SENTENCE, POS, LEMMA, DOMAIN, SENSE, SYNTAX, CHUNKING, ENTITY, CORRECTION, ERRORDETECTION, PHON, SUBJECTIVITY, MORPHOLOGICAL, EVENT, DEPENDENCY, TIMESEGMENT, GAP, QUOTE, NOTE, REFERENCE, RELATION, SPANRELATION, COREFERENCE, SEMROLE, METRIC, LANG, STRING, TABLE, STYLE, PART, UTTERANCE, ENTRY, TERM, DEFINITION, EXAMPLE, PHONOLOGICAL, PREDICATE, OBSERVATION, SENTIMENT, STATEMENT, ALTERNATIVE, RAWCONTENT, COMMENT, DESCRIPTION, HYPHENATION = range(54)
 
 
 
@@ -8443,7 +8443,7 @@ def validate(filename,schema=None,deep=False):
 #================================= FOLIA SPECIFICATION ==========================================================
 
 #foliaspec:header
-#This file was last updated according to the FoLiA specification for version 2.0.0 on 2019-02-04 14:02:08, using foliaspec.py
+#This file was last updated according to the FoLiA specification for version 2.0.0 on 2019-02-20 12:44:15, using foliaspec.py
 #Code blocks after a foliaspec comment (until the next newline) are automatically generated. **DO NOT EDIT THOSE** and **DO NOT REMOVE ANY FOLIASPEC COMMENTS** !!!
 
 #foliaspec:structurescope:STRUCTURESCOPE
@@ -8472,6 +8472,7 @@ ANNOTATIONTYPE2XML = {
     AnnotationType.FIGURE:  "figure" ,
     AnnotationType.GAP:  "gap" ,
     AnnotationType.HEAD:  "head" ,
+    AnnotationType.HYPHENATION:  "t-hbr" ,
     AnnotationType.LANG:  "lang" ,
     AnnotationType.LEMMA:  "lemma" ,
     AnnotationType.LINEBREAK:  "br" ,
@@ -8543,6 +8544,7 @@ XML2CLASS = {
     "gap": Gap,
     "head": Head,
     "hd": Headspan,
+    "t-hbr": Hyphbreak,
     "label": Label,
     "lang": LangAnnotation,
     "lemma": LemmaAnnotation,
@@ -8702,6 +8704,7 @@ AbstractSpanAnnotation.SPEAKABLE = True
 #------ AbstractSpanRole -------
 AbstractSpanRole.ACCEPTED_DATA = (Comment, Description, Feature, ForeignData, LinkReference, Metric, Relation, WordReference,)
 AbstractSpanRole.OPTIONAL_ATTRIBS = (Attrib.ID, Attrib.ANNOTATOR, Attrib.N, Attrib.DATETIME,)
+AbstractSpanRole.PRIMARYELEMENT = False
 #------ AbstractStructureElement -------
 AbstractStructureElement.ACCEPTED_DATA = (AbstractAnnotationLayer, Alternative, AlternativeLayers, Comment, Correction, Description, Feature, ForeignData, Metric, Part, Relation,)
 AbstractStructureElement.AUTO_GENERATE_ID = True
@@ -8754,7 +8757,7 @@ AlternativeLayers.XMLTAG = "altlayers"
 BegindatetimeFeature.SUBSET = "begindatetime"
 BegindatetimeFeature.XMLTAG = None
 #------ Caption -------
-Caption.ACCEPTED_DATA = (AbstractAnnotationLayer, AbstractInlineAnnotation, Alternative, AlternativeLayers, Comment, Correction, Description, Feature, ForeignData, Gap, Linebreak, Metric, Part, PhonContent, Reference, Relation, Sentence, String, TextContent, Whitespace,)
+Caption.ACCEPTED_DATA = (AbstractAnnotationLayer, AbstractInlineAnnotation, Alternative, AlternativeLayers, Comment, Correction, Description, Feature, ForeignData, Gap, Linebreak, Metric, Paragraph, Part, PhonContent, Reference, Relation, Sentence, String, TextContent, Whitespace,)
 Caption.LABEL = "Caption"
 Caption.OCCURRENCES = 1
 Caption.OPTIONAL_ATTRIBS = (Attrib.ID, Attrib.ANNOTATOR, Attrib.N, Attrib.CONFIDENCE, Attrib.DATETIME, Attrib.SRC, Attrib.BEGINTIME, Attrib.ENDTIME, Attrib.SPEAKER, Attrib.METADATA,)
@@ -8836,6 +8839,7 @@ Dependency.XMLTAG = "dependency"
 #------ DependencyDependent -------
 DependencyDependent.LABEL = "Dependent"
 DependencyDependent.OCCURRENCES = 1
+DependencyDependent.PRIMARYELEMENT = False
 DependencyDependent.XMLTAG = "dep"
 #------ Description -------
 Description.ANNOTATIONTYPE = AnnotationType.DESCRIPTION
@@ -8868,7 +8872,7 @@ Entity.ANNOTATIONTYPE = AnnotationType.ENTITY
 Entity.LABEL = "Entity"
 Entity.XMLTAG = "entity"
 #------ Entry -------
-Entry.ACCEPTED_DATA = (AbstractAnnotationLayer, Alternative, AlternativeLayers, Comment, Correction, Definition, Description, Example, Feature, ForeignData, Metric, Part, Relation, Term,)
+Entry.ACCEPTED_DATA = (AbstractAnnotationLayer, Alternative, AlternativeLayers, Comment, Correction, Definition, Description, Example, Feature, ForeignData, Metric, Part, Relation, String, Term, TextContent,)
 Entry.ANNOTATIONTYPE = AnnotationType.ENTRY
 Entry.LABEL = "Entry"
 Entry.XMLTAG = "entry"
@@ -8900,7 +8904,7 @@ External.XMLTAG = "external"
 Feature.LABEL = "Feature"
 Feature.XMLTAG = "feat"
 #------ Figure -------
-Figure.ACCEPTED_DATA = (AbstractAnnotationLayer, Alternative, AlternativeLayers, Caption, Comment, Correction, Description, Feature, ForeignData, Metric, Part, Relation, Sentence, String, TextContent,)
+Figure.ACCEPTED_DATA = (AbstractAnnotationLayer, Alternative, AlternativeLayers, Caption, Comment, Correction, Description, Feature, ForeignData, Metric, Part, Relation, String, TextContent,)
 Figure.ANNOTATIONTYPE = AnnotationType.FIGURE
 Figure.LABEL = "Figure"
 Figure.SPEAKABLE = False
@@ -8918,7 +8922,7 @@ Gap.LABEL = "Gap"
 Gap.OPTIONAL_ATTRIBS = (Attrib.ID, Attrib.CLASS, Attrib.ANNOTATOR, Attrib.N, Attrib.DATETIME, Attrib.SRC, Attrib.BEGINTIME, Attrib.ENDTIME, Attrib.METADATA,)
 Gap.XMLTAG = "gap"
 #------ Head -------
-Head.ACCEPTED_DATA = (AbstractAnnotationLayer, AbstractInlineAnnotation, Alternative, AlternativeLayers, Comment, Correction, Description, Event, Feature, ForeignData, Gap, Linebreak, Metric, Part, PhonContent, Reference, Relation, Sentence, String, TextContent, Whitespace, Word,)
+Head.ACCEPTED_DATA = (AbstractAnnotationLayer, AbstractInlineAnnotation, Alternative, AlternativeLayers, Comment, Correction, Description, Event, Feature, ForeignData, Gap, Linebreak, Metric, Paragraph, Part, PhonContent, Reference, Relation, Sentence, String, TextContent, Whitespace, Word,)
 Head.ANNOTATIONTYPE = AnnotationType.HEAD
 Head.LABEL = "Head"
 Head.OCCURRENCES = 1
@@ -8930,7 +8934,13 @@ HeadFeature.XMLTAG = None
 #------ Headspan -------
 Headspan.LABEL = "Head"
 Headspan.OCCURRENCES = 1
+Headspan.PRIMARYELEMENT = False
 Headspan.XMLTAG = "hd"
+#------ Hyphbreak -------
+Hyphbreak.ANNOTATIONTYPE = AnnotationType.HYPHENATION
+Hyphbreak.LABEL = "Hyphbreak"
+Hyphbreak.TEXTDELIMITER = ""
+Hyphbreak.XMLTAG = "t-hbr"
 #------ Label -------
 Label.ACCEPTED_DATA = (AbstractAnnotationLayer, AbstractInlineAnnotation, Alternative, AlternativeLayers, Comment, Correction, Description, Feature, ForeignData, Linebreak, Metric, Part, PhonContent, Reference, Relation, String, TextContent, Whitespace, Word,)
 Label.LABEL = "Label"
@@ -9120,6 +9130,7 @@ SentimentLayer.XMLTAG = "sentiments"
 #------ Source -------
 Source.LABEL = "Source"
 Source.OCCURRENCES = 1
+Source.PRIMARYELEMENT = False
 Source.XMLTAG = "source"
 #------ SpanRelation -------
 SpanRelation.ACCEPTED_DATA = (Comment, Description, Feature, ForeignData, Metric, Relation,)
@@ -9153,6 +9164,7 @@ StatementLayer.XMLTAG = "statements"
 #------ StatementRelation -------
 StatementRelation.LABEL = "Relation"
 StatementRelation.OCCURRENCES = 1
+StatementRelation.PRIMARYELEMENT = False
 StatementRelation.XMLTAG = "rel"
 #------ StrengthFeature -------
 StrengthFeature.SUBSET = "strength"
@@ -9202,6 +9214,7 @@ TableHead.XMLTAG = "tablehead"
 #------ Target -------
 Target.LABEL = "Target"
 Target.OCCURRENCES = 1
+Target.PRIMARYELEMENT = False
 Target.XMLTAG = "target"
 #------ Term -------
 Term.ACCEPTED_DATA = (AbstractAnnotationLayer, AbstractInlineAnnotation, Alternative, AlternativeLayers, Comment, Correction, Description, Event, Feature, Figure, ForeignData, Gap, Linebreak, List, Metric, Paragraph, Part, PhonContent, Reference, Relation, Sentence, String, Table, TextContent, Utterance, Whitespace, Word,)
