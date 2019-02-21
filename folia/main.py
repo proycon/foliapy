@@ -6611,7 +6611,6 @@ class Document(object):
 
 
         self.version = kwargs.get('version', FOLIAVERSION)
-        self.force_version = 'version' in kwargs
         self.document_version = None
 
         self.data = [] #will hold all texts (usually only one)
@@ -7743,10 +7742,10 @@ class Document(object):
                     self.id = node.attrib['{http://www.w3.org/XML/1998/namespace}id']
                 except KeyError:
                     raise Exception("FoLiA Document has no ID!")
-                if 'version' in node.attrib and not self.force_version:
+                if 'version' in node.attrib:
                     self.version = node.attrib['version']
-                elif not self.force_version:
-                    self.version = None
+                else:
+                    raise Exception("FoLiA Document has no version!")
                 if self.debug >= 1: print("[FoLiA DEBUG] FoLiA version:", self.version,file=stderr)
                 if checkversion(self.version) > 0:
                     print("WARNING!!! Document uses a newer version of FoLiA than this library! (" + self.version + " vs " + FOLIAVERSION + "). Any possible subsequent failures in parsing or processing may probably be attributed to this. Upgrade foliapy to remedy this.",file=sys.stderr)
@@ -8110,7 +8109,7 @@ def relaxng(filename=None):
     #TODO: Add data types #27
     grammar = RXE.grammar( RXE.start( RXE.element( #FoLiA
                 RXE.attribute(name='id',ns="http://www.w3.org/XML/1998/namespace"),
-                RXE.optional( RXE.attribute(name='version') ),
+                RXE.attribute(name='version'),
                 RXE.optional( RXE.attribute(name='generator') ),
                 RXE.element( #metadata
                     RXE.optional(RXE.attribute(name='type')),
