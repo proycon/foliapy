@@ -6618,6 +6618,7 @@ class Document(object):
         self.annotationdefaults = {}
         self.annotations = [] #Ordered list of incorporated(AnnotationType, set (str))
         self.annotators = {} #AnnotationType => set => Annotator    (leaf value resolves to Processor when called)
+        self.groupannotations = {} #AnnotationType -> set -> bool  (used to store whether inline annotations are allowed in certain span annotations)
 
 
         self.index = {} #all IDs go here
