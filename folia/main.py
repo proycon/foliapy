@@ -2752,8 +2752,6 @@ class AbstractElement(object):
                     RXE.optional(RXE.attribute(name='label',ns="http://www.w3.org/1999/xlink")),
                     RXE.optional(RXE.attribute(name='show',ns="http://www.w3.org/1999/xlink")),
             ]
-        if cls.ANNOTATIONTYPE is not None and annotationtypeisspan(cls.ANNOTATIONTYPE):
-            attribs.append( RXE.optional( RXE.attribute(name='groupannotations') ) )
 
         attribs.append( RXE.optional( RXE.attribute( name='auth' ) ) )
 
@@ -8070,6 +8068,7 @@ def relaxng_declarations():
                 RXE.optional( RXE.attribute(RXE.data(type='string',datatypeLibrary='http://www.w3.org/2001/XMLSchema-datatypes'), name='annotator') ), #pre-provenance, FoLiA <2.0
                 RXE.optional( RXE.attribute(RXE.data(type='string',datatypeLibrary='http://www.w3.org/2001/XMLSchema-datatypes'), name='annotatortype') ), #pre-provenance, FoLiA <2.0
                 RXE.optional( RXE.attribute(RXE.data(type='dateTime',datatypeLibrary='http://www.w3.org/2001/XMLSchema-datatypes'), name='datetime') ), #pre-provenance, FoLiA <2.0
+                RXE.optional( RXE.attribute(RXE.data(type='string',datatypeLibrary='http://www.w3.org/2001/XMLSchema-datatypes'), name='groupannotations') ), #(this overstretches, only valid on span elements),
                 RXE.zeroOrMore(
                     RXE.element(RXE.attribute(RXE.data(type='IDREF',datatypeLibrary='http://www.w3.org/2001/XMLSchema-datatypes'), name="processor"), name="annotator")
                 )
