@@ -870,6 +870,17 @@ class AbstractElement(object):
             if Attrib.TEXTCLASS in supported:
                 self.textclass = "current"
 
+        if Attrib.SPACE in supported:
+            self.space = True #use spacing as determined by textdelimiter
+            if 'space' in kwargs:
+                if space['kwargs'] == "no":
+                    self.space = False
+                elif space['kwargs'] == "yes":
+                    self.space = True
+                else:
+                    raise ValueError("Invalid value for space attribute: " + self.space)
+                del kwargs['space']
+
         if 'metadata' in kwargs:
             if not Attrib.METADATA in supported:
                 raise ValueError("Metadata is not supported for " + self.__class__.__name__)
@@ -1323,6 +1334,11 @@ class AbstractElement(object):
                 if isinstance(child, AbstractElement):
                     return child.gettextdelimiter(retaintokenisation)
             return ""
+        elif Attrib.SPACE in self.OPTIONAL_ATTRIBS: #(we use the assumption it's never a required attribute to speed up things)
+            if self.space or retaintokenisation:
+                return self.TEXTDELIMITER
+            else:
+                return ''
         else:
             return self.TEXTDELIMITER
 
@@ -2190,6 +2206,9 @@ class AbstractElement(object):
             if self.textclass and self.textclass != "current":
                 attribs['textclass'] = self.textclass
 
+        if Attrib.SPACE in self.OPTIONAL_ATTRIBS and not self.space:
+            attribs['space'] = 'no'
+
         if 'metadata' not in attribs: #do not override if caller already set it
             if self.metadata:
                 attribs['metadata'] = self.metadata
@@ -2307,6 +2326,8 @@ class AbstractElement(object):
             jsonnode['auth'] = self.auth
         if self.datetime:
             jsonnode['datetime'] = self.datetime.strftime("%Y-%m-%dT%H:%M:%S")
+        if Attrib.SPACE in self.OPTIONAL_ATTRIBS and not self.space:
+            jsonnode['space'] = "no"
 
         if recurse: #pylint: disable=too-many-nested-blocks
             jsonnode['children'] = []
@@ -2712,6 +2733,10 @@ class AbstractElement(object):
             attribs.append(RXE.attribute(name='metadata') )
         elif Attrib.METADATA in cls.OPTIONAL_ATTRIBS:
             attribs.append( RXE.optional( RXE.attribute(name='metadata') ) )
+        if Attrib.SPACE in cls.REQUIRED_ATTRIBS:
+            attribs.append(RXE.attribute(name='space') )
+        elif Attrib.SPACE in cls.OPTIONAL_ATTRIBS:
+            attribs.append( RXE.optional( RXE.attribute(name='space') ) )
         if cls.XLINK:
             attribs += [ #loose interpretation of specs, not checking whether xlink combinations are valid
                     RXE.optional(RXE.attribute(name='href',ns="http://www.w3.org/1999/xlink"),RXE.attribute(name='type',ns="http://www.w3.org/1999/xlink") ),
@@ -3267,6 +3292,126 @@ class AllowInlineAnnotation(AllowCorrections):
                                 continue
                     except AttributeError:
                         continue
+
+class AbstractWord: #interface grouping elements that act like words
+    """Interface class that is inherited by word-like (wrefable) elements (Word, Hiddenword, Morpheme)"""
+
+    def sentence(self):
+        """Obtain the sentence this word is a part of, otherwise return None"""
+        return self.ancestor(Sentence)
+
+
+    def paragraph(self):
+        """Obtain the paragraph this word is a part of, otherwise return None"""
+        return self.ancestor(Paragraph)
+
+    def division(self):
+        """Obtain the deepest division this word is a part of, otherwise return None"""
+        return self.ancestor(Division)
+
+    def pos(self,set=None):
+        """Shortcut: returns the FoLiA class of the PoS annotation (will return only one if there are multiple!)"""
+        return self.annotation(PosAnnotation,set).cls
+
+    def lemma(self, set=None):
+        """Shortcut: returns the FoLiA class of the lemma annotation (will return only one if there are multiple!)"""
+        return self.annotation(LemmaAnnotation,set).cls
+
+    def sense(self,set=None):
+        """Shortcut: returns the FoLiA class of the sense annotation (will return only one if there are multiple!)"""
+        return self.annotation(SenseAnnotation,set).cls
+
+    def domain(self,set=None):
+        """Shortcut: returns the FoLiA class of the domain annotation (will return only one if there are multiple!)"""
+        return self.annotation(DomainAnnotation,set).cls
+
+    def morphemes(self,set=None):
+        """Generator yielding all morphemes (in a particular set if specified). For retrieving one specific morpheme by index, use morpheme() instead"""
+        for layer in self.select(MorphologyLayer):
+            for m in layer.select(Morpheme, set):
+                yield m
+
+    def phonemes(self,set=None):
+        """Generator yielding all phonemes (in a particular set if specified). For retrieving one specific morpheme by index, use morpheme() instead"""
+        for layer in self.select(PhonologyLayer):
+            for p in layer.select(Phoneme, set):
+                yield p
+
+    def morpheme(self,index, set=None):
+        """Returns a specific morpheme, the n'th morpheme (given the particular set if specified)."""
+        for layer in self.select(MorphologyLayer):
+            for i, m in enumerate(layer.select(Morpheme, set)):
+                if index == i:
+                    return m
+        raise NoSuchAnnotation
+
+
+    def phoneme(self,index, set=None):
+        """Returns a specific phoneme, the n'th morpheme (given the particular set if specified)."""
+        for layer in self.select(PhonologyLayer):
+            for i, p in enumerate(layer.select(Phoneme, set)):
+                if index == i:
+                    return p
+        raise NoSuchAnnotation
+
+    def getcorrection(self,set=None,cls=None):
+        try:
+            return self.getcorrections(set,cls)[0]
+        except:
+            raise NoSuchAnnotation
+
+    def getcorrections(self, set=None,cls=None):
+        try:
+            l = []
+            for correction in self.annotations(Correction):
+                if ((not set or correction.set == set) and (not cls or correction.cls == cls)):
+                    l.append(correction)
+            return l
+        except NoSuchAnnotation:
+            raise
+
+    def findspans(self, type,set=None):
+        """Yields span annotation elements of the specified type that include this word.
+
+        Arguments:
+            type: The annotation type, can be passed as using any of the :class:`AnnotationType` member, or by passing the relevant :class:`AbstractSpanAnnotation` or :class:`AbstractAnnotationLayer` class.
+            set (str or None): Constrain by set
+
+        Example::
+
+            for chunk in word.findspans(folia.Chunk):
+                print(" Chunk class=", chunk.cls, " words=")
+                for word2 in chunk.wrefs(): #print all words in the chunk (of which the word is a part)
+                    print(word2, end="")
+                print()
+
+        Yields:
+            Matching span annotation instances (derived from :class:`AbstractSpanAnnotation`)
+        """
+
+        if issubclass(type, AbstractAnnotationLayer):
+            layerclass = type
+        else:
+            layerclass = ANNOTATIONTYPE2LAYERCLASS[type.ANNOTATIONTYPE]
+        e = self
+        while True:
+            if not e.parent: break
+            e = e.parent
+            for layer in e.select(layerclass,set,False):
+                if type is layerclass:
+                    for e2 in layer.select(AbstractSpanAnnotation,set,True, (True, Word, Morpheme)):
+                        if not isinstance(e2, AbstractSpanRole) and self in e2.wrefs():
+                            yield e2
+                else:
+                    for e2 in layer.select(type,set,True, (True, Word, Morpheme)):
+                        if not isinstance(e2, AbstractSpanRole) and self in e2.wrefs():
+                            yield e2
+
+                #for e2 in layer:
+                #    if (type is layerclass and isinstance(e2, AbstractSpanAnnotation)) or (type is not layerclass and isinstance(e2, type)):
+                #        if self in e2.wrefs():
+                #            yield e2
+
 
 
 class AllowGenerateID(object):
@@ -4225,10 +4370,8 @@ class Whitespace(AbstractStructureElement):
             return previousdelimiter.strip(' ') + "\n\n"
 
 
-class Word(AbstractStructureElement, AllowCorrections):
+class Word(AbstractStructureElement, AbstractWord, AllowCorrections):
     """Word (aka token) element. Holds a word/token and all its related token annotations."""
-
-    #will actually be determined by gettextdelimiter()
 
     def __init__(self, doc, *args, **kwargs):
         """Constructor for words.
@@ -4250,81 +4393,7 @@ class Word(AbstractStructureElement, AllowCorrections):
         See also:
             :class:`AbstractElement.__init__`
         """
-        self.space = True
-
-        if 'space' in kwargs:
-            self.space = kwargs['space']
-            del kwargs['space']
         super(Word,self).__init__(doc, *args, **kwargs)
-
-
-    def sentence(self):
-        """Obtain the sentence this word is a part of, otherwise return None"""
-        return self.ancestor(Sentence)
-
-
-    def paragraph(self):
-        """Obtain the paragraph this word is a part of, otherwise return None"""
-        return self.ancestor(Paragraph)
-
-    def division(self):
-        """Obtain the deepest division this word is a part of, otherwise return None"""
-        return self.ancestor(Division)
-
-
-
-
-    def pos(self,set=None):
-        """Shortcut: returns the FoLiA class of the PoS annotation (will return only one if there are multiple!)"""
-        return self.annotation(PosAnnotation,set).cls
-
-    def lemma(self, set=None):
-        """Shortcut: returns the FoLiA class of the lemma annotation (will return only one if there are multiple!)"""
-        return self.annotation(LemmaAnnotation,set).cls
-
-    def sense(self,set=None):
-        """Shortcut: returns the FoLiA class of the sense annotation (will return only one if there are multiple!)"""
-        return self.annotation(SenseAnnotation,set).cls
-
-    def domain(self,set=None):
-        """Shortcut: returns the FoLiA class of the domain annotation (will return only one if there are multiple!)"""
-        return self.annotation(DomainAnnotation,set).cls
-
-    def morphemes(self,set=None):
-        """Generator yielding all morphemes (in a particular set if specified). For retrieving one specific morpheme by index, use morpheme() instead"""
-        for layer in self.select(MorphologyLayer):
-            for m in layer.select(Morpheme, set):
-                yield m
-
-    def phonemes(self,set=None):
-        """Generator yielding all phonemes (in a particular set if specified). For retrieving one specific morpheme by index, use morpheme() instead"""
-        for layer in self.select(PhonologyLayer):
-            for p in layer.select(Phoneme, set):
-                yield p
-
-    def morpheme(self,index, set=None):
-        """Returns a specific morpheme, the n'th morpheme (given the particular set if specified)."""
-        for layer in self.select(MorphologyLayer):
-            for i, m in enumerate(layer.select(Morpheme, set)):
-                if index == i:
-                    return m
-        raise NoSuchAnnotation
-
-
-    def phoneme(self,index, set=None):
-        """Returns a specific phoneme, the n'th morpheme (given the particular set if specified)."""
-        for layer in self.select(PhonologyLayer):
-            for i, p in enumerate(layer.select(Phoneme, set)):
-                if index == i:
-                    return p
-        raise NoSuchAnnotation
-
-    def gettextdelimiter(self, retaintokenisation=False):
-        """Returns the text delimiter"""
-        if self.space or retaintokenisation:
-            return ' '
-        else:
-            return ''
 
     def resolveword(self, id):
         if id == self.id:
@@ -4332,101 +4401,11 @@ class Word(AbstractStructureElement, AllowCorrections):
         else:
             return None
 
-    def getcorrection(self,set=None,cls=None):
-        try:
-            return self.getcorrections(set,cls)[0]
-        except:
-            raise NoSuchAnnotation
-
-    def getcorrections(self, set=None,cls=None):
-        try:
-            l = []
-            for correction in self.annotations(Correction):
-                if ((not set or correction.set == set) and (not cls or correction.cls == cls)):
-                    l.append(correction)
-            return l
-        except NoSuchAnnotation:
-            raise
-
-    @classmethod
-    def parsexml(Class, node, doc, **kwargs):#pylint: disable=bad-classmethod-argument
-        assert Class is Word
-        instance = super(Word,Class).parsexml(node, doc, **kwargs) #we do this the old way (no kwargs used, because for some reason I forgot we need to whether instance evaluates to True)
-        if 'space' in node.attrib and instance:
-            if node.attrib['space'] == 'no':
-                instance.space = False
-        return instance
-
-
-    def xml(self, attribs = None,elements = None, skipchildren = False):
-        if not attribs: attribs = {}
-        if not self.space:
-            attribs['space'] = 'no'
-        return super(Word,self).xml(attribs,elements, False)
-
-    def json(self,attribs =None, recurse=True, ignorelist=False):
-        if not attribs: attribs = {}
-        if not self.space:
-            attribs['space'] = 'no'
-        return super(Word,self).json(attribs, recurse,ignorelist)
-
-    @classmethod
-    def relaxng(cls, includechildren=True,extraattribs = None, extraelements=None):
-        if not extraattribs:
-            extraattribs = [ RXE.optional(RXE.attribute(name='space')) ]
-        else:
-            extraattribs.append( RXE.optional(RXE.attribute(name='space')) )
-        return AbstractStructureElement.relaxng(includechildren, extraattribs, extraelements, cls)
-
-
-
     def split(self, *newwords, **kwargs):
         self.sentence().splitword(self, *newwords, **kwargs)
 
 
 
-
-    def findspans(self, type,set=None):
-        """Yields span annotation elements of the specified type that include this word.
-
-        Arguments:
-            type: The annotation type, can be passed as using any of the :class:`AnnotationType` member, or by passing the relevant :class:`AbstractSpanAnnotation` or :class:`AbstractAnnotationLayer` class.
-            set (str or None): Constrain by set
-
-        Example::
-
-            for chunk in word.findspans(folia.Chunk):
-                print(" Chunk class=", chunk.cls, " words=")
-                for word2 in chunk.wrefs(): #print all words in the chunk (of which the word is a part)
-                    print(word2, end="")
-                print()
-
-        Yields:
-            Matching span annotation instances (derived from :class:`AbstractSpanAnnotation`)
-        """
-
-        if issubclass(type, AbstractAnnotationLayer):
-            layerclass = type
-        else:
-            layerclass = ANNOTATIONTYPE2LAYERCLASS[type.ANNOTATIONTYPE]
-        e = self
-        while True:
-            if not e.parent: break
-            e = e.parent
-            for layer in e.select(layerclass,set,False):
-                if type is layerclass:
-                    for e2 in layer.select(AbstractSpanAnnotation,set,True, (True, Word, Morpheme)):
-                        if not isinstance(e2, AbstractSpanRole) and self in e2.wrefs():
-                            yield e2
-                else:
-                    for e2 in layer.select(type,set,True, (True, Word, Morpheme)):
-                        if not isinstance(e2, AbstractSpanRole) and self in e2.wrefs():
-                            yield e2
-
-                #for e2 in layer:
-                #    if (type is layerclass and isinstance(e2, AbstractSpanAnnotation)) or (type is not layerclass and isinstance(e2, type)):
-                #        if self in e2.wrefs():
-                #            yield e2
 
 
 class Feature(AbstractElement):
