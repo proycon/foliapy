@@ -2206,7 +2206,7 @@ class AbstractElement(object):
             if self.textclass and self.textclass != "current":
                 attribs['textclass'] = self.textclass
 
-        if Attrib.SPACE in self.OPTIONAL_ATTRIBS and not self.space:
+        if self.OPTIONAL_ATTRIBS and Attrib.SPACE in self.OPTIONAL_ATTRIBS and not self.space:
             attribs['space'] = 'no'
 
         if 'metadata' not in attribs: #do not override if caller already set it
@@ -2326,7 +2326,7 @@ class AbstractElement(object):
             jsonnode['auth'] = self.auth
         if self.datetime:
             jsonnode['datetime'] = self.datetime.strftime("%Y-%m-%dT%H:%M:%S")
-        if Attrib.SPACE in self.OPTIONAL_ATTRIBS and not self.space:
+        if self.OPTIONAL_ATTRIBS and Attrib.SPACE in self.OPTIONAL_ATTRIBS and not self.space:
             jsonnode['space'] = "no"
 
         if recurse: #pylint: disable=too-many-nested-blocks
