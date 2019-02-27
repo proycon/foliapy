@@ -2752,7 +2752,7 @@ class AbstractElement(object):
                     RXE.optional(RXE.attribute(name='label',ns="http://www.w3.org/1999/xlink")),
                     RXE.optional(RXE.attribute(name='show',ns="http://www.w3.org/1999/xlink")),
             ]
-        if annotationtypeisspan(cls.ANNOTATIONTYPE):
+        if cls.ANNOTATIONTYPE is not None and annotationtypeisspan(cls.ANNOTATIONTYPE):
             attribs.append( RXE.optional( RXE.attribute(name='groupannotations') ) )
 
         attribs.append( RXE.optional( RXE.attribute( name='auth' ) ) )
