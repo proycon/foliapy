@@ -135,6 +135,30 @@ class Test_E001_Tokens_Structure(unittest.TestCase):
         self.assertTrue( self.doc.declared(folia.Sentence) )
         self.assertTrue( self.doc.declared(folia.Paragraph) )
 
+class Test_Exxx_Hidden_Tokens(unittest.TestCase): #xxx -> replace with a number at some point when there are more new tests
+    """Hidden token tests"""
+
+    def setUp(self):
+        self.doc = folia.Document(file=os.path.join(FOLIAPATH,"examples/syntactic-movement.2.0.0.folia.xml"))
+
+    def test_wordcount(self):
+        """Simple Token & Structure - Word count (does not include hidden words)"""
+        self.assertEqual( self.doc.count(folia.Word), 7 )
+        #explicitly obtain:
+        self.assertEqual( len(list(self.doc.words())), 7 )
+        self.assertEqual( len(list(self.doc.select(folia.Word))), 7 )
+
+        #explicitly obtain:
+        sentence = self.doc['example.s.1']
+        self.assertEqual( len(list(sentence.words())), 7 )
+        self.assertEqual( len(list(sentence.select(folia.Word))), 7 )
+
+    def test_text(self):
+        """Text serialisation (no hidden words)"""
+        sentence = self.doc['example.s.1']
+        self.assertEqual( sentence.text() , "Isn't a whole lot left" )
+
+
 
 class Test_Provenance(unittest.TestCase):
     def test001_metadatasanity(self):
