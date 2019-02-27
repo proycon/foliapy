@@ -670,7 +670,10 @@ class AbstractElement(object):
                 #for FoLiA <2 we only check if we have a set
                 #This is a much stricter check than older FoLiA versions
                 if doc and (annotationtype not in doc.annotationdefaults or self.set not in doc.annotationdefaults[annotationtype]):
-                    if doc.autodeclare:
+                    if self.set is False:
+                        #set may be False in case of annotation layers, where it will be set later after appending children, we ignore that case (things like auto-declare are deferred until an actual span annotation appears)
+                        pass
+                    elif doc.autodeclare:
                         #autodeclare
                         if isinstance(self, TextContent): #FoLiA v2.0, autodeclare text
                             if FOLIA2:
@@ -680,7 +683,7 @@ class AbstractElement(object):
                             if FOLIA2:
                                 if doc.debug >= 1: print("[FoLiA DEBUG] Auto-declaring Phonetic Annotation",file=stderr)
                                 doc.declare(AnnotationType.PHON, DEFAULT_PHON_SET)
-                        else:
+                        elif self.set:
                             if doc.debug >= 1: print("[FoLiA DEBUG] Auto-declaring " + self.__class__.__name__ + " with set " + str(self.set),file=stderr)
                             doc.declare(annotationtype, self.set)
                     elif self.set:
@@ -688,7 +691,7 @@ class AbstractElement(object):
                     else:
                         raise DeclarationError("Encountered an instance without proper declaration: " + self.__class__.__name__ + " <" + self.__class__.XMLTAG + ">!")
             #check for ambiguity
-            if not self.set and self.__class__.PRIMARYELEMENT and annotationtype in doc.annotationdefaults and len(doc.annotationdefaults[annotationtype]) > 1:
+            if self.set is None and self.__class__.PRIMARYELEMENT and annotationtype in doc.annotationdefaults and len(doc.annotationdefaults[annotationtype]) > 1:
                 raise DeclarationError("No set assigned for " + self.__class__.__name__ + " <" + self.__class__.XMLTAG + "> but no default available either due to multiple possible declarations: " + ", ".join([str(s) for s in doc.annotationdefaults[annotationtype].keys()]))
 
         if 'class' in kwargs:
@@ -7246,7 +7249,7 @@ class Document(object):
             #we don't end up with two declarations
             del self.annotationdefaults[annotationtype]['undefined']
         if set is not None and not isinstance(set,str):
-            raise ValueError("Set parameter for declare() must be a string, got " + repr(set))
+            raise ValueError("Set parameter for declare() must be a string or None, got " + repr(set))
 
         if annotationtype in self.alias_set and set in self.alias_set[annotationtype]:
             raise ValueError("Set " + set + " conflicts with alias, may not be equal!")
