@@ -873,9 +873,9 @@ class AbstractElement(object):
         if Attrib.SPACE in supported:
             self.space = True #use spacing as determined by textdelimiter
             if 'space' in kwargs:
-                if kwargs['space'] == "no":
+                if kwargs['space'] == "no" or not kwargs['space']:
                     self.space = False
-                elif kwargs['space'] == "yes":
+                elif kwargs['space'] == "yes" or kwargs['space'] is True:
                     self.space = True
                 else:
                     raise ValueError("Invalid value for space attribute: " + self.space)
