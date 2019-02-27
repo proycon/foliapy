@@ -1953,7 +1953,7 @@ class AbstractElement(object):
         addspanfromstructure = False #add a span annotation elements from a structural parent which holds the span layers? (e.g. a Sentence, Paragraph)
         if (inspect.isclass(child) and issubclass(child, AbstractSpanAnnotation)) or (not inspect.isclass(child) and isinstance(child, AbstractSpanAnnotation)):
             layerclass = ANNOTATIONTYPE2LAYERCLASS[child.ANNOTATIONTYPE]
-            if isinstance(self, (Word, Morpheme)):
+            if isinstance(self, wrefables):
                 addspanfromspanned = True
             elif isinstance(self,AbstractStructureElement): #add a span
                 addspanfromstructure = True
@@ -3406,11 +3406,11 @@ class AbstractWord: #interface grouping elements that act like words
             e = e.parent
             for layer in e.select(layerclass,set,False):
                 if type is layerclass:
-                    for e2 in layer.select(AbstractSpanAnnotation,set,True, (True, Word, Morpheme)):
+                    for e2 in layer.select(AbstractSpanAnnotation,set,recursive=True, ignore=ignore_wrefables):
                         if not isinstance(e2, AbstractSpanRole) and self in e2.wrefs():
                             yield e2
                 else:
-                    for e2 in layer.select(type,set,True, (True, Word, Morpheme)):
+                    for e2 in layer.select(type,set,recursive=True, ignore=ignore_wrefables):
                         if not isinstance(e2, AbstractSpanRole) and self in e2.wrefs():
                             yield e2
 
@@ -4538,12 +4538,12 @@ class AbstractSpanAnnotation(AbstractElement, AllowGenerateID, AllowCorrections)
 
     def append(self, child, *args, **kwargs):
         """See :meth:`AbstractElement.append`"""
-        if isinstance(child, (Word, Morpheme, Phoneme)) and WordReference in self.ACCEPTED_DATA:
+        if isinstance(child, AbstractElement) and child.WREFABLE and WordReference in self.ACCEPTED_DATA:
             #We don't really append but do an insertion so all references are in proper order
             insertionpoint = len(self.data)
             needsort = False
             for i, sibling in enumerate(self.data):
-                if isinstance(sibling, (Word, Morpheme, Phoneme)):
+                if isinstance(sibling, AbstractElement) and sibling.WREFABLE:
                     wref = child
                 elif isinstance(sibling, AbstractSpanAnnotation):
                     try:
@@ -4653,7 +4653,7 @@ class AbstractSpanAnnotation(AbstractElement, AllowGenerateID, AllowCorrections)
 
     def addtoindex(self,norecurse=None):
         """Makes sure this element (and all subelements), are properly added to the index"""
-        if not norecurse: norecurse = (Word, Morpheme, Phoneme)
+        if not norecurse: norecurse = wrefables
         if self.id:
             self.doc.index[self.id] = self
         for e in self.data:
@@ -4715,7 +4715,7 @@ class AbstractSpanAnnotation(AbstractElement, AllowGenerateID, AllowCorrections)
                     if childwref in self.data:
                         duplicates.add(childwref)
 
-            elif not isinstance(e, (Word, Morpheme, Phoneme)):
+            elif not isinstance(e, wrefables):
                 reference = False
             if not reference:
                 nonrefdata.append(e)
@@ -4747,13 +4747,13 @@ class AbstractSpanAnnotation(AbstractElement, AllowGenerateID, AllowCorrections)
                 e1 = self.data[i]
                 e2 = self.data[i+1]
 
-                if isinstance(e1, (Word, Morpheme, Phoneme)):
+                if isinstance(e1, wrefables):
                     e1_word = e1
                 elif isinstance(e1, AbstractSpanAnnotation):
                     e1_word = e1.wrefs(0, recurse=True)
                 else: #TODO: corrections
                     e1_word = None
-                if isinstance(e2, (Word, Morpheme, Phoneme)):
+                if isinstance(e2, wrefables):
                     e2_word = e2
                 elif isinstance(e2, AbstractSpanAnnotation):
                     e2_word = e2.wrefs(0, recurse=True)
@@ -8651,6 +8651,13 @@ ANNOTATIONTYPE2LAYERCLASS = {
     AnnotationType.TIMESEGMENT:  TimingLayer ,
     AnnotationType.PREDICATE:  SemanticRolesLayer
 }
+
+#foliaspec:wrefables
+#Elements that act as words and can be referable from span annotations
+wrefables = ( Word, Hiddenword, Morpheme, Phoneme,)
+
+#adds the element True so it can be pastsed to select(ignore=) , which then gets intepreted as defualt_ignore | ignore_wrefables
+ignore_wrefables = tuple([True] + list(wrefables))
 
 #foliaspec:default_ignore
 #Default ignore list for the select() method, do not descend into these
