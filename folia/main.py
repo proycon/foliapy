@@ -1391,7 +1391,7 @@ class AbstractElement(object):
         if self.id != other.id:
             if self.doc and self.doc.debug: print("[FoLiA DEBUG] AbstractElement Equality Check - ID mismatch: " + str(self.id) + " vs " + str(other.id),file=stderr)
             return False
-        if self.set != other.set:
+        if self.set != other.set and not (self.set is None and other.set == "undefined"): #the latter condition gives us some lenience in comparisons with pre 2.0 documents
             if self.doc and self.doc.debug: print("[FoLiA DEBUG] AbstractElement Equality Check - Set mismatch: " + str(self.set) + " vs " + str(other.set),file=stderr)
             return False
         if self.cls != other.cls:
@@ -1413,12 +1413,16 @@ class AbstractElement(object):
 
         #Now check equality of children
         for mychild, yourchild in zip(mychildren, yourchildren):
+            if self.doc and self.doc.debug: print("[FoLiA DEBUG] AbstractElement Equality Check - Descending into children of " + repr(self) + " and " + repr(other),file=stderr)
             if mychild != yourchild:
                 if self.doc and self.doc.debug: print("[FoLiA DEBUG] AbstractElement Equality Check - Child mismatch: " + repr(mychild) + " vs " + repr(yourchild) + " (in " + repr(self) + ", id: " + str(self.id) + ")",file=stderr)
                 return False
 
         #looks like we made it! \o/
         return True
+
+    def __repr__(self):
+        return "<" + self.__class__.__name__ + " at " + str(id(self)) + " id=" + str(self.id) + ">"
 
     def __len__(self):
         """Returns the number of child elements under the current element."""
