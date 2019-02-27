@@ -7246,7 +7246,7 @@ class Document(object):
             #we don't end up with two declarations
             del self.annotationdefaults[annotationtype]['undefined']
         if set is not None and not isinstance(set,str):
-            raise ValueError("Set parameter for declare() must be a string")
+            raise ValueError("Set parameter for declare() must be a string, got " + repr(set))
 
         if annotationtype in self.alias_set and set in self.alias_set[annotationtype]:
             raise ValueError("Set " + set + " conflicts with alias, may not be equal!")
