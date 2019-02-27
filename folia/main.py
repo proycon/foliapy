@@ -4404,7 +4404,7 @@ class Word(AbstractStructureElement, AbstractWord, AllowCorrections):
     def split(self, *newwords, **kwargs):
         self.sentence().splitword(self, *newwords, **kwargs)
 
-class HiddenWord(AbstractStructureElement, AbstractWord, AllowCorrections):
+class Hiddenword(AbstractStructureElement, AbstractWord, AllowCorrections):
     """Hidden word (aka token) element. Holds a word/token and all its related token annotations, but the word is ignored for most intents and purposes. It may act as a dummy for e.g. syntactic movement annotation."""
     pass
 
