@@ -4404,7 +4404,9 @@ class Word(AbstractStructureElement, AbstractWord, AllowCorrections):
     def split(self, *newwords, **kwargs):
         self.sentence().splitword(self, *newwords, **kwargs)
 
-
+class HiddenWord(AbstractStructureElement, AbstractWord, AllowCorrections):
+    """Hidden word (aka token) element. Holds a word/token and all its related token annotations, but the word is ignored for most intents and purposes. It may act as a dummy for e.g. syntactic movement annotation."""
+    pass
 
 
 
@@ -8448,7 +8450,7 @@ def validate(filename,schema=None,deep=False):
 #================================= FOLIA SPECIFICATION ==========================================================
 
 #foliaspec:header
-#This file was last updated according to the FoLiA specification for version 2.0.0 on 2019-02-27 13:27:11, using foliaspec.py
+#This file was last updated according to the FoLiA specification for version 2.0.0 on 2019-02-27 13:35:39, using foliaspec.py
 #Code blocks after a foliaspec comment (until the next newline) are automatically generated. **DO NOT EDIT THOSE** and **DO NOT REMOVE ANY FOLIASPEC COMMENTS** !!!
 
 #foliaspec:structurescope:STRUCTURESCOPE
@@ -8948,6 +8950,8 @@ Hiddenword.ACCEPTED_DATA = (AbstractAnnotationLayer, AbstractInlineAnnotation, A
 Hiddenword.ANNOTATIONTYPE = AnnotationType.HIDDENTOKEN
 Hiddenword.LABEL = "Hidden Word/Token"
 Hiddenword.OPTIONAL_ATTRIBS = (Attrib.ID, Attrib.CLASS, Attrib.ANNOTATOR, Attrib.N, Attrib.CONFIDENCE, Attrib.DATETIME, Attrib.SRC, Attrib.BEGINTIME, Attrib.ENDTIME, Attrib.SPEAKER, Attrib.TEXTCLASS, Attrib.METADATA, Attrib.SPACE,)
+Hiddenword.PRINTABLE = False
+Hiddenword.SPEAKABLE = False
 Hiddenword.TEXTDELIMITER = " "
 Hiddenword.WREFABLE = True
 Hiddenword.XMLTAG = "hiddenw"
