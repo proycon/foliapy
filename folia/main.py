@@ -143,6 +143,10 @@ class DuplicateIDError(Exception):
     """Exception raised when an identifier that is already in use is assigned again to another element"""
     pass
 
+class InvalidReference(Exception):
+    """Exception raised when an identifier points to something that does not exist"""
+    pass
+
 class NoCommonAncestor(Exception):
     """Exception raised when two elements do not share a common ancestor"""
     pass
@@ -5665,7 +5669,10 @@ class WordReference(AbstractElement):
             return doc[id]
         except KeyError:
             if doc.debug >= 1: print("[FoLiA DEBUG] ...Unresolvable!",file=stderr)
-            return WordReference(doc, id=id)
+            if doc.checkreferences:
+                raise InvalidReference(id)
+            else:
+                return WordReference(doc, id=id)
 
     @classmethod
     def relaxng(cls, includechildren=True,extraattribs = None, extraelements=None):
@@ -6611,6 +6618,8 @@ class Document(object):
 
         self.index = {} #all IDs go here
         self.declareprocessed = False # Will be set to True when declarations have been processed
+
+        self.checkreferences = True #check whether wrefs point to valid elements, this is good practice but needs to be disabled for streaming readers and <external> (proycon/folia#41)
 
         self.metadata = NativeMetaData() #will point to XML Element holding native metadata
         self.metadatatype = "native"
@@ -8371,6 +8380,7 @@ class Reader(object):
                 metadata = True
                 self.doc.parsemetadata(node)
                 break
+        self.doc.checkreferences = False
 
 
         if not self.doc:

@@ -162,6 +162,13 @@ class Test_Exxx_Hidden_Tokens(unittest.TestCase): #xxx -> replace with a number 
         sentence = self.doc['example.s.1.su.1']
         self.assertEqual( sentence.text() , "Isn't a whole lot left." )
 
+class Test_Exxx_Invalid_Wref(unittest.TestCase): #xxx -> replace with a number at some point when there are more new tests
+    """Invalid Wref test"""
+
+    def test(self):
+        with self.assertRaises( folia.ParseError) as cm:
+            folia.Document(file=os.path.join(FOLIAPATH,"examples/erroneous/invalid-wref.2.0.0.folia.xml"))
+        self.assertEqual(cm.exception.cause.__class__, folia.InvalidReference)
 
 class Test_Provenance(unittest.TestCase):
     def test001_metadatasanity(self):
