@@ -153,10 +153,14 @@ class Test_Exxx_Hidden_Tokens(unittest.TestCase): #xxx -> replace with a number 
         self.assertEqual( len(list(sentence.select(folia.Word, ignore=folia.default_ignore_structure))), 7 )
 
     def test_text(self):
-        """Text serialisation (no hidden words)"""
+        """Text serialisation on sentence (no hidden words)"""
         sentence = self.doc['example.s.1']
         self.assertEqual( sentence.text() , "Isn't a whole lot left." )
 
+    def test_text2(self):
+        """Text serialisation on syntactic unit (no hidden words)"""
+        sentence = self.doc['example.s.1.su.1']
+        self.assertEqual( sentence.text() , "Isn't a whole lot left." )
 
 
 class Test_Provenance(unittest.TestCase):
