@@ -8665,11 +8665,11 @@ default_ignore = ( Original, Suggestion, Alternative, AlternativeLayers, Foreign
 
 #foliaspec:default_ignore_annotations
 #Default ignore list for token annotation
-default_ignore_annotations = ( Original, Suggestion, Alternative, AlternativeLayers, MorphologyLayer, PhonologyLayer,)
+default_ignore_annotations = ( Original, Suggestion, Alternative, AlternativeLayers, MorphologyLayer, PhonologyLayer, ForeignData,)
 
 #foliaspec:default_ignore_structure
 #Default ignore list for structure annotation
-default_ignore_structure = ( Original, Suggestion, Alternative, AlternativeLayers, AbstractAnnotationLayer,)
+default_ignore_structure = ( Original, Suggestion, Alternative, AlternativeLayers, AbstractAnnotationLayer, ForeignData,)
 
 #foliaspec:defaultproperties
 #Default properties which all elements inherit
