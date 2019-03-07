@@ -2385,7 +2385,7 @@ class AbstractElement(object):
             Class (class): The class to select; any python class (not instance) subclassed off :class:`AbstractElement`
             Set (str): The set to match against, only elements pertaining to this set will be returned. If set to None (default), all elements regardless of set will be returned.
             recursive (bool): Select recursively? Descending into child elements? Defaults to ``True``.
-            ignore: A list of Classes to ignore, if set to ``True`` instead of a list, all non-authoritative elements will be skipped (this is the default behaviour and corresponds to the following elements: :class:`Alternative`, :class:`AlternativeLayer`, :class:`Suggestion`, and :class:`folia.Original`. These elements and those contained within are never *authorative*. You may also include the boolean True as a member of a list, if you want to skip additional tags along the predefined non-authoritative ones.
+            ignore: A list of Classes to ignore, if set to ``True`` instead of a list, all non-authoritative elements will be skipped (this is the default behaviour and corresponds to the following elements: :class:`Alternative`, :class:`AlternativeLayers`, :class:`Suggestion`, and :class:`folia.Original`. These elements and those contained within are never *authorative*. You may also include the boolean True as a member of a list, if you want to skip additional tags along the predefined non-authoritative ones.
             * ``node``: Reserved for internal usage, used in recursion.
 
         Yields:
@@ -5525,7 +5525,7 @@ class Correction(AbstractHigherOrderAnnotation, AllowGenerateID):
 
 
 class Alternative(AbstractHigherOrderAnnotation, AllowInlineAnnotation, AllowGenerateID):
-    """Element grouping alternative token annotation(s).
+    """Element grouping alternative inline annotation(s).
 
     Multiple alternative elements may occur, each denoting a different alternative. Elements grouped inside an alternative block are considered dependent.
 
@@ -5542,13 +5542,85 @@ class Alternative(AbstractHigherOrderAnnotation, AllowInlineAnnotation, AllowGen
     pos tag alternative is tied to a particular lemma.
     """
 
+    def __init__(self, doc, *args, **kwargs):
+        """See :meth:`AbstractElement.__init__`"""
+        if 'exclusive' in kwargs and kwargs['exclusive'] in (True,'yes','true',1):
+            #for backward compatibility
+            self.exclusive = True
+            del kwargs['exclusive']
+        super(Alternative,self).__init__(doc, *args, **kwargs)
+
+    def xml(self, attribs = None,elements = None, skipchildren = False):
+        """See :meth:`AbstractElement.xml`"""
+        if not attribs: attribs = {}
+        if self.exclusive:
+            attribs['exclusive'] = "yes"
+        return super(Alternative,self).xml(attribs,elements, skipchildren)
+
+    def json(self,attribs =None, recurse=True, ignorelist=False):
+        """See :meth:`AbstractElement.json`"""
+        if not attribs: attribs = {}
+        if self.exclusive:
+            attribs['exclusive'] = True
+        return super(Alternative,self).json(attribs,recurse, ignorelist)
+
+    @classmethod
+    def parsexml(Class, node, doc, **kwargs):
+        if not kwargs: kwargs ={}
+        if 'exclsuive' in node.attrib:
+            kwargs['exclusive'] = node.attrib['exclusive']
+            del node.attrib['exclusive']
+        return super(Alternative,Class).parsexml(node, doc, **kwargs)
+
+    @classmethod
+    def relaxng(cls, includechildren=True,extraattribs = None, extraelements=None):
+        if not extraattribs: extraattribs = []
+        extraattribs.append( RXE.optional(RXE.attribute(name='exclusive' ))) #id reference
+        return super(Alternative, cls).relaxng(includechildren, extraattribs, extraelements)
+
     def deepvalidation(self):
         return True
 
 
 
 class AlternativeLayers(AbstractHigherOrderAnnotation):
-    """Element grouping alternative subtoken annotation(s). Multiple altlayers elements may occur, each denoting a different alternative. Elements grouped inside an alternative block are considered dependent."""
+    """Element grouping alternative span or subtoken annotation(s). Multiple altlayers elements may occur, each denoting a different alternative. Elements grouped inside an alternative block are considered dependent."""
+
+    def __init__(self, doc, *args, **kwargs):
+        """See :meth:`AbstractElement.__init__`"""
+        if 'exclusive' in kwargs and kwargs['exclusive'] in (True,'yes','true',1):
+            #for backward compatibility
+            self.exclusive = True
+            del kwargs['exclusive']
+        super(AlternativeLayers,self).__init__(doc, *args, **kwargs)
+
+    def xml(self, attribs = None,elements = None, skipchildren = False):
+        """See :meth:`AbstractElement.xml`"""
+        if not attribs: attribs = {}
+        if self.exclusive:
+            attribs['exclusive'] = "yes"
+        return super(AlternativeLayers,self).xml(attribs,elements, skipchildren)
+
+    def json(self,attribs =None, recurse=True, ignorelist=False):
+        """See :meth:`AbstractElement.json`"""
+        if not attribs: attribs = {}
+        if self.exclusive:
+            attribs['exclusive'] = True
+        return super(AlternativeLayers,self).json(attribs,recurse, ignorelist)
+
+    @classmethod
+    def parsexml(Class, node, doc, **kwargs):
+        if not kwargs: kwargs ={}
+        if 'exclsuive' in node.attrib:
+            kwargs['exclusive'] = node.attrib['exclusive']
+            del node.attrib['exclusive']
+        return super(AlternativeLayers,Class).parsexml(node, doc, **kwargs)
+
+    @classmethod
+    def relaxng(cls, includechildren=True,extraattribs = None, extraelements=None):
+        if not extraattribs: extraattribs = []
+        extraattribs.append( RXE.optional(RXE.attribute(name='exclusive' ))) #id reference
+        return super(AlternativeLayers, cls).relaxng(includechildren, extraattribs, extraelements)
 
     def deepvalidation(self):
         return True
