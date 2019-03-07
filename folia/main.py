@@ -588,7 +588,7 @@ class AbstractElement(object):
     def __getattr__(self, attr):
         """Internal method"""
         #overriding getattr so we can get defaults here rather than needing a copy on each element, saves memory
-        if attr in ('set','cls','processor', 'confidence','datetime','n','href','src','speaker','begintime','endtime','xlinktype','xlinktitle','xlinklabel','xlinkrole','xlinkshow','label', 'textclass', 'metadata'):
+        if attr in ('set','cls','processor', 'confidence','datetime','n','href','src','speaker','begintime','endtime','xlinktype','xlinktitle','xlinklabel','xlinkrole','xlinkshow','label', 'textclass', 'metadata','exclusive'):
             return None
         elif attr == 'annotator':
             if self.processor:
