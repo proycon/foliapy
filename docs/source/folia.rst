@@ -1,18 +1,16 @@
-.. module:: pynlpl.formats.folia 
+.. module:: folia.main
 
-FoLiA library 
+FoLiA library
 *************
 
-This tutorial will introduce the **FoLiA Python library**, part of PyNLPl. The
+This tutorial will introduce the **FoLiA Python library**. The
 FoLiA library provides an Application Programming Interface for the reading,
-creation and manipulation of FoLiA XML documents. The library works under
-Python 2.7 as well as Python 3, which is the recommended version. The samples
-in this documentation follow Python 3 conventions.
+creation and manipulation of FoLiA XML documents. The library is written for Python 3.5 and above.
 
 Prior to reading this document, it is  recommended to first read the
 FoLiA documentation itself and familiarise yourself with the format and
-underlying paradigm. The FoLiA documentation can be found on the 
-`FoLiA website <https://proycon.github.io/folia/>`_ . It is especially important 
+underlying paradigm. The FoLiA documentation can be found on the
+`FoLiA website <https://proycon.github.io/folia/>`_ . It is especially important
 to understand the way FoLiA handles sets/classes, declarations, common
 attributes such as annotator/annotatortype and the distinction between various
 kinds of annotation categories such as token annotation and span annotation.
@@ -33,11 +31,11 @@ Loading a document
 
 Any script that uses FoLiA starts with the import::
 
-    from pynlpl.formats import folia
+    import folia.main as folia
 
 At the basis of any FoLiA processing lies the following class:
 
-.. autosummary:: 
+.. autosummary::
     :nosignatures:
     :toctree: _autosummary
     :template: fullclass.rst
@@ -79,17 +77,15 @@ Obtaining the text as a string is done by invoking the document's :meth:`Documen
 method::
 
     text = doc.text()
-    
+
 Or alternatively as follows::
 
-    text = str(doc) 
+    text = str(doc)
 
 For any subelement of the document, you can obtain its text in the same fashion
 as well, by calling its :meth:`AbstractElement.text` method or by using
 ``str()``, the only difference is that the former allows for extensive fine
 tuning using various extra parameters (See :meth:`AbstractElement.text`).
-
-.. note:: In Python 2, both ``str()`` as well as ``unicode()`` return a unicode instance. You may need to append ``.encode('utf-8')`` for proper output.
 
 
 Index
@@ -102,10 +98,8 @@ dictionary::
     word = doc['example.p.3.s.5.w.1']
     print(word)
 
-.. note:: Python 2 users will have to do ``print word.text().encode('utf-8')`` instead, to ensure non-ascii characters are printed properly.
-
 IDs are unique in the entire document, and preferably even beyond.
-    
+
 Elements
 ----------------------------------
 
@@ -119,7 +113,7 @@ This abstract base element is never instantiated directly. The FoLiA paradigm
 derives several more abstract base  classes which  may implement some additional
 methods or overload some of the original ones:
 
-.. autosummary:: 
+.. autosummary::
     :nosignatures:
     :toctree: _autosummary
     :template: foliaelement.rst
@@ -138,14 +132,14 @@ Obtaining list of elements
 The aforementioned index is useful only if you know the ID of the element. This
 if often not the case, and you will want to iterate through the hierarchy of
 elements through different means.
-                 
+
 If you want to iterate over all of the child elements of a certain element,
 regardless of what type they are, you can simply do so as follows::
 
     for subelement in element:
         if isinstance(subelement, folia.Sentence):
             print("this is a sentence")
-        else: 
+        else:
             print("this is something else")
 
 If applied recursively this allows you to traverse the entire
@@ -170,7 +164,7 @@ returning them::
 
     word = sentence.count(folia.Word)
 
-.. note:: 
+.. note::
     The ``select()`` method and similar high-level methods derived from it, are
     generators.  This implies that the results of the selection are returned one by
     one in the iteration, as opposed to all stored in memory. This also implies
@@ -186,11 +180,11 @@ returning them::
     The select method is by default recursive, set the third argument to ``False`` to
     make it non-recursive. The second argument can be used for restricting matches
     to a specific set, a tuple of classes. The recursion will not go into any
-    *non-authoritative* elements such as alternatives, originals of corrections. 
+    *non-authoritative* elements such as alternatives, originals of corrections.
 
 Selection Shortcuts
 ---------------------
- 
+
 There are various shortcut methods for ``select()``.
 
 For example, you can iterate over all words in the document using :meth:`Document.words`, or
@@ -198,7 +192,7 @@ all words under any structural element using :meth:`AbstractStructureElement.wor
 
     for word in doc.words():
         print(word)
-        
+
 That however gives you one big iteration of words without boundaries. You may
 more likely want to seek words within sentences, provided the document
 distinguishes sentences. So we first iterate over all sentences using
@@ -208,7 +202,7 @@ words therein using :meth:`AbstractStructureElement.words`::
     for sentence in doc.sentences():
         for word in sentence.words():
             print(word)
-            
+
 Or including paragraphs, assuming the document has them::
 
     for paragraph in doc.paragraphs():
@@ -217,7 +211,7 @@ Or including paragraphs, assuming the document has them::
                 print(word)
 
 .. warning:: Do be aware that such constructions make presumptions about the structure of the FoLiA document that may not always apply!
-        
+
 All of these shortcut methods also take an ``index`` parameter to quickly
 select a specific item in the sequence::
 
@@ -287,7 +281,7 @@ for structure anntoation along with the FoLiA XML tag. Sets and classes can
 be associated with most of these elements to make them more specific, these are
 never prescribed by FoLiA. The list of classes is as follows:
 
-.. autosummary:: 
+.. autosummary::
     :nosignatures:
     :toctree: _autosummary
     :template: foliaelement.rst
@@ -318,7 +312,7 @@ never prescribed by FoLiA. The list of classes is as follows:
     Whitespace
     Word
 
-The `FoLiA documentation <https://github.com/proycon/folia/raw/master/docs/folia.pdf>`_ explains the exact semantics and use of 
+The `FoLiA documentation <https://github.com/proycon/folia/raw/master/docs/folia.pdf>`_ explains the exact semantics and use of
 these in detail. Make sure to consult it to familiarize yourself with how the
 elements should be used.
 
@@ -335,7 +329,7 @@ such as a set of part-of-speech tags, and a class is one selected value in such 
 The paradigm furthermore introduces other common attributes to set on
 annotation elements, such as an identifier,  information on the annotator, and
 more. A full list is provided below:
-    
+
 * ``element.id``        (str) - The unique identifier of the element
 * ``element.set``       (str) - The set the element pertains to.
 * ``element.cls``       (str) - The assigned class, i.e. the actual value of
@@ -353,7 +347,7 @@ The following attributes are specific to a speech context:
 * ``element.speaker``   (str) -  The name of ID of the speaker. Access this attribute using the ``element.speech_speaker()`` method, as it is inheritable from ancestors.
 * ``element.begintime`` (4-tuple) - The time in the above source fragment when the phonetic content of this element starts, this is a ``(hours, minutes,seconds,milliseconds)`` tuple.
 * ``element.endtime``   (4-tuple) - The time in the above source fragment when the phonetic content of this element ends, this is a ``(hours, minutes,seconds,milliseconds)`` tuple.
- 
+
 Attributes that are not available for certain elements, or not set, default to ``None``.
 
 Annotations
@@ -390,9 +384,9 @@ Token Annotation Types
 +++++++++++++++++++++++++
 
 The following token annotation elements are available in FoLiA, they are
-embedded under a structural element (not necessarily a token, despite the name). 
+embedded under a structural element (not necessarily a token, despite the name).
 
-.. autosummary:: 
+.. autosummary::
     :nosignatures:
     :toctree: _autosummary
     :template: foliaelement.rst
@@ -409,9 +403,9 @@ Text and phonetic annotation
 +++++++++++++++++++++++++++++++++
 
 The actual text of an element, or a phonetic textual representation, are also
-considered annotations themselves. 
+considered annotations themselves.
 
-.. autosummary:: 
+.. autosummary::
     :nosignatures:
     :toctree: _autosummary
     :template: foliaelement.rst
@@ -424,7 +418,7 @@ using Phonetic content is retrieved as string using
 :meth:`AbstractElement.text`, or as element using
 :meth:`AbstractElement.textcontent`.
 
-.. note:: 
+.. note::
     These are the only elements for which FoLiA prescribes a default set and a default class (``current``).
     This will only be relevant if you work with multiple text layers (current
     text vs OCRed text for instance) or with corrections of
@@ -498,7 +492,7 @@ another span annotation (of a particular type) and can not be used standalone.
 
 FoLiA distinguishes the following span annotation elements:
 
-.. autosummary:: 
+.. autosummary::
     :nosignatures:
     :toctree: _autosummary
     :template: foliaelement.rst
@@ -517,7 +511,7 @@ FoLiA distinguishes the following span annotation elements:
 
 These are placed in the following annotation layers:
 
-.. autosummary:: 
+.. autosummary::
     :nosignatures:
     :toctree: _autosummary
     :template: foliaelement.rst
@@ -536,7 +530,7 @@ These are placed in the following annotation layers:
 
 Some span annotation elements take *span roles*, depending on their type:
 
-.. autosummary:: 
+.. autosummary::
     :nosignatures:
     :toctree: _autosummary
     :template: foliaelement.rst
@@ -557,7 +551,7 @@ is done by explicitly providing the ID for the new document in the
 :class:`Document` constructor::
 
     doc = folia.Document(id='example')
-    
+
 
 Declarations
 ---------------------
@@ -572,7 +566,7 @@ An example for Part-of-Speech annotation::
     doc.declare(folia.PosAnnotation, 'http://somewhere/brown-tag-set')
 
 An example with a default annotator::
-    
+
     doc.declare(folia.PosAnnotation, 'http://somewhere/brown-tag-set', annotator='proycon', annotatortype=folia.AnnotatorType.MANUAL)
 
 Any additional sets for Part-of-Speech would have to be explicitly declared as
@@ -585,7 +579,7 @@ Adding structure
 Assuming we begin with an empty document, we should first add a Text element.
 Then we can add paragraphs, sentences, or other structural elements. The
 :meth:`AbstractElement.add` method adds new children to an element::
-    
+
     text = doc.add(folia.Text)
     paragraph = text.add(folia.Paragraph)
     sentence = paragraph.add(folia.Sentence)
@@ -611,10 +605,10 @@ raised as soon as ``add()`` is called. Let's build on the previous example::
 
     #First we grab the fourth word, 'test', from the sentence
     word = sentence.words(3)
-    
+
     #Add Part-of-Speech tag
     word.add(folia.PosAnnotation, set='brown-tagset',cls='n')
-    
+
     #Add lemma
     lemma.add(folia.LemmaAnnotation, cls='test')
 
@@ -629,12 +623,12 @@ above example, as the previous method is merely a shortcut for convenience::
 
     #First we grab the fourth word, 'test', from the sentence
     word = sentence.words(3)
-    
+
     #Add Part-of-Speech tag
     word.add( folia.PosAnnotation(doc, set='brown-tagset',cls='n') )
-    
+
     #Add lemma
-    lemma.add( folia.LemmaAnnotation(doc , cls='test') )   
+    lemma.add( folia.LemmaAnnotation(doc , cls='test') )
 
 The :meth:`AbstractElement.add` method always returns that which was added, allowing it to be chained.
 
@@ -653,8 +647,8 @@ The common attributes are set using equally named keyword arguments:
 
  * ``id=``
  * ``cls=``
- * ``set=`` 
- * ``annotator=`` 
+ * ``set=``
+ * ``annotator=``
  * ``annotatortype=``
  * ``confidence=``
  * ``src=``
@@ -665,7 +659,7 @@ The common attributes are set using equally named keyword arguments:
 Not all attributes are allowed for all elements, and certain attributes are
 required for certain elements. ``ValueError`` exceptions will be raised when these
 constraints are not met.
- 
+
 Instead of setting ``id``. you can also set the keyword argument
 ``generate_id_in`` and pass it another element, an ID will be automatically
 generated, based on the ID of the element passed. When you use the first method
@@ -690,7 +684,7 @@ layers are in turn embedded in structural elements such as sentences. However,
 the :meth:`AbstractElement.add` method abstracts over this. Consider the following example of a named entity::
 
     doc.declare(folia.Entity, "https://raw.githubusercontent.com/proycon/folia/master/setdefinitions/namedentities.foliaset.xml")
-    
+
     sentence = text.add(folia.Sentence)
     sentence.add(folia.Word, 'I',id='example.s.1.w.1')
     sentence.add(folia.Word, 'saw',id='example.s.1.w.2')
@@ -712,7 +706,7 @@ In the next example we do things more explicitly. We first create a sentence
 and then add a syntax parse, consisting of nested elements::
 
     doc.declare(folia.SyntaxLayer, 'some-syntax-set')
-    
+
     sentence = text.add(folia.Sentence)
     sentence.add(folia.Word, 'The',id='example.s.1.w.1')
     sentence.add(folia.Word, 'boy',id='example.s.1.w.2')
@@ -720,12 +714,12 @@ and then add a syntax parse, consisting of nested elements::
     sentence.add(folia.Word, 'the',id='example.s.1.w.4')
     sentence.add(folia.Word, 'cat',id='example.s.1.w.5')
     sentence.add(folia.Word, '.', id='example.s.1.w.6')
-    
+
     #Adding Syntax Layer
     layer = sentence.add(folia.SyntaxLayer)
-    
+
     #Adding Syntactic Units
-    layer.add( 
+    layer.add(
         folia.SyntacticUnit(self.doc, cls='s', contents=[
             folia.SyntacticUnit(self.doc, cls='np', contents=[
                 folia.SyntacticUnit(self.doc, self.doc['example.s.1.w.1'], cls='det'),
@@ -735,13 +729,13 @@ and then add a syntax parse, consisting of nested elements::
                 folia.SyntacticUnit(self.doc, self.doc['example.s.1.w.3'], cls='v')
                     folia.SyntacticUnit(self.doc, cls='np', contents=[
                         folia.SyntacticUnit(self.doc, self.doc['example.s.1.w.4'], cls='det'),
-                        folia.SyntacticUnit(self.doc, self.doc['example.s.1.w.5'], cls='n'),            
+                        folia.SyntacticUnit(self.doc, self.doc['example.s.1.w.5'], cls='n'),
                     ]),
                 ]),
-            folia.SyntacticUnit(self.doc, self.doc['example.s.1.w.6'], cls='fin')        
+            folia.SyntacticUnit(self.doc, self.doc['example.s.1.w.6'], cls='fin')
         ])
     )
-    
+
 
 .. note:: The lower-level :meth:`AbstractElement.append` method would have had the same effect in the above syntax tree sample.
 
@@ -755,7 +749,7 @@ Any element can be deleted by calling the :meth:`AbstractElement.remove` method 
 Copying annotations
 ----------------------
 
-A *deep copy* can be made of any element by calling its :meth:`AbstractElement.copy` method:: 
+A *deep copy* can be made of any element by calling its :meth:`AbstractElement.copy` method::
 
     word2 = word.copy()
 
@@ -784,7 +778,8 @@ uses the **FoLiA Query Language** (FQL) or the **Corpus Query Language** (CQL).
 
 These two languages are part of separate libraries that need to be imported::
 
-    from pynlpl.formats import fql, cql
+    from folia import fql
+    from pynlpl.formats import cql
 
 
 Corpus Query Language (CQL)
@@ -813,7 +808,7 @@ Multiple words can be queried::
 
     query = fql.Query(cql.cql2fql('"the" "big" "house"'))
     for word1,word2,word3 in query(doc):
-        print(word1, word2,word3) 
+        print(word1, word2,word3)
 
 Queries may contain wildcard expressions to match multiple text patterns. Gaps can be specified using []. The following will match any three word combination starting with the and ending with something that starts with house. It will thus match things like "the big house" or "the small household"::
 
@@ -837,11 +832,11 @@ The original CQL attribute here is ``tag`` rather than ``pos``, this can be used
 
 Consult the CQL documentation for more. Do note that CQL is very word/token centered, for searching other types of elements, use FQL instead.
 
-    
+
 FoLiA Query Language (FQL)
 -------------------------------
 
- 
+
 FQL is documented `here
 <https://github.com/proycon/foliadocserve/blob/master/README.rst>`__, a full
 overview is beyond the scope of this documentation. We will just introduce some
@@ -850,16 +845,16 @@ basic selection queries so you can develop an initial impression of the language
 All FQL processing is done via the following class, as already seen in the
 previous section:
 
-.. currentmodule:: pynlpl.formats.fql
+.. currentmodule:: folia.fql
 
-.. autosummary:: 
+.. autosummary::
     :nosignatures:
     :toctree: _autosummary
     :template: fullclass.rst
 
     Query
 
-.. currentmodule:: pynlpl.formats.folia
+.. currentmodule:: folia.fq
 
 Selecting a word with a particular text is done as follows::
 
@@ -871,13 +866,13 @@ Regular expression matching can be done using the ``MATCHES`` operator::
 
     query = fql.Query('SELECT w WHERE text MATCHES "^house.*$"')
     for word in query(doc):
-        print(word)  
+        print(word)
 
 The classes of other annotation types can be easily queried as follows::
 
     query = fql.Query('SELECT w WHERE :pos = "v"' AND :lemma = "be"')
     for word in query(doc):
-        print(word) 
+        print(word)
 
 You can constrain your queries to a particular target selection using the ``FOR`` keyword::
 
@@ -895,8 +890,8 @@ This construction also allows you to select the actual annotations. To select al
 
     query = fql.Query('SELECT entity WHERE class = "person" FOR w WHERE text != "John" FOR div ID "section.21"')
     for entity in query(doc):
-        print(entity) 
-    
+        print(entity)
+
 Sets are specified using the **OF** keyword, it can be omitted if there is only one for the annotation type, but will be required otherwise::
 
     query = fql.Query('SELECT su OF "http://some/syntax/set" WHERE class = "np"')
@@ -916,7 +911,7 @@ of reading FoLiA documents. This class always loads the entire document in
 memory, which can be a considerable resource demand. The following class
 provides an alternative to loading FoLiA documents:
 
-.. autosummary:: 
+.. autosummary::
     :nosignatures:
     :toctree: _autosummary
     :template: fullclass.rst
@@ -947,7 +942,7 @@ FoLiA has a number of text markup elements, these appear within the
 :class:`TextContent` element will first and foremost produce strings, but also
 uncover these markup elements when present. The following markup types exists:
 
-.. autosummary:: 
+.. autosummary::
     :nosignatures:
     :toctree: _autosummary
     :template: foliaelement.rst
@@ -979,7 +974,7 @@ features::
 
 The :meth:`AbstractElement.feat` method will return an exception when the feature does not exist.
 Note that the actual subset and class values are defined by the set and not
-FoLiA itself! They are therefore fictitious in the above example. 
+FoLiA itself! They are therefore fictitious in the above example.
 
 The Python class for features is :class:`Feature`, in the following example we
 add a feature::
@@ -993,7 +988,7 @@ the FoLiA document. The FoLiA library provides extra classes, all subclassed
 off :class:`Feature` for these:
 
 
-.. autosummary:: 
+.. autosummary::
     :nosignatures:
     :toctree: _autosummary
     :template: foliaelement.rst
@@ -1043,7 +1038,7 @@ unless explicitly told to do so. For this reason, there is an
 
 In summary, a list of the two relevant classes for alternatives:
 
-.. autosummary:: 
+.. autosummary::
     :nosignatures:
     :toctree: _autosummary
     :template: foliaelement.rst
@@ -1071,7 +1066,7 @@ return ``None``::
 
     pos = word.annotation(folia.PosAnnotation)
     correction = pos.incorrection()
-    if correction: 
+    if correction:
         if correction.hasoriginal():
             originalpos = correction.original(0) #assuming it's the only element as is customary
             #originalpos will be an instance of folia.PosAnnotation
@@ -1084,23 +1079,23 @@ Besides :meth:`Correction.original`, corrections distinguish three other types, 
 Adding a correction can be done explicitly::
 
     wrongpos = word.annotation(folia.PosAnnotation)
-    word.add(folia.Correction, folia.New(doc, folia.PosAnnotation(doc, cls="n")) , folia.Original(doc, wrongpos), cls="misclassified")   
+    word.add(folia.Correction, folia.New(doc, folia.PosAnnotation(doc, cls="n")) , folia.Original(doc, wrongpos), cls="misclassified")
 
 Let's settle for a suggestion rather than an actual correction::
 
     wrongpos = word.annotation(folia.PosAnnotation)
-    word.add(folia.Correction, folia.Suggestion(doc, folia.PosAnnotation(doc, cls="n")), cls="misclassified")   
+    word.add(folia.Correction, folia.Suggestion(doc, folia.PosAnnotation(doc, cls="n")), cls="misclassified")
 
 
 In some instances, when correcting text or structural elements, :class:`New` may be
 empty, which would correspond to an *deletion*. Similarly, :class:`Original` may be
-empty, corresponding to an *insertion*. 
+empty, corresponding to an *insertion*.
 
 The use of :class:`Current` is reserved for use with structure elements, such as words, in combination with suggestions. The structure elements then have to be embedded in :class:`Current`. This situation arises for instance when making suggestions for a merge or split.
 
 Here is a list of all relevant classes for corrections:
 
-.. autosummary:: 
+.. autosummary::
     :nosignatures:
     :toctree: _autosummary
     :template: foliaelement.rst
@@ -1117,11 +1112,11 @@ Alignments
 
 Alignments are used to make reference to external documents.  It concerns
 references as annotation rather than references which are explicitly part of
-the text, such as hyperlinks and :class:`Reference`. 
+the text, such as hyperlinks and :class:`Reference`.
 
 The following elements are relevant for alignments:
 
-.. autosummary:: 
+.. autosummary::
     :nosignatures:
     :toctree: _autosummary
     :template: foliaelement.rst
@@ -1137,7 +1132,7 @@ allows assigning metrics to any annotation, which consist of a key/value pair
 that often express a quantivative or qualitative measure. This is accomplished,
 respectively, with the following element classes:
 
-.. autosummary:: 
+.. autosummary::
     :nosignatures:
     :toctree: _autosummary
     :template: foliaelement.rst
