@@ -2127,6 +2127,7 @@ class AbstractElement(object):
         See also:
             :meth:`AbstractElement.xmlstring` - for direct string output
         """
+        PREFOLIA2 = checkversion(self.version,'2.0.0') < 0
 
         if not attribs: attribs = {}
         if not elements: elements = []
@@ -2163,7 +2164,7 @@ class AbstractElement(object):
                 has_default = (self.ANNOTATIONTYPE in self.doc.annotationdefaults) and (self.set in self.doc.annotationdefaults[self.ANNOTATIONTYPE]) and 'processor' in self.doc.annotationdefaults[self.ANNOTATIONTYPE][self.set]
                 if has_default:
                     assert self.doc.annotationdefaults[self.ANNOTATIONTYPE][self.set]['processor'] == self.processor.id
-                else:
+                elif not (PREFOLIA2 and self.doc.keepversion):
                     attribs['processor'] = self.processor.id
 
         if 'annotator' not in attribs and not self.processor: #do not override if caller already set it
@@ -6669,7 +6670,8 @@ class Document(object):
             textvalidation (bool): Do validation of text consistency (default: False)``
             preparsexmlcallback (function):  Callback for a function taking one argument (``node``, an lxml node). Will be called whenever an XML element is parsed into FoLiA. The function should return an instance inherited from folia.AbstractElement, or None to abort parsing this element (and all its children)
             parsexmlcallback (function):  Callback for a function taking one argument (``element``, a FoLiA element). Will be called whenever an XML element is parsed into FoLiA. The function should return an instance inherited from folia.AbstractElement, or None to abort adding this element (and all its children)
-            version (str): force a particular FoLiA version (use with caution)
+            keepversion (bool): attempt to keep the FoLiA version (use with caution)
+            version (str): force a particular FoLiA version when creating a new document (use with caution)
             declare (list): Declare the specifies annotation types. Consists of a list or tuple of annotationtypes or (annotation,set) tuples or (annotationtype,set,processor) tuples
             processor (Processor): Register the current processor in the provenance data and use this processor in all subsequent declarations
             reprocessor (Processor): As above, but will take pro-active ownership of any declarations already present but not tied to a processor yet
@@ -6678,6 +6680,7 @@ class Document(object):
 
 
         self.version = kwargs.get('version', FOLIAVERSION)
+        self.keepversion = 'version' in kwargs or ('keepversion' in kwargs and kwargs['keepversion'])
         self.document_version = None
 
         self.data = [] #will hold all texts (usually only one)
@@ -7018,6 +7021,7 @@ class Document(object):
 
     def xmldeclarations(self):
         """Internal method to generate XML nodes for all declarations"""
+        PREFOLIA2 = checkversion(self.version,'2.0.0') < 0
         l = []
 
         for annotationtype, set in self.annotations:
@@ -7029,8 +7033,8 @@ class Document(object):
                     break
             #gather attribs
 
-            if checkversion(self.version, '2.0.0') < 0: #implicit declarations only in older FoLiA
-                if (annotationtype == AnnotationType.TEXT or annotationtype == AnnotationType.PHON) and set == 'undefined' and len(self.annotationdefaults[annotationtype][set]) == 0:
+            if PREFOLIA2 and self.keepversion: #implicit declarations only in older FoLiA
+                if (annotationtype == AnnotationType.TEXT or annotationtype == AnnotationType.PHON) and set in ('undefined', DEFAULT_TEXT_SET, DEFAULT_PHON_SET) and len(self.annotationdefaults[annotationtype][set]) == 0:
                     #this is the implicit TextContent declaration, no need to output it explicitly
                     continue
 
@@ -7050,14 +7054,15 @@ class Document(object):
                 elif value:
                     attribs[key] = value
 
-            if annotationtypeisspan(annotationtype):
-                if self.groupannotations[annotationtype][set]:
-                    attribs["groupannotations"] = "yes"
 
             annotators = []
-            if annotationtype in self.annotators and set in self.annotators[annotationtype]:
-                for annotator in self.annotators[annotationtype][set]:
-                    annotators.append( getattr(E, 'annotator')(processor=annotator.processor_id) )
+            if not (PREFOLIA2 and self.keepversion):
+                if annotationtypeisspan(annotationtype):
+                    if self.groupannotations[annotationtype][set]:
+                        attribs["groupannotations"] = "yes"
+                if annotationtype in self.annotators and set in self.annotators[annotationtype]:
+                    for annotator in self.annotators[annotationtype][set]:
+                        annotators.append( getattr(E, 'annotator')(processor=annotator.processor_id) )
             if label:
                 l.append( getattr(E,'{' + NSFOLIA + '}' + label.lower() + '-annotation')(*annotators, **attribs) )
             else:
@@ -7127,10 +7132,10 @@ class Document(object):
         attribs = {}
         attribs['{http://www.w3.org/XML/1998/namespace}id'] = self.id
 
-        #if self.version:
-        #    attribs['version'] = self.version
-        #else:
-        attribs['version'] = FOLIAVERSION
+        if self.keepversion:
+            attribs['version'] = self.version
+        else:
+            attribs['version'] = FOLIAVERSION
 
         attribs['generator'] = 'foliapy-v' + LIBVERSION
 
@@ -7168,7 +7173,7 @@ class Document(object):
         self.pendingsort()
 
         jsondoc = {'id': self.id, 'children': [], 'declarations': self.jsondeclarations() }
-        if self.version:
+        if self.keepversion:
             jsondoc['version'] = self.version
         else:
             jsondoc['version'] = FOLIAVERSION
@@ -7180,7 +7185,10 @@ class Document(object):
 
     def xmlprovenance(self):
         """Internal method to serialize provenance data to XML"""
-        if self.provenance:
+        PREFOLIA2 = checkversion(self.version,'2.0.0') < 0
+        if self.keepversion and PREFOLIA2:
+            return []
+        elif self.provenance:
             return [ self.provenance.xml() ]
         else:
             return []
