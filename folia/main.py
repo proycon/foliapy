@@ -2258,7 +2258,7 @@ class AbstractElement(object):
                         break #only one
 
         tag = self.XMLTAG
-        if self.doc and PREFOLIA2 and self.doc.keepversion and tag in OLDTAGS_REVERSE:
+        if self.doc and PREFOLIA2 and self.doc.keepversion and tag in OLDTAGS_REVERSE and tag != "item":
             tag = OLDTAGS_REVERSE[tag]
         e = getattr(E, tag)(**attribs)
 
@@ -5086,6 +5086,10 @@ class LinkReference(AbstractElement):
                 raise DocumentNotLoaded()
 
     def xml(self, attribs = None,elements = None, skipchildren = False):
+        if self.doc:
+            PREFOLIA2 = checkversion(self.doc.version,'2.0.0') < 0
+        else:
+            PREFOLIA2 = False
         if not attribs:
             attribs = {}
         attribs['id'] = self.id
@@ -5093,7 +5097,10 @@ class LinkReference(AbstractElement):
             attribs['type'] = self.type
         if self.t: attribs['t'] = self.t
 
-        return E.xref( **attribs)
+        if PREFOLIA2 and self.doc and self.doc.keepversion:
+            return E.aref( **attribs)
+        else:
+            return E.xref( **attribs)
 
     def json(self, attribs=None, recurse=True, ignorelist=False):
         return {} #alignment not supported yet, TODO
@@ -7070,7 +7077,11 @@ class Document(object):
                     for annotator in self.annotators[annotationtype][set]:
                         annotators.append( getattr(E, 'annotator')(processor=annotator.processor_id) )
             if label:
-                l.append( getattr(E,'{' + NSFOLIA + '}' + label.lower() + '-annotation')(*annotators, **attribs) )
+                label = label.lower()
+                if PREFOLIA2 and self.keepversion and label in OLDTAGS_REVERSE and label != "item":
+                    #for FoLiA v1 serialisation
+                    label = OLDTAGS_REVERSE[label]
+                l.append( getattr(E,'{' + NSFOLIA + '}' + label + '-annotation')(*annotators, **attribs) )
             else:
                 raise Exception("Invalid annotation type")
         return l

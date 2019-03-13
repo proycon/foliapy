@@ -8,19 +8,20 @@ if 'TMPDIR' in os.environ:
 else:
     TMPDIR = '/tmp/'
 
-def xmlnorm(xml):
+def xmlnorm(xml, version = FOLIAVERSION, stripns=True):
     """normalize XML prior to comparison"""
-    xml = re.sub(r' version="[^"]*" generator="[^"]*"', ' version="' + FOLIAVERSION + '" generator="foliapy-v' + LIBVERSION + '"', xml, re.MULTILINE)
-    xml = re.sub(r'xmlns:?\w?="[^"]*"', '', xml, re.MULTILINE)
+    xml = re.sub(r' version="[^"]*" generator="[^"]*"', ' version="' + version + '" generator="foliapy-v' + LIBVERSION + '"', xml, re.MULTILINE)
+    if stripns:
+        xml = re.sub(r'xmlns:?\w?="[^"]*"', '', xml, re.MULTILINE)
     return xml
 
-def xmlcheck(xml,expect):
+def xmlcheck(xml,expect, version=FOLIAVERSION):
     #obj1 = lxml.objectify.fromstring(expect)
     #expect = lxml.etree.tostring(obj1)
     with open(os.path.join(TMPDIR, 'foliatest.fragment.expect.xml'),'w',encoding='utf-8') as f:
-        f.write(xmlnorm(xml))
+        f.write(xmlnorm(xml, version))
     with open(os.path.join(TMPDIR , 'foliatest.fragment.out.xml'),'w', encoding='utf-8') as f:
-        f.write(xmlnorm(xml))
+        f.write(xmlnorm(xml, version))
 
     retcode = os.system('xmldiff -c ' + os.path.join(TMPDIR, 'foliatest.fragment.expect.xml') + ' ' + os.path.join(TMPDIR,'foliatest.fragment.out.xml'))
     passed = (retcode == 0)

@@ -170,6 +170,22 @@ class Test_Exxx_Invalid_Wref(unittest.TestCase): #xxx -> replace with a number a
             folia.Document(file=os.path.join(FOLIAPATH,"examples/erroneous/invalid-wref.2.0.0.folia.xml"))
         self.assertEqual(cm.exception.cause.__class__, folia.InvalidReference)
 
+class Text_Exxx_KeepVersion(unittest.TestCase):
+    """Serialisation of older FoLiA versions"""
+
+    def test(self):
+        #write legacy example to file
+        f = open(os.path.join(TMPDIR,'foliatest1.5.ref.xml'),'w',encoding='utf-8')
+        f.write(xmlnorm(LEGACYEXAMPLE,"1.5",stripns=False))
+        f.close()
+
+        doc = folia.Document(string=LEGACYEXAMPLE, keepversion=True, debug=False)
+        doc.save(os.path.join(TMPDIR,'foliatest1.5.xml'))
+        retcode = os.system('xmldiff -c ' + os.path.join(TMPDIR,'foliatest1.5.ref.xml') + ' ' + os.path.join(TMPDIR,'foliatest1.5.xml'))
+        #retcode = 1 #disabled (memory hog)
+        self.assertEqual( retcode, 0)
+
+
 class Test_Provenance(unittest.TestCase):
     def test001_metadatasanity(self):
         """Provenance - Parse and sanity check"""
