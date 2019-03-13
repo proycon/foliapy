@@ -2257,7 +2257,10 @@ class AbstractElement(object):
                         omitchildren.append(c2) #and skip them as elements
                         break #only one
 
-        e = getattr(E, self.XMLTAG)(**attribs)
+        tag = self.XMLTAG
+        if self.doc and PREFOLIA2 and self.doc.keepversion and tag in OLDTAGS_REVERSE:
+            tag = OLDTAGS_REVERSE[tag]
+        e = getattr(E, tag)(**attribs)
 
 
 
@@ -7036,7 +7039,7 @@ class Document(object):
                     break
             #gather attribs
 
-            if PREFOLIA2 and self.keepversion: #implicit declarations only in older FoLiA
+            if PREFOLIA2:
                 if (annotationtype == AnnotationType.TEXT or annotationtype == AnnotationType.PHON) and set in ('undefined', DEFAULT_TEXT_SET, DEFAULT_PHON_SET) and len(self.annotationdefaults[annotationtype][set]) == 0:
                     #this is the implicit TextContent declaration, no need to output it explicitly
                     continue
