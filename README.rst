@@ -42,11 +42,11 @@ Alternatively, clone this repository and run ``python setup.py install`` (or
 ``python3 setup.py install`` for Python 3 on most system. Prepend ``sudo`` for
 global installations.
 
-The Python FoLiA library is also included in our `LaMachine <http://proycon.github.io/LaMachine>`_ distribution.
+The Python FoLiA library is also included in our `LaMachine <https://proycon.github.io/LaMachine>`_ distribution.
 
 Documentation
 --------------------
 
-API Documentation and tutorials can be found `here <http://foliapy.readthedocs.io/en/latest/>`__.
+API Documentation and tutorials can be found `here <https://foliapy.readthedocs.io/en/latest/>`_ .
 
 
