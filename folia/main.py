@@ -2127,7 +2127,10 @@ class AbstractElement(object):
         See also:
             :meth:`AbstractElement.xmlstring` - for direct string output
         """
-        PREFOLIA2 = checkversion(self.version,'2.0.0') < 0
+        if self.doc:
+            PREFOLIA2 = checkversion(self.doc.version,'2.0.0') < 0
+        else:
+            PREFOLIA2 = False
 
         if not attribs: attribs = {}
         if not elements: elements = []
