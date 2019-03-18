@@ -534,22 +534,45 @@ is done by explicitly providing the ID for the new document in the
 Declarations
 ---------------------
 
-Whenever you add a new **type** of annotation, or a different set, to a FoLiA document, you have to
-first declare it. This is done using the :meth:`Document.declare` method. It takes as
-arguments the annotation type, the set, and you can optionally pass keyword
-arguments to ``annotator=`` and ``annotatortype=`` to set defaults.
+Whenever you add a new **type** of annotation, no matter whether linguistic, structural or otherwise, you need to
+declare it. Now this FoLiA library is capable of automatically declaring annotations as you go along as long as there is
+no ambiguity, so you won't always need to do this explicitly, but it is still important to understand what is going on
+as you will run into it eventually.
 
-An example for Part-of-Speech annotation::
+Declarations are made using the :meth:`Document.declare` method. For example, do you want to use paragraphs in your
+document? Declare it. The simplest form of declaration looks as follows::
+
+   doc.declare(folia.Paragraph)
+
+In your declaration you can associate a set with the annotation type, we do this in the second parameter to
+:meth:`Document.declare` (for various annotation types this is mandatory even because without this there can be no
+classes for the annotations). The set defines the vocabulary that is used, the declaration points to a URL where this
+set is hosted, but don't worry about this too much yet::
 
     doc.declare(folia.PosAnnotation, 'http://somewhere/brown-tag-set')
 
-An example with a default annotator::
 
-    doc.declare(folia.PosAnnotation, 'http://somewhere/brown-tag-set', annotator='proycon', annotatortype=folia.AnnotatorType.MANUAL)
+Basic Provenance
+~~~~~~~~~~~~~~~~~~~~
 
-Any additional sets for Part-of-Speech would have to be explicitly declared as
-well. To check if a particular annotation type and set is declared, use the
-:meth:`Document.declared` method.
+At this point, you may also include information about who or what performed this type of annotation. For instance, your
+program or script. We call this *provenance information*, and each annotator is added through a *processor*, passed as
+argument to the :meth:`Document.declare` method::
+
+    doc.declare(folia.PosAnnotation, 'http://some/path/brown-tag-set', Processor(name="mytagger") )
+
+If you want to add another processor, simply call the declare method again, it will still result in only one
+declaration, but this will be tied to multiple processors::
+
+    othertagger = doc.declare(folia.PosAnnotation, 'http://some/path/brown-tag-set', Processor(name="othertagger") )
+
+As shown in the above example, the :meth:`Document.declare` method will actually return the processor, which is useful if you have multiple, as each processor will automatically (unless you specificy it explicitly) get assigned an ID, which you can pass to individual annotations to associate your annotation with a particular processor. This will be illustrated later.
+
+You're not limited to just using one set, simply call declare with another set to add another declaration::
+
+    doc.declare(folia.PosAnnotation, 'http://some/path/cgn-tag-set' )
+
+To check if a particular annotation type and set is declared, use the :meth:`Document.declared` method.
 
 Adding structure
 -------------------------
