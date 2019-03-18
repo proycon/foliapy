@@ -297,6 +297,8 @@ elements should be used.
 FoLiA and this library enforce explicit rules about what elements are allowed
 in what others. Exceptions will be raised when this is about to be violated.
 
+.. _commonattributes:
+
 Common attributes
 -----------------------
 
@@ -305,7 +307,7 @@ the actual value (class) of an annotation. A set often corresponds to a tagset,
 such as a set of part-of-speech tags, and a class is one selected value in such a set.
 
 The paradigm furthermore introduces other common attributes to set on
-annotation elements, such as an identifier,  information on the annotator, and
+annotation elements, such as an identifier, information on the annotator and provenance, and
 more. A full list is provided below:
 
 * ``element.id``        (str) - The unique identifier of the element
@@ -313,9 +315,16 @@ more. A full list is provided below:
 * ``element.cls``       (str) - The assigned class, i.e. the actual value of
   the annotation, defined in the set.  Classes correspond with tagsets in this case of many annotation types.
   Note that since *class* is already a reserved keyword in python, the library consistently uses ``cls`` everywhere.
-* ``element.annotator`` (str) - The name or ID of the annotator who added/modified this element
-* ``element.annotatortype`` - The type of annotator, can be either ``folia.AnnotatorType.MANUAL`` or ``folia.AnnotatorType.AUTO``
-* ``element.confidence`` (float) - A confidence value expressing
+* ``element.processor`` (str) - The ID of the processor who last added/modified this element. The processor is an
+  instance of :class:`Processor` and is part of the provenance data. It  contains information regarding who or what performed the annotation, such as (not exhaustive):
+   * ``element.processor.id`` (str) - the ID of the processor, has to be unique
+   * ``element.processor.name`` (str) - the name of the processor, e.g. the name of a certain software tool or human
+     annotator, needs not be unique
+   * ``element.processor.type`` - the type of processor (e.g. ``folia.ProcessorType.MANUAL``, ``folia.ProcessorType.AUTO``)
+* ``element.annotator`` (str) - The name or ID of the annotator who last added/modified this element, this is a less extensive mechanism used only if processor is
+  not used.
+* ``element.annotatortype`` - Only if processor is not used: the type of annotator, can be either ``folia.AnnotatorType.MANUAL`` or ``folia.AnnotatorType.AUTO``
+* ``element.confidence`` (float) - A confidence value expressing the confidence the annotator has in this annotation.
 * ``element.datetime``  (datetime.datetime) - The date and time when the element was added/modified.
 * ``element.n``         (str) - An ordinal label, used for instance in enumerated list contexts, numbered sections, etc..
 
@@ -358,10 +367,10 @@ Note that the second argument of :meth:`AllowTokenAnnotation.annotation`, :meth:
 :meth:`AbstractElement.select` can be used to restrict your selection to a certain set. In the
 above example we restrict ourselves to Part-of-Speech tags in the CGN set.
 
-Token Annotation Types
+Inline Annotation Types
 +++++++++++++++++++++++++
 
-The following token annotation elements are available in FoLiA, they are
+The following inline annotation elements are available in FoLiA, they are
 embedded under a structural element (not necessarily a token, despite the name).
 
 .. autosummary::
@@ -405,7 +414,7 @@ using Phonetic content is retrieved as string using
 Span Annotation
 +++++++++++++++++++
 
-FoLiA distinguishes token annotation and span annotation, token annotation is
+FoLiA distinguishes inline annotation and span annotation, inline annotation is
 embedded in-line within a structural element, and the annotation therefore
 pertains to that structural element, whereas span annotation is stored in a
 stand-off annotation layer outside the element and refers back to it. Span
@@ -531,6 +540,8 @@ is done by explicitly providing the ID for the new document in the
     doc = folia.Document(id='example')
 
 
+.. _declarations:
+
 Declarations
 ---------------------
 
@@ -551,13 +562,14 @@ set is hosted, but don't worry about this too much yet::
 
     doc.declare(folia.PosAnnotation, 'http://somewhere/brown-tag-set')
 
+.. _basicprovenance:
 
 Basic Provenance
 ~~~~~~~~~~~~~~~~~~~~
 
 At this point, you may also include information about who or what performed this type of annotation. For instance, your
-program or script. We call this *provenance information*, and each annotator is added through a *processor*, passed as
-argument to the :meth:`Document.declare` method::
+program or script. We call this *provenance information*, and each annotator is added through a *processor*, an instance
+of :class:`Processor`, passed as argument to the :meth:`Document.declare` method::
 
     doc.declare(folia.PosAnnotation, 'http://some/path/brown-tag-set', Processor(name="mytagger") )
 
@@ -566,7 +578,7 @@ declaration, but this will be tied to multiple processors::
 
     othertagger = doc.declare(folia.PosAnnotation, 'http://some/path/brown-tag-set', Processor(name="othertagger") )
 
-As shown in the above example, the :meth:`Document.declare` method will actually return the processor, which is useful if you have multiple, as each processor will automatically (unless you specificy it explicitly) get assigned an ID, which you can pass to individual annotations to associate your annotation with a particular processor. This will be illustrated later.
+As shown in the above example, the :meth:`Document.declare` method will actually return the :class:`Processor` instance, which is useful if you have multiple, as each processor will automatically (unless you specificy it explicitly) get assigned an ID, which you can pass to individual annotations to associate your annotation with a particular processor. This will be illustrated later.
 
 You're not limited to just using one set, simply call declare with another set to add another declaration::
 
@@ -593,7 +605,7 @@ Then we can add paragraphs, sentences, or other structural elements. The
 
 .. note:: The :meth:`AbstractElement.add` method is actually a wrapper around :meth:`AbstractElement.append`, which takes the
     exact same arguments. It performs extra checks and works for both span
-    annotation as well as token annotation. Using ``append()`` will be faster
+    annotation as well as inline annotation. Using ``append()`` will be faster
     though.
 
 Adding annotations
@@ -649,6 +661,7 @@ The common attributes are set using equally named keyword arguments:
  * ``id=``
  * ``cls=``
  * ``set=``
+ * ``processor=``
  * ``annotator=``
  * ``annotatortype=``
  * ``confidence=``
@@ -674,6 +687,29 @@ and pass a list. This is a shortcut made merely for convenience, as Python
 obliges all non-keyword arguments to come before the keyword-arguments, which
 if often aesthetically unpleasing for our purposes. Example of this use case
 will be shown in the next section.
+
+.. _provenance:
+
+Provenance Information
+-------------------------
+
+We already introduced the concept of provenance in the section on :ref:`declarations`, provenance data clarifies what
+the origin of an annotation is, i.e. who or what annotated it. If you declared an annotation type with a single
+processor, then it will automatically act as the default for annotations of that type (and set). If, however, you have
+multiple processors for a given annotation type and set (and it's good practise to always assume this), you should make
+this explicit when adding the annotation, using the ``processor`` attribute::
+
+    #First we declare the annotation type with a processor
+    posprocessor = doc.declare(folia.PosAnnotation, set='brown-tagset', processor=Processor(name="mypostagger"))
+
+    #Then we add an annotation to our word
+    word.add( folia.PosAnnotation, set='brown-tagset', cls='n', processor=posprocessor)
+
+The processor attribute takes an instance of :class:`Processor`, or the ID (not the name!) of an existing processor. If
+the processor has not been declared yet, the library will do that for you automatically.
+
+You can iterate over the entire provenance chain of a document ``doc`` by iterating over ``doc.provenance``
+(:class:`Provenance`). To get a a specific processor by ID: ``doc.provenance[id]``.
 
 
 Adding span annotation
@@ -1004,7 +1040,7 @@ Alternatives
 ------------------
 
 A key feature of FoLiA is its ability to make explicit alternative annotations,
-for token annotations, the :class:`Alternative` (``alt``) class is used to
+for inline annotations, the :class:`Alternative` (``alt``) class is used to
 this end. Alternative annotations are embedded in this structure. This implies
 the annotation is not authoritative, but is merely an alternative to the actual
 annotation (if any). Alternatives may typically occur in larger numbers,
@@ -1052,7 +1088,7 @@ Corrections
 
 Corrections are one of the most complex annotation types in FoLiA. Corrections
 can be applied not just over text, but over any type of structure annotation,
-token annotation or span annotation. Corrections explicitly preserve the
+inline annotation or span annotation. Corrections explicitly preserve the
 original, and recursively so if corrections are done over other corrections.
 
 Despite their complexity, the library treats correction transparently. Whenever
