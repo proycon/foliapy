@@ -3617,8 +3617,6 @@ class AbstractInlineAnnotation(AbstractElement, AllowGenerateID):
         self._setmaxid(e)
         return e
 
-class AbstractExtendedInlineAnnotation(AbstractInlineAnnotation):
-    pass
 
 
 class AbstractTextMarkup(AbstractElement):
@@ -5157,7 +5155,7 @@ class Relation(AbstractElement):
 Alignment = Relation #backward compatibility for FoLiA < 2
 
 
-class ErrorDetection(AbstractExtendedInlineAnnotation):
+class ErrorDetection(AbstractInlineAnnotation):
     """The ErrorDetection element is used to signal the presence of errors in a structural element."""
     pass
 
@@ -5986,7 +5984,7 @@ class PosAnnotation(AbstractInlineAnnotation):
 class LemmaAnnotation(AbstractInlineAnnotation):
     """Lemma annotation:  a token annotation element"""
 
-class LangAnnotation(AbstractExtendedInlineAnnotation):
+class LangAnnotation(AbstractInlineAnnotation):
     """Language annotation:  an extended token annotation element"""
 
 #class PhonAnnotation(AbstractInlineAnnotation): #DEPRECATED in v0.9
@@ -5996,7 +5994,7 @@ class LangAnnotation(AbstractExtendedInlineAnnotation):
 #    XMLTAG = 'phon'
 
 
-class DomainAnnotation(AbstractExtendedInlineAnnotation):
+class DomainAnnotation(AbstractInlineAnnotation):
     """Domain annotation:  an extended token annotation element"""
 
 class SynsetFeature(Feature):
