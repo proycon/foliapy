@@ -53,7 +53,7 @@ from folia import LIBVERSION
 
 #foliaspec:version:FOLIAVERSION
 #The FoLiA version
-FOLIAVERSION = "2.0.0"
+FOLIAVERSION = "2.0.1"
 
 #foliaspec:namespace:NSFOLIA
 #The FoLiA XML namespace
@@ -8563,7 +8563,7 @@ def validate(filename,schema=None,deep=False):
 #================================= FOLIA SPECIFICATION ==========================================================
 
 #foliaspec:header
-#This file was last updated according to the FoLiA specification for version 2.0.0 on 2019-02-27 15:33:16, using foliaspec.py
+#This file was last updated according to the FoLiA specification for version 2.0.1 on 2019-03-19 13:20:12, using foliaspec.py
 #Code blocks after a foliaspec comment (until the next newline) are automatically generated. **DO NOT EDIT THOSE** and **DO NOT REMOVE ANY FOLIASPEC COMMENTS** !!!
 
 #foliaspec:structurescope:STRUCTURESCOPE
@@ -8770,11 +8770,11 @@ default_ignore = ( Original, Suggestion, Alternative, AlternativeLayers, Foreign
 
 #foliaspec:default_ignore_annotations
 #Default ignore list for token annotation
-default_ignore_annotations = ( Original, Suggestion, Alternative, AlternativeLayers, MorphologyLayer, PhonologyLayer, ForeignData,)
+default_ignore_annotations = ( Original, Suggestion, Alternative, AlternativeLayers, MorphologyLayer, PhonologyLayer,)
 
 #foliaspec:default_ignore_structure
 #Default ignore list for structure annotation
-default_ignore_structure = ( Original, Suggestion, Alternative, AlternativeLayers, AbstractAnnotationLayer, ForeignData,)
+default_ignore_structure = ( Original, Suggestion, Alternative, AlternativeLayers, AbstractAnnotationLayer,)
 
 #foliaspec:defaultproperties
 #Default properties which all elements inherit
