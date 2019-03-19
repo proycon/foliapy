@@ -1144,10 +1144,10 @@ Here is a list of all relevant classes for corrections:
     Original
     Suggestion
 
-Alignments
+Relations
 ------------------
 
-Alignments are used to make reference to external documents.  It concerns
+Relations are used to make reference to external documents.  It concerns
 references as annotation rather than references which are explicitly part of
 the text, such as hyperlinks and :class:`Reference`.
 
@@ -1158,8 +1158,8 @@ The following elements are relevant for alignments:
     :toctree: _autosummary
     :template: foliaelement.rst
 
-    Alignment
-    AlignReference
+    Relation
+    LinkReference
 
 Descriptions, Metrics
 -------------------------
