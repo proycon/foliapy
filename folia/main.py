@@ -3938,6 +3938,8 @@ class TextContent(AbstractContentAnnotation):
         if 'class' in e.attrib and e.attrib['class'] == "current":
             #delete 'class=current'
             del e.attrib['class']
+        if 'set' in e.attrib and e.attrib['set'] == "undefined" and self.doc and checkversion(self.doc.version, "2.0.0") < 0:
+            del e.attrib['set']
 
         return e
 
