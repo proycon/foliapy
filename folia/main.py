@@ -667,36 +667,7 @@ class AbstractElement(object):
         elif Attrib.CLASS in required: #or (hasattr(self,'SETONLY') and self.SETONLY):
             raise ValueError("Set is required for " + self.__class__.__name__)
 
-        if doc and annotationtype is not None: #we can only do this check if we have a document, we'll be overly permissive for documentless elements (so caution adviced for those)
-            FOLIA2 = checkversion(doc.version, '2.0.0') >= 0
-            if (FOLIA2 or (self.set and self.set != "undefined")) and not isinstance(self, (Text,Speech)): #Body is an undeclared element
-                #Check if an element is declared (FoLiA v2+ only)
-                #for FoLiA <2 we only check if we have a set
-                #This is a much stricter check than older FoLiA versions
-                if doc and (annotationtype not in doc.annotationdefaults or self.set not in doc.annotationdefaults[annotationtype]):
-                    if self.set is False:
-                        #set may be False in case of annotation layers, where it will be set later after appending children, we ignore that case (things like auto-declare are deferred until an actual span annotation appears)
-                        pass
-                    elif doc.autodeclare:
-                        #autodeclare
-                        if isinstance(self, TextContent): #FoLiA v2.0, autodeclare text
-                            if FOLIA2:
-                                if doc.debug >= 1: print("[FoLiA DEBUG] Auto-declaring Text Annotation",file=stderr)
-                                doc.declare(AnnotationType.TEXT, DEFAULT_TEXT_SET)
-                        elif isinstance(self, PhonContent): #FoLiA v2.0
-                            if FOLIA2:
-                                if doc.debug >= 1: print("[FoLiA DEBUG] Auto-declaring Phonetic Annotation",file=stderr)
-                                doc.declare(AnnotationType.PHON, DEFAULT_PHON_SET)
-                        elif self.set:
-                            if doc.debug >= 1: print("[FoLiA DEBUG] Auto-declaring " + self.__class__.__name__ + " with set " + str(self.set),file=stderr)
-                            doc.declare(annotationtype, self.set)
-                    elif self.set:
-                        raise DeclarationError("Set '" + str(self.set) + "' is used for " + self.__class__.__name__ + " <" + self.__class__.XMLTAG + ">, but has no declaration!")
-                    else:
-                        raise DeclarationError("Encountered an instance without proper declaration: " + self.__class__.__name__ + " <" + self.__class__.XMLTAG + ">!")
-            #check for ambiguity
-            if self.set is None and self.__class__.PRIMARYELEMENT and annotationtype in doc.annotationdefaults and len(doc.annotationdefaults[annotationtype]) > 1:
-                raise DeclarationError("No set assigned for " + self.__class__.__name__ + " <" + self.__class__.XMLTAG + "> but no default available either due to multiple possible declarations: " + ", ".join([str(s) for s in doc.annotationdefaults[annotationtype].keys()]))
+        self.checkdeclaration()
 
         if 'class' in kwargs:
             if not Attrib.CLASS in supported:
@@ -950,6 +921,40 @@ class AbstractElement(object):
                     del kwargs[c.SUBSET]
 
         return kwargs
+
+    def checkdeclaration(self):
+        """Internal method (usually no need to call this) that checks whether the element's annotation type is properly declared, raises an exception if not so, or auto-declares the annotation type if need be."""
+        annotationtype = self.ANNOTATIONTYPE
+        if self.doc and annotationtype is not None: #we can only do this check if we have a document, we'll be overly permissive for documentless elements (so caution adviced for those)
+            FOLIA2 = checkversion(self.doc.version, '2.0.0') >= 0
+            if (FOLIA2 or (self.set and self.set != "undefined")) and not isinstance(self, (Text,Speech)): #Body is an undeclared element
+                #Check if an element is declared (FoLiA v2+ only)
+                #for FoLiA <2 we only check if we have a set
+                #This is a much stricter check than older FoLiA versions
+                if self.doc and (annotationtype not in self.doc.annotationdefaults or self.set not in self.doc.annotationdefaults[annotationtype]):
+                    if self.set is False:
+                        #set may be False in case of annotation layers, where it will be set later after appending children, we ignore that case (things like auto-declare are deferred until an actual span annotation appears)
+                        pass
+                    elif self.doc.autodeclare:
+                        #autodeclare
+                        if isinstance(self, TextContent): #FoLiA v2.0, autodeclare text
+                            if FOLIA2:
+                                if self.doc.debug >= 1: print("[FoLiA DEBUG] Auto-declaring Text Annotation",file=stderr)
+                                self.doc.declare(AnnotationType.TEXT, DEFAULT_TEXT_SET)
+                        elif isinstance(self, PhonContent): #FoLiA v2.0
+                            if FOLIA2:
+                                if self.doc.debug >= 1: print("[FoLiA DEBUG] Auto-declaring Phonetic Annotation",file=stderr)
+                                self.doc.declare(AnnotationType.PHON, DEFAULT_PHON_SET)
+                        elif self.set:
+                            if self.doc.debug >= 1: print("[FoLiA DEBUG] Auto-declaring " + self.__class__.__name__ + " with set " + str(self.set),file=stderr)
+                            self.doc.declare(annotationtype, self.set)
+                    elif self.set:
+                        raise DeclarationError("Set '" + str(self.set) + "' is used for " + self.__class__.__name__ + " <" + self.__class__.XMLTAG + ">, but has no declaration!")
+                    else:
+                        raise DeclarationError("Encountered an instance without proper declaration: " + self.__class__.__name__ + " <" + self.__class__.XMLTAG + ">!")
+            #check for ambiguity
+            if self.set is None and self.__class__.PRIMARYELEMENT and annotationtype in self.doc.annotationdefaults and len(self.doc.annotationdefaults[annotationtype]) > 1:
+                raise DeclarationError("No set assigned for " + self.__class__.__name__ + " <" + self.__class__.XMLTAG + "> but no default available either due to multiple possible declarations: " + ", ".join([str(s) for s in self.doc.annotationdefaults[annotationtype].keys()]))
 
 
     def description(self):
