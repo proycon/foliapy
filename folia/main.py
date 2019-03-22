@@ -709,12 +709,13 @@ class AbstractElement(object):
                     raise ValueError("Annotatortype attribute " + kwargs['annotatortype'] + " does not equal processor type (" + self.processor.type + ")")
             del kwargs['processor']
         elif doc and annotationtype in doc.annotators and self.set in doc.annotators[annotationtype] and doc.annotators[annotationtype][self.set]:
-            l = len(doc.annotators[annotationtype][self.set])
-            if l == 1:
-                for processor in doc.getprocessors(annotationtype, self.set): #should only iterate over one!
-                    self.processor = processor
-            elif l > 1:
-                raise NoDefaultError("No processor specified for " + self.__class__.__name__ + " <" + self.__class__.XMLTAG + ">, but the presence of multiple declarations prevent assigning a default")
+            try:
+                self.processor = doc.getdefaultprocessor(annotationtype,self.set)
+            except NoDefaultError as e:
+                raise e
+        #elif doc and annotationtype in doc.annotationdefaults and self.set in self.doc.annotationdefaults[annotationtype] and 'processor' in self.doc.annotationdefults[annotationtype][self.set]:
+        #    self.processor = self.doc.annotationdefaults[annotationtype][self.set]['processor']
+
 
         if self.processor is None:
             #old behavour without provenance (FoLiA <= 1.5)
@@ -921,6 +922,7 @@ class AbstractElement(object):
                     del kwargs[c.SUBSET]
 
         return kwargs
+
 
     def checkdeclaration(self):
         """Internal method (usually no need to call this) that checks whether the element's annotation type is properly declared, raises an exception if not so, or auto-declares the annotation type if need be."""
@@ -2171,12 +2173,13 @@ class AbstractElement(object):
         if 'processor' not in attribs: #do not override if caller already set it
             if self.ANNOTATIONTYPE in self.doc.annotators and self.set in self.doc.annotators[self.ANNOTATIONTYPE] and self.doc.annotators[self.ANNOTATIONTYPE][self.set]:
                 #there are new-style (FoLiA v2) annotators (pointing to processors in provenance data)
+                try:
+                    defaultprocessor = self.doc.getdefaultprocessor(self.ANNOTATIONTYPE, self.set)
+                    attribs['processor'] = defaultprocessor.id
+                except NoDefaultError:
+                    if not (PREFOLIA2 and self.doc.keepversion):
+                        attribs['processor'] = self.processor.id
 
-                has_default = (self.ANNOTATIONTYPE in self.doc.annotationdefaults) and (self.set in self.doc.annotationdefaults[self.ANNOTATIONTYPE]) and 'processor' in self.doc.annotationdefaults[self.ANNOTATIONTYPE][self.set]
-                if has_default:
-                    assert self.doc.annotationdefaults[self.ANNOTATIONTYPE][self.set]['processor'] == self.processor.id
-                elif not (PREFOLIA2 and self.doc.keepversion):
-                    attribs['processor'] = self.processor.id
 
         if 'annotator' not in attribs and not self.processor: #do not override if caller already set it
             try:
@@ -7480,6 +7483,13 @@ class Document(object):
             #no defaults
             self.annotationdefaults[annotationtype][set] = {}
 
+    def getdefaultprocessor(self, annotationtype, set):
+        l = len(self.annotators[annotationtype][set])
+        if l == 1:
+            for processor in self.getprocessors(annotationtype, set): #should only iterate over one!
+                return processor
+        elif l > 1:
+            raise NoDefaultError("No processor specified for <" + ANNOTATIONTYPE2XML[annotationtype] +  ">, but the presence of multiple declarations prevent assigning a default")
 
     def attachexternal(self, type, set, **kwargs):
         if self.debug >= 1:
