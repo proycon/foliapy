@@ -948,6 +948,9 @@ class AbstractElement(object):
                         elif self.set:
                             if self.doc.debug >= 1: print("[FoLiA DEBUG] Auto-declaring " + self.__class__.__name__ + " with set " + str(self.set),file=stderr)
                             self.doc.declare(annotationtype, self.set)
+                        else:
+                            if self.doc.debug >= 1: print("[FoLiA DEBUG] Auto-declaring " + self.__class__.__name__ + " (no set)", file=stderr)
+                            self.doc.declare(annotationtype)
                     elif self.set:
                         raise DeclarationError("Set '" + str(self.set) + "' is used for " + self.__class__.__name__ + " <" + self.__class__.XMLTAG + ">, but has no declaration!")
                     else:
