@@ -6861,6 +6861,7 @@ class Document(object):
         else:
             raise Exception("No ID, filename or tree specified")
 
+        self.doneparsing = True #indicates that the document is done parsing
 
         #### POST-READING
 
