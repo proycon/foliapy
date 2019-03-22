@@ -7054,16 +7054,17 @@ class Document(object):
                 attribs['set'] = set
 
 
-            for key, value in self.annotationdefaults[annotationtype][set].items():
-                if key == 'annotatortype':
-                    if value == AnnotatorType.MANUAL:
-                        attribs[key] = 'manual'
-                    elif value == AnnotatorType.AUTO:
-                        attribs[key] = 'auto'
-                elif key == 'datetime':
-                    attribs[key] = value.strftime("%Y-%m-%dT%H:%M:%S") #proper iso-formatting
-                elif value:
-                    attribs[key] = value
+            if 'processor' not in self.annotationdefaults[annotationtype][set]:
+                for key, value in self.annotationdefaults[annotationtype][set].items():
+                    if key == 'annotatortype':
+                        if value == AnnotatorType.MANUAL:
+                            attribs[key] = 'manual'
+                        elif value == AnnotatorType.AUTO:
+                            attribs[key] = 'auto'
+                    elif key == 'datetime':
+                        attribs[key] = value.strftime("%Y-%m-%dT%H:%M:%S") #proper iso-formatting
+                    elif value:
+                        attribs[key] = value
 
 
             annotators = []
