@@ -1,7 +1,7 @@
-# -*- coding: utf-8 -*-
+#% -*- coding: utf-8 -*-
 #----------------------------------------------------------------
 # FoLiA Library for Python
-#   by Maarten van Gompel
+# /  by Maarten van Gompel
 #   Centre for Language Studies
 #   Radboud University Nijmegen
 #
@@ -7058,7 +7058,7 @@ class Document(object):
             #gather attribs
 
             if PREFOLIA2:
-                if (annotationtype == AnnotationType.TEXT or annotationtype == AnnotationType.PHON) and set in ('undefined', DEFAULT_TEXT_SET, DEFAULT_PHON_SET) and len(self.annotationdefaults[annotationtype][set]) == 0:
+                if (annotationtype == AnnotationType.TEXT or annotationtype == AnnotationType.PHON) and set in ('undefined', DEFAULT_TEXT_SET, DEFAULT_PHON_SET): # and len(self.annotationdefaults[annotationtype][set]) == 0:
                     #this is the implicit TextContent declaration, no need to output it explicitly
                     continue
 
