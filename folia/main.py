@@ -923,6 +923,13 @@ class AbstractElement(object):
 
         return kwargs
 
+    def setprocessor(self,processor):
+        """Sets the processor for this element, taking care of adding an annotator in the declarations"""
+        if isinstance(processor,str) and self.doc:
+            processor = self.doc.provenance[processor]
+        assert isinstance(processor, Processor)
+        self.processor = processor
+
 
     def checkdeclaration(self):
         """Internal method (usually no need to call this) that checks whether the element's annotation type is properly declared, raises an exception if not so, or auto-declares the annotation type if need be."""
