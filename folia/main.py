@@ -188,6 +188,7 @@ class CorrectionHandling:
 class Annotator:
     """Links to a Processor"""
     def __init__(self, processor_id, doc):
+        if isinstance(processor_id, Processor): processor_id = processor_id.id #some flexibility, allow passing either Processor instances or ID as str
         self.processor_id = processor_id
         self.doc = doc
 
@@ -929,7 +930,8 @@ class AbstractElement(object):
             processor = self.doc.provenance[processor]
         assert isinstance(processor, Processor)
         self.processor = processor
-
+        if not any( annotator() == processor for annotator in self.doc.getannotators(self.ANNOTATIONTYPE, self.set)):
+            self.doc.annotators[self.ANNOTATIONTYPE][self.set].append(Annotator(processor, self.doc))
 
     def checkdeclaration(self):
         """Internal method (usually no need to call this) that checks whether the element's annotation type is properly declared, raises an exception if not so, or auto-declares the annotation type if need be."""
@@ -7433,7 +7435,6 @@ class Document(object):
             del kwargs['processor']
 
         context = None
-        return_processors = []
         for i, processor in enumerate(args):
             if isinstance(processor, Processor):
                 #check if processor is new
@@ -7468,7 +7469,6 @@ class Document(object):
                     if self.debug >= 1:
                         print("[FoLiA DEBUG] Adding new processor " + processor.name + ", ID " + processor.id, file=stderr)
                     self.provenance.append(processor)
-            return_processors.append(processor)
             context = processor
 
         if 'external' in kwargs:
@@ -7590,11 +7590,13 @@ class Document(object):
             raise NoDefaultError
 
     def getannotators(self, annotationtype, annotationset):
+        """Get all annotators for the given annotationtype and set. This is a generator that yields Annotator instances, these resolve to a Processor when called. See also `:meth:AbstractElement.getprocessors` to obtain processors directly, which is most likely what you want."""
         if inspect.isclass(annotationtype) or isinstance(annotationtype,AbstractElement): annotationtype = annotationtype.ANNOTATIONTYPE
         for annotator in self.annotators[annotationtype][annotationset]:
             yield annotator
 
     def getprocessors(self, annotationtype, annotationset):
+        """Get all processors associated with  the given annotationtype and set, generator yielding Processor instances, see also `:meth:AbstractElement.getannotators`"""
         for annotator in self.getannotators(annotationtype, annotationset):
             yield annotator() #calling the annotator returns a Processor
 
