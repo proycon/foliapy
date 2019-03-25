@@ -37,7 +37,7 @@ elif os.path.exists("../folia-repo"):
 elif os.path.exists("../../folia-repo"):
     FOLIAPATH = "../../folia-repo"
 else:
-    raise Exception("FoLiA repository not found, did you run git submodule init and are you in the test directory?")
+    raise Exception("FoLiA repository not found, did you run 'git submodule init && git submodule update' are you in the test directory?")
 
 if 'TMPDIR' in os.environ:
     TMPDIR = os.environ['TMPDIR']
