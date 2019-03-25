@@ -201,7 +201,7 @@ class Processor:
     def __init__(self, name, type=ProcessorType.AUTO, id=None, version=None, document_version=None, folia_version=None, command=None, host=None, user=None, begindatetime=None, enddatetime=None, resourcelink=None, parent=None):
         self.name = name
         if id is None:
-            self.id = "proc." + self.name.lower() + "."  + ("%08x" % random.getrandbits(16)) #assign ID with random elements if none provided
+            self.id = "proc." + self.name.lower() + "."  + ("%08x" % random.getrandbits(32)) #assign ID with random elements if none provided
         else:
             self.id = id
         if type not in (ProcessorType.MANUAL, ProcessorType.AUTO, ProcessorType.GENERATOR, ProcessorType.DATASOURCE): #superset of AnnotatorType
