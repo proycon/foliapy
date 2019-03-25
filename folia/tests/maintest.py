@@ -30,7 +30,13 @@ stderr = sys.stderr
 stdout = sys.stdout
 
 
-if not os.path.exists(os.path.join("folia-repo","examples")):
+if os.path.exists("folia-repo"):
+    FOLIAPATH = "folia-repo"
+elif os.path.exists("../folia-repo"):
+    FOLIAPATH = "../folia-repo"
+elif os.path.exists("../../folia-repo"):
+    FOLIAPATH = "../../folia-repo"
+else:
     raise Exception("FoLiA repository not found, did you run 'git submodule init && git submodule update' are you in the test directory?")
 
 if 'TMPDIR' in os.environ:
