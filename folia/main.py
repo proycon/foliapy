@@ -7475,9 +7475,11 @@ class Document(object):
             self.attachexternal(type,set,**kwargs)
 
         #Set defaults
-        if len(self.annotators[annotationtype][set]) == 1 and args:
-            self.annotationdefaults[annotationtype][set] = {'processor': processor.id}
-            return processor #returns the last one
+        if args:
+            #no defaults
+            self.annotationdefaults[annotationtype][set] = {}
+            #return last processor
+            return processor
         elif not args:
             #No processors, old-style behaviour with annotator/annotatortype attributes for defaults
             if 'datetime' in kwargs:
