@@ -923,6 +923,13 @@ class AbstractElement(object):
 
         return kwargs
 
+    def setprocessor(self,processor):
+        """Sets the processor for this element, taking care of adding an annotator in the declarations"""
+        if isinstance(processor,str) and self.doc:
+            processor = self.doc.provenance[processor]
+        assert isinstance(processor, Processor)
+        self.processor = processor
+
 
     def checkdeclaration(self):
         """Internal method (usually no need to call this) that checks whether the element's annotation type is properly declared, raises an exception if not so, or auto-declares the annotation type if need be."""
@@ -6690,7 +6697,7 @@ class Document(object):
             setdefinition (dict):  A dictionary of set definitions, the key corresponds to the set name, the value is a SetDefinition instance
             loadsetdefinitions (bool):  download and load set definitions (default: False)
             deepvalidation (bool): Do deep validation of the document (default: False), implies ``loadsetdefinitions``
-            textvalidation (bool): Do validation of text consistency (default: False)``
+            textvalidation (bool): Do validation of text consistency (default: False), this value is always forced to True to FoLiA v1.5 and above``
             preparsexmlcallback (function):  Callback for a function taking one argument (``node``, an lxml node). Will be called whenever an XML element is parsed into FoLiA. The function should return an instance inherited from folia.AbstractElement, or None to abort parsing this element (and all its children)
             parsexmlcallback (function):  Callback for a function taking one argument (``element``, a FoLiA element). Will be called whenever an XML element is parsed into FoLiA. The function should return an instance inherited from folia.AbstractElement, or None to abort adding this element (and all its children)
             keepversion (bool): attempt to keep the FoLiA version (use with caution)
@@ -7863,6 +7870,8 @@ class Document(object):
                 if self.debug >= 1: print("[FoLiA DEBUG] FoLiA version:", self.version,file=stderr)
                 if checkversion(self.version) > 0:
                     print("WARNING!!! Document uses a newer version of FoLiA than this library! (" + self.version + " vs " + FOLIAVERSION + "). Any possible subsequent failures in parsing or processing may probably be attributed to this. Upgrade foliapy to remedy this.",file=sys.stderr)
+                if checkversion(self.version,'1.5.0') >= 0:
+                    self.textvalidation = True
                 if checkversion(self.version,'2.0.0') < 0:
                     #older FoLiA, add implicit declarations:
                     if self.autodeclare is None: self.autodeclare = False
