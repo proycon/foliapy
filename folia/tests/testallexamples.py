@@ -22,5 +22,9 @@ for filename in glob.glob(os.path.join(FOLIAPATH,"examples","*.xml")):
     examplename = os.path.basename(filename)[:-10].replace('-','_')
     setattr(ExamplesTest, "test_" + examplename, (lambda self: folia.Document(file=filename)))
 
+for filename in glob.glob(os.path.join(FOLIAPATH,"examples","erronous","*.xml")):
+    examplename = os.path.basename(filename)[:-10].replace('-','_')
+    setattr(ExamplesTest, "test_" + examplename, (lambda self: self.assertRaises(Exception, folia.Document, file=filename)))
+
 if __name__ == '__main__':
     unittest.main()
