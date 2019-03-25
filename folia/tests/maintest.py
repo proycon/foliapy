@@ -37,6 +37,8 @@ elif os.path.exists("../folia-repo"):
 elif os.path.exists("../../folia-repo"):
     FOLIAPATH = "../../folia-repo"
 else:
+    raise Exception("Please invoke this script from its base directory or the repository root")
+if not os.path.exists(os.path.join(FOLIAPATH,"examples")):
     raise Exception("FoLiA repository not found, did you run 'git submodule init && git submodule update' are you in the test directory?")
 
 if 'TMPDIR' in os.environ:
