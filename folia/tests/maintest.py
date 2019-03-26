@@ -1173,7 +1173,7 @@ class Test02Sanity(unittest.TestCase):
         """Sanity Check - B - Checking output file against input using xmldiff (should be equal)"""
         #uses a partial rather than full legacy example without elements that have been renamed in FoLiA 2.0
         f = open(os.path.join(TMPDIR,'foliatest.xml'),'w',encoding='utf-8')
-        f.write( re.sub(r' version="[^"]*" generator="[^"]*"', ' version="' + folia.FOLIAVERSION + '" generator="foliapy-v' + folia.LIBVERSION + '"', PARTIALLEGACYEXAMPLE, re.MULTILINE) )
+        f.write( re.sub(r' version="[^"]*" generator="[^"]*"', ' version="1.5" generator="foliapy-v' + folia.LIBVERSION + '"', PARTIALLEGACYEXAMPLE, re.MULTILINE) )
         f.close()
         #use xmldiff to compare the two:
         doc = folia.Document(string=PARTIALLEGACYEXAMPLE, debug=False, keepversion=True)
