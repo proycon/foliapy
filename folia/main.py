@@ -4828,7 +4828,7 @@ class AbstractAnnotationLayer(AbstractElement, AllowGenerateID, AllowCorrections
 
     def xml(self, attribs = None,elements = None, skipchildren = False):
         """See :meth:`AbstractElement.xml`"""
-        if self.set is False or self.set is None:
+        if self.set is False:
             if len(self.data) == 0: #just skip if there are no children
                 return None
             else:
