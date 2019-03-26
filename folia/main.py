@@ -7602,7 +7602,7 @@ class Document(object):
 
     def hasprocessors(self, annotationtype, annotationset):
         """Does this annotationtype and set have associated processors/annotators? (FoLiA v2 provenance data)"""
-        return annotationtype not in self.annotators or annotationset not in self.annotators[annotationtype] or not self.annotators[annotationtype][annotationset]
+        return annotationtype in self.annotators and annotationset in self.annotators[annotationtype] and self.annotators[annotationtype][annotationset]
 
     def hasannotators(self, annotationtype, annotationset):
         """Alias for :meth:`Document.hasprocessors`: Does this annotationtype and set have associated processors/annotators? (FoLiA v2 provenance data)"""
