@@ -7602,7 +7602,7 @@ class Document(object):
 
     def hasprocessors(self, annotationtype, annotationset):
         """Does this annotationtype and set have associated processors/annotators? (FoLiA v2 provenance data)"""
-        return annotationtype in self.annotators and annotationset in self.annotators[annotationtype] and self.annotators[annotationtype][annotationset]
+        return annotationtype in self.annotators and annotationset in self.annotators[annotationtype] and len(self.annotators[annotationtype][annotationset]) > 0
 
     def hasannotators(self, annotationtype, annotationset):
         """Alias for :meth:`Document.hasprocessors`: Does this annotationtype and set have associated processors/annotators? (FoLiA v2 provenance data)"""
@@ -7610,7 +7610,7 @@ class Document(object):
 
     def hasdefaults(self, annotationtype, annotationset):
         """Does this annotationtype and set have associated defaults? (old style FoLiA v1 without provenance data)"""
-        return annotationtype in self.annotationdefaults and annotationset in self.annotationdefaults[annotationtype][annotationset] and self.annotationdefaults[annotationtype][annotationset]
+        return annotationtype in self.annotationdefaults and annotationset in self.annotationdefaults[annotationtype] and len(self.annotationdefaults[annotationtype][annotationset]) > 0
 
     def defaultannotator(self, annotationtype, set=None):
         """Obtain the default annotator for the specified annotation type and set.

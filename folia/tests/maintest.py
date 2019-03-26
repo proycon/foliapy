@@ -1164,9 +1164,9 @@ class Test02Sanity(unittest.TestCase):
     def test100a_sanity(self):
         """Sanity Check - A - Checking output file against input (should be equal)"""
         #uses a partial rather than full legacy example without elements that have been renamed in FoLiA 2.0
-        doc = folia.Document(string=PARTIALLEGACYEXAMPLE, debug=False)
+        doc = folia.Document(string=PARTIALLEGACYEXAMPLE, debug=False, keepversion=True)
         doc.save(os.path.join(TMPDIR,'foliatest100.xml'))
-        reloadeddoc = folia.Document(file=os.path.join(TMPDIR,'foliatest100.xml'),version='1.5.0', debug=False)
+        reloadeddoc = folia.Document(file=os.path.join(TMPDIR,'foliatest100.xml'),version='1.5.0', keepversion=True,debug=False)
         self.assertEqual( reloadeddoc , doc )
 
     def test100b_sanity_xmldiff(self):
@@ -1176,7 +1176,7 @@ class Test02Sanity(unittest.TestCase):
         f.write( re.sub(r' version="[^"]*" generator="[^"]*"', ' version="' + folia.FOLIAVERSION + '" generator="foliapy-v' + folia.LIBVERSION + '"', PARTIALLEGACYEXAMPLE, re.MULTILINE) )
         f.close()
         #use xmldiff to compare the two:
-        doc = folia.Document(string=PARTIALLEGACYEXAMPLE, debug=False)
+        doc = folia.Document(string=PARTIALLEGACYEXAMPLE, debug=False, keepversion=True)
         doc.save(os.path.join(TMPDIR,'foliatest100.xml'))
         retcode = os.system('xmldiff -c ' + os.path.join(TMPDIR,'foliatest.xml') + ' ' + os.path.join(TMPDIR,'foliatest100.xml'))
         #retcode = 1 #disabled (memory hog)
