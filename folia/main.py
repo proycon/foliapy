@@ -938,7 +938,7 @@ class AbstractElement(object):
         annotationtype = self.ANNOTATIONTYPE
         if self.doc and annotationtype is not None: #we can only do this check if we have a document, we'll be overly permissive for documentless elements (so caution adviced for those)
             FOLIA2 = checkversion(self.doc.version, '2.0.0') >= 0
-            if (FOLIA2 or (self.set and self.set != "undefined")) and not isinstance(self, (Text,Speech)): #Body is an undeclared element
+            if not isinstance(self, (Text,Speech)): #Body is an undeclared element
                 #Check if an element is declared (FoLiA v2+ only)
                 #for FoLiA <2 we only check if we have a set
                 #This is a much stricter check than older FoLiA versions
@@ -964,7 +964,7 @@ class AbstractElement(object):
                             self.doc.declare(annotationtype)
                     elif self.set:
                         raise DeclarationError("Set '" + str(self.set) + "' is used for " + self.__class__.__name__ + " <" + self.__class__.XMLTAG + ">, but has no declaration!")
-                    else:
+                    elif FOLIA2:
                         raise DeclarationError("Encountered an instance without proper declaration: " + self.__class__.__name__ + " <" + self.__class__.XMLTAG + ">!")
             #check for ambiguity
             if self.set is None and self.__class__.PRIMARYELEMENT and annotationtype in self.doc.annotationdefaults and len(self.doc.annotationdefaults[annotationtype]) > 1:
