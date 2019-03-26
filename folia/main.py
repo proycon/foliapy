@@ -7075,8 +7075,8 @@ class Document(object):
             if set and (set != 'undefined' or checkversion(self.version,'2.0.0') >= 0):
                 attribs['set'] = set
 
-
-            if 'processor' not in self.annotationdefaults[annotationtype][set]:
+            if not self.hasprocessors(annotationtype, set) and self.hasdefaults(annotationtype, set):
+                #there are no new-style processors associated with this declaration, but there are old-style defaults, fall back to those:
                 for key, value in self.annotationdefaults[annotationtype][set].items():
                     if key == 'annotatortype':
                         if value == AnnotatorType.MANUAL:
@@ -7599,6 +7599,18 @@ class Document(object):
         """Get all processors associated with  the given annotationtype and set, generator yielding Processor instances, see also `:meth:AbstractElement.getannotators`"""
         for annotator in self.getannotators(annotationtype, annotationset):
             yield annotator() #calling the annotator returns a Processor
+
+    def hasprocessors(self, annotationtype, annotationset):
+        """Does this annotationtype and set have associated processors/annotators? (FoLiA v2 provenance data)"""
+        return annotationtype not in self.annotators or annotationset not in self.annotators[annotationtype] or not self.annotators[annotationtype][annotationset]
+
+    def hasannotators(self, annotationtype, annotationset):
+        """Alias for :meth:`Document.hasprocessors`: Does this annotationtype and set have associated processors/annotators? (FoLiA v2 provenance data)"""
+        return self.hasprocessors(annotationtype, annotationset)
+
+    def hasdefaults(self, annotationtype, annotationset):
+        """Does this annotationtype and set have associated defaults? (old style FoLiA v1 without provenance data)"""
+        return annotationtype in self.annotationdefaults and annotationset in self.annotationdefaults[annotationtype][annotationset] and self.annotationdefaults[annotationtype][annotationset]
 
     def defaultannotator(self, annotationtype, set=None):
         """Obtain the default annotator for the specified annotation type and set.
