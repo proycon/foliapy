@@ -4838,7 +4838,7 @@ class AbstractAnnotationLayer(AbstractElement, AllowGenerateID, AllowCorrections
     def append(self, child, *args, **kwargs):
         """See :meth:`AbstractElement.append`"""
         #if no set is associated with the layer yet, we learn it from span annotation elements that are added
-        if self.set is False or self.set is None:
+        if self.set is False:
             if inspect.isclass(child):
                 if issubclass(child,AbstractSpanAnnotation):
                     if 'set' in kwargs:
