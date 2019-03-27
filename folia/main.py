@@ -7507,13 +7507,6 @@ class Document(object):
             #no defaults
             self.annotationdefaults[annotationtype][set] = {}
 
-    def getdefaultprocessor(self, annotationtype, set):
-        l = len(self.annotators[annotationtype][set])
-        if l == 1:
-            for processor in self.getprocessors(annotationtype, set): #should only iterate over one!
-                return processor
-        elif l > 1:
-            raise NoDefaultError("No processor specified for <" + ANNOTATIONTYPE2XML[annotationtype] +  ">, but the presence of multiple declarations prevent assigning a default")
 
     def attachexternal(self, type, set, **kwargs):
         if self.debug >= 1:
@@ -7627,6 +7620,18 @@ class Document(object):
     def hasdefaults(self, annotationtype, annotationset):
         """Does this annotationtype and set have associated defaults? (old style FoLiA v1 without provenance data)"""
         return annotationtype in self.annotationdefaults and annotationset in self.annotationdefaults[annotationtype] and len(self.annotationdefaults[annotationtype][annotationset]) > 0
+
+    def hasdefaultprocessor(self, annotationtype, annotationset):
+        """Does this annotationtype and set have defaults? (new style FoLiA v2 with provenance data)"""
+        return len(self.annotators[annotationtype][annotationset]) == 1
+
+    def getdefaultprocessor(self, annotationtype, annotationset):
+        l = len(self.annotators[annotationtype][annotationset])
+        if l == 1:
+            for processor in self.getprocessors(annotationtype, annotationset): #should only iterate over one!
+                return processor
+        elif l > 1:
+            raise NoDefaultError("No processor specified for <" + ANNOTATIONTYPE2XML[annotationtype] +  ">, but the presence of multiple declarations prevent assigning a default")
 
     def defaultannotator(self, annotationtype, set=None):
         """Obtain the default annotator for the specified annotation type and set.
