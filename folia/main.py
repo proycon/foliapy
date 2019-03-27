@@ -7074,7 +7074,7 @@ class Document(object):
                     continue
 
             attribs = {}
-            if set and (set != 'undefined' or self.FOLIA2) >= 0):
+            if set and (set != 'undefined' or self.FOLIA2 >= 0):
                 attribs['set'] = set
 
             if not self.hasprocessors(annotationtype, set) and self.hasdefaults(annotationtype, set):
@@ -7130,7 +7130,7 @@ class Document(object):
                 continue
 
             jsonnode = {'annotationtype': label.lower()}
-            if set and (set != 'undefined' or self.FOLIA2:
+            if set and (set != 'undefined' or self.FOLIA2):
                 jsonnode['set'] = set
 
 
