@@ -654,12 +654,13 @@ class AbstractElement(object):
         if 'set' in kwargs:
             if Attrib.CLASS not in supported and not self.SETONLY:
                 raise ValueError("Set is not supported on " + self.__class__.__name__)
-            if not kwargs['set'] and checkversion(doc.version, '2.0.0') < 0:
-                self.set ="undefined" #FoLiA <2.0 allowed a 'default' undefined set, FoLiA 2.0 doesn't
-            elif not kwargs['set']:
-                self.set = None
-            else:
+            if kwargs['set']:
                 self.set = kwargs['set']
+            else:
+                if doc.FOLIA1:
+                    self.set ="undefined" #FoLiA <2.0 allowed a 'default' undefined set, FoLiA 2.0 doesn't
+                else:
+                    self.set = None
             del kwargs['set']
             if doc and self.set and self.set in doc.alias_set:
                 self.set = doc.alias_set[self.set]
@@ -685,7 +686,7 @@ class AbstractElement(object):
 
         if self.cls and not self.set:
             if doc and doc.autodeclare:
-                if checkversion(doc.version, '2.0.0') < 0: #'undefined' set only for FoLiA < 2.0.0
+                if doc.FOLIA1: #'undefined' set only for FoLiA < 2.0.0
                     if (annotationtype, 'undefined') not in doc.annotations:
                         doc.annotations.append( (annotationtype, 'undefined') )
                         doc.annotationdefaults[annotationtype] = {'undefined': {} }
@@ -937,7 +938,7 @@ class AbstractElement(object):
         """Internal method (usually no need to call this) that checks whether the element's annotation type is properly declared, raises an exception if not so, or auto-declares the annotation type if need be."""
         annotationtype = self.ANNOTATIONTYPE
         if self.doc and annotationtype is not None: #we can only do this check if we have a document, we'll be overly permissive for documentless elements (so caution adviced for those)
-            FOLIA2 = checkversion(self.doc.version, '2.0.0') >= 0
+            FOLIA2 = self.doc.FOLIA2
             if not isinstance(self, (Text,Speech)): #Body is an undeclared element
                 #Check if an element is declared (FoLiA v2+ only)
                 #for FoLiA <2 we only check if we have a set
@@ -2147,9 +2148,9 @@ class AbstractElement(object):
             :meth:`AbstractElement.xmlstring` - for direct string output
         """
         if self.doc:
-            PREFOLIA2 = checkversion(self.doc.version,'2.0.0') < 0
+            FOLIA1 = self.doc.FOLIA1
         else:
-            PREFOLIA2 = False
+            FOLIA1 = False
 
         if not attribs: attribs = {}
         if not elements: elements = []
@@ -2185,7 +2186,7 @@ class AbstractElement(object):
                 try:
                     defaultprocessor = self.doc.getdefaultprocessor(self.ANNOTATIONTYPE, self.set)
                 except NoDefaultError:
-                    if not (PREFOLIA2 and self.doc.keepversion):
+                    if not (FOLIA1 and self.doc.keepversion):
                         attribs['processor'] = self.processor.id
 
 
@@ -2277,7 +2278,7 @@ class AbstractElement(object):
                         break #only one
 
         tag = self.XMLTAG
-        if self.doc and PREFOLIA2 and self.doc.keepversion and tag in OLDTAGS_REVERSE and tag != "item":
+        if self.doc and FOLIA1 and self.doc.keepversion and tag in OLDTAGS_REVERSE and tag != "item":
             tag = OLDTAGS_REVERSE[tag]
         e = getattr(E, tag)(**attribs)
 
@@ -3957,7 +3958,7 @@ class TextContent(AbstractContentAnnotation):
         if 'class' in e.attrib and e.attrib['class'] == "current":
             #delete 'class=current'
             del e.attrib['class']
-        if 'set' in e.attrib and e.attrib['set'] == "undefined" and self.doc and checkversion(self.doc.version, "2.0.0") < 0:
+        if 'set' in e.attrib and e.attrib['set'] == "undefined" and self.doc and self.doc.FOLIA1:
             del e.attrib['set']
 
         return e
@@ -5106,9 +5107,9 @@ class LinkReference(AbstractElement):
 
     def xml(self, attribs = None,elements = None, skipchildren = False):
         if self.doc:
-            PREFOLIA2 = checkversion(self.doc.version,'2.0.0') < 0
+            FOLIA1 = self.FOLIA1
         else:
-            PREFOLIA2 = False
+            FOLIA1 = False
         if not attribs:
             attribs = {}
         attribs['id'] = self.id
@@ -5116,7 +5117,7 @@ class LinkReference(AbstractElement):
             attribs['type'] = self.type
         if self.t: attribs['t'] = self.t
 
-        if PREFOLIA2 and self.doc and self.doc.keepversion:
+        if FOLIA1 and self.doc and self.doc.keepversion:
             return E.aref( **attribs)
         else:
             return E.xref( **attribs)
@@ -6712,6 +6713,8 @@ class Document(object):
 
 
         self.version = kwargs.get('version', FOLIAVERSION)
+        self.FOLIA2 = checkversion(self.version, "2.0.0") >= 0
+        self.FOLIA1 = checkversion(self.version, "2.0.0") < 0 #also includes FoLiA v0.*
         self.keepversion = 'version' in kwargs or ('keepversion' in kwargs and kwargs['keepversion'])
         self.document_version = None
 
@@ -7054,7 +7057,6 @@ class Document(object):
 
     def xmldeclarations(self):
         """Internal method to generate XML nodes for all declarations"""
-        PREFOLIA2 = checkversion(self.version,'2.0.0') < 0
         l = []
 
         for annotationtype, set in self.annotations:
@@ -7066,13 +7068,13 @@ class Document(object):
                     break
             #gather attribs
 
-            if PREFOLIA2:
+            if self.FOLIA1:
                 if (annotationtype == AnnotationType.TEXT or annotationtype == AnnotationType.PHON) and set in ('undefined', DEFAULT_TEXT_SET, DEFAULT_PHON_SET): # and len(self.annotationdefaults[annotationtype][set]) == 0:
                     #this is the implicit TextContent declaration, no need to output it explicitly
                     continue
 
             attribs = {}
-            if set and (set != 'undefined' or checkversion(self.version,'2.0.0') >= 0):
+            if set and (set != 'undefined' or self.FOLIA2) >= 0):
                 attribs['set'] = set
 
             if not self.hasprocessors(annotationtype, set) and self.hasdefaults(annotationtype, set):
@@ -7090,7 +7092,7 @@ class Document(object):
 
 
             annotators = []
-            if not (PREFOLIA2 and self.keepversion):
+            if not (self.FOLIA1 and self.keepversion):
                 if annotationtypeisspan(annotationtype):
                     if self.groupannotations[annotationtype][set]:
                         attribs["groupannotations"] = "yes"
@@ -7099,7 +7101,7 @@ class Document(object):
                         annotators.append( getattr(E, 'annotator')(processor=annotator.processor_id) )
             if label:
                 label = label.lower()
-                if PREFOLIA2 and self.keepversion and label in OLDTAGS_REVERSE and label != "item":
+                if self.FOLIA1 and self.keepversion and label in OLDTAGS_REVERSE and label != "item":
                     #for FoLiA v1 serialisation
                     label = OLDTAGS_REVERSE[label]
                 l.append( getattr(E,'{' + NSFOLIA + '}' + label + '-annotation')(*annotators, **attribs) )
@@ -7128,7 +7130,7 @@ class Document(object):
                 continue
 
             jsonnode = {'annotationtype': label.lower()}
-            if set and (set != 'undefined' or checkversion(self.version,'2.0.0') >= 0):
+            if set and (set != 'undefined' or self.FOLIA2:
                 jsonnode['set'] = set
 
 
@@ -7223,8 +7225,7 @@ class Document(object):
 
     def xmlprovenance(self):
         """Internal method to serialize provenance data to XML"""
-        PREFOLIA2 = checkversion(self.version,'2.0.0') < 0
-        if self.keepversion and PREFOLIA2:
+        if self.keepversion and self.FOLIA1:
             return []
         elif self.provenance:
             return [ self.provenance.xml() ]
@@ -7273,7 +7274,6 @@ class Document(object):
         """Internal method to parse XML declarations"""
         if self.debug >= 1:
             print("[FoLiA DEBUG] Processing Annotation Declarations",file=stderr)
-        PREFOLIA2 = checkversion(self.version,'2.0.0') < 0
         self.declareprocessed = True
         for subnode in node: #pylint: disable=too-many-nested-blocks
             if not isinstance(subnode.tag, str): continue
@@ -7373,7 +7373,7 @@ class Document(object):
             elif annotationtype == AnnotationType.PHON:
                 set = DEFAULT_PHON_SET
                 if self.debug >= 1: print("[FoLiA DEBUG] No set specified for phon, auto-declaring default phon set", file=stderr)
-            elif checkversion(self.version, '2.0.0') < 0:
+            elif self.FOLIA1:
                 set = "undefined" #only for FoLiA < v2
         if annotationtype in (AnnotationType.TEXT, AnnotationType.PHON) and annotationtype in self.annotationdefaults and 'undefined' in self.annotationdefaults[annotationtype]:
             #override any 'undefined' declarations (for FoLiA <2), so
@@ -7886,9 +7886,11 @@ class Document(object):
                 if self.debug >= 1: print("[FoLiA DEBUG] FoLiA version:", self.version,file=stderr)
                 if checkversion(self.version) > 0:
                     print("WARNING!!! Document uses a newer version of FoLiA than this library! (" + self.version + " vs " + FOLIAVERSION + "). Any possible subsequent failures in parsing or processing may probably be attributed to this. Upgrade foliapy to remedy this.",file=sys.stderr)
+                self.FOLIA2 = checkversion(self.version, "2.0.0") >= 0
+                self.FOLIA1 = checkversion(self.version, "2.0.0") < 0 #also includes FoLiA v0.*
                 if checkversion(self.version,'1.5.0') >= 0:
                     self.textvalidation = True
-                if checkversion(self.version,'2.0.0') < 0:
+                if self.FOLIA1:
                     #older FoLiA, add implicit declarations:
                     if self.autodeclare is None: self.autodeclare = False
 
@@ -7922,7 +7924,7 @@ class Document(object):
                 #generic handling (FoLiA)
                 if foliatag in OLDTAGS: #backward compatibility
                     foliatag = OLDTAGS[foliatag]
-                elif foliatag == "relation" and checkversion(self.version,'2.0.0') < 0: #this is a patch for backward compatibility because the span role 'relation' got renamed to 'rel' so alignments could be renamed to relations,
+                elif foliatag == "relation" and self.FOLIA1: #this is a patch for backward compatibility because the span role 'relation' got renamed to 'rel' so alignments could be renamed to relations,
                     foliatag = "rel"
                 if foliatag not in XML2CLASS:
                     raise Exception("Unknown FoLiA XML tag: " + foliatag)
@@ -8487,7 +8489,7 @@ class Reader(object):
             self.bypassleak = False
         self.stream = io.open(filename,'rb')
         self.initdoc()
-        if checkversion(self.doc.version,'2.0.0') < 0:
+        if self.doc.FOLIA1:
             self.doc.declare(AnnotationType.PHON)
         if 'declare' in kwargs:
             for item in kwargs['declare']:
