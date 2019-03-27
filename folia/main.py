@@ -5107,7 +5107,7 @@ class LinkReference(AbstractElement):
 
     def xml(self, attribs = None,elements = None, skipchildren = False):
         if self.doc:
-            FOLIA1 = self.FOLIA1
+            FOLIA1 = self.doc.FOLIA1
         else:
             FOLIA1 = False
         if not attribs:
