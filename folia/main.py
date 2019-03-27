@@ -685,12 +685,29 @@ class AbstractElement(object):
             raise ValueError("Class is required for " + self.__class__.__name__)
 
         if self.cls and not self.set:
+            #we have a class but no set!
             if doc and doc.autodeclare:
-                if doc.FOLIA1: #'undefined' set only for FoLiA < 2.0.0
-                    if (annotationtype, 'undefined') not in doc.annotations:
-                        doc.annotations.append( (annotationtype, 'undefined') )
-                        doc.annotationdefaults[annotationtype] = {'undefined': {} }
-                    self.set = 'undefined'
+                #If autodeclare is enabled and it is an old FoLiA v1 document,
+                #then we can automatically declare the 'undefined' set or new-style default text/phon sets
+                if doc.FOLIA1:
+                    if annotationtype == AnnotationType.TEXT:
+                        if (annotationtype, DEFAULT_TEXT_SET) not in doc.annotations: #prevent duplicates
+                            if doc.debug >= 1: print("[FoLiA DEBUG] Auto-declaring text with default set for FoLiA v1 document", file=stderr)
+                            doc.annotations.append( (annotationtype, DEFAULT_TEXT_SET) )
+                            doc.annotationdefaults[annotationtype] = {DEFAULT_TEXT_SET: {} }
+                        self.set = DEFAULT_TEXT_SET
+                    elif annotationtype == AnnotationType.PHON:
+                        if (annotationtype, DEFAULT_PHON_SET) not in doc.annotations: #prevent duplicates
+                            if doc.debug >= 1: print("[FoLiA DEBUG] Auto-declaring phon with default set for FoLiA v1 document", file=stderr)
+                            doc.annotations.append( (annotationtype, DEFAULT_PHON_SET) )
+                            doc.annotationdefaults[annotationtype] = {DEFAULT_PHON_SET: {} }
+                        self.set = DEFAULT_PHON_SET
+                    else:
+                        if (annotationtype, 'undefined') not in doc.annotations: #prevent duplicates
+                            if doc.debug >= 1: print("[FoLiA DEBUG] Auto-declaring undefined set for FoLiA v1 document", file=stderr)
+                            doc.annotations.append( (annotationtype, 'undefined') )
+                            doc.annotationdefaults[annotationtype] = {'undefined': {} }
+                        self.set = 'undefined'
             else:
                 raise DeclarationError("Set is required for " + self.__class__.__name__ + " <"+self.__class__.XMLTAG+"> . Class '" + self.cls + "' assigned without set and no default set found in declaration.")
 
@@ -940,21 +957,20 @@ class AbstractElement(object):
         if self.doc and annotationtype is not None: #we can only do this check if we have a document, we'll be overly permissive for documentless elements (so caution adviced for those)
             FOLIA2 = self.doc.FOLIA2
             if not isinstance(self, (Text,Speech)): #Body is an undeclared element
-                #Check if an element is declared (FoLiA v2+ only)
+                #Check if an element is declared (FoLiA v2+ only), this is a much stricter check than older FoLiA versions
                 #for FoLiA <2 we only check if we have a set
-                #This is a much stricter check than older FoLiA versions
-                if self.doc and (annotationtype not in self.doc.annotationdefaults or self.set not in self.doc.annotationdefaults[annotationtype]):
+                if self.doc and (annotationtype, self.set) not in self.doc.annotations:
                     if self.set is False:
                         #set may be False in case of annotation layers, where it will be set later after appending children, we ignore that case (things like auto-declare are deferred until an actual span annotation appears)
                         pass
                     elif self.doc.autodeclare:
-                        #autodeclare
+                        #autodeclare is enabled (default for FoLiA v2)
                         if isinstance(self, TextContent): #FoLiA v2.0, autodeclare text
-                            if FOLIA2:
+                            if FOLIA2 or (self.doc.FOLIA1 and not self.doc.keepversion):
                                 if self.doc.debug >= 1: print("[FoLiA DEBUG] Auto-declaring Text Annotation",file=stderr)
                                 self.doc.declare(AnnotationType.TEXT, DEFAULT_TEXT_SET)
                         elif isinstance(self, PhonContent): #FoLiA v2.0
-                            if FOLIA2:
+                            if FOLIA2 or (self.doc.FOLIA1 and not self.doc.keepversion):
                                 if self.doc.debug >= 1: print("[FoLiA DEBUG] Auto-declaring Phonetic Annotation",file=stderr)
                                 self.doc.declare(AnnotationType.PHON, DEFAULT_PHON_SET)
                         elif self.set:
@@ -6721,7 +6737,7 @@ class Document(object):
         self.data = [] #will hold all texts (usually only one)
 
         self.annotationdefaults = {}
-        self.annotations = [] #Ordered list of incorporated(AnnotationType, set (str))
+        self.annotations = [] #Ordered list of (AnnotationType, set (str))
         self.annotators = {} #AnnotationType => set => Annotator    (leaf value resolves to Processor when called)
         self.groupannotations = {} #AnnotationType -> set -> bool  (used to store whether inline annotations are allowed in certain span annotations)
 
@@ -7068,10 +7084,10 @@ class Document(object):
                     break
             #gather attribs
 
-            if self.FOLIA1:
-                if (annotationtype == AnnotationType.TEXT or annotationtype == AnnotationType.PHON) and set in ('undefined', DEFAULT_TEXT_SET, DEFAULT_PHON_SET): # and len(self.annotationdefaults[annotationtype][set]) == 0:
-                    #this is the implicit TextContent declaration, no need to output it explicitly
-                    continue
+            if self.FOLIA1 and self.keepversion and annotationtype in ( AnnotationType.TEXT, AnnotationType.PHON) and set in ('undefined', DEFAULT_TEXT_SET, DEFAULT_PHON_SET):
+                #this is the implicit TextContent or PhonContent declaration for FoLiA v1 output, no need to output it explicitly
+                continue
+
 
             attribs = {}
             if set and (set != 'undefined' or self.FOLIA2):
