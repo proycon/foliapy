@@ -1049,11 +1049,15 @@ class Correction(object): #AS CORRECTION/SUGGESTION expression...
             actionassignments[key] = value
 
         if actionassignments:
-            if (not 'set' in actionassignments or actionassignments['set'] is None) and action.focus.Class:
-                try:
+            if ('set' not in actionassignments or actionassignments['set'] is None) and action.focus.Class:
+                print(query.defaultsets,file=sys.stderr)
+                if action.focus.Class.XMLTAG in query.defaultsets:
                     actionassignments['set'] = query.defaultsets[action.focus.Class.XMLTAG]
-                except KeyError:
-                    actionassignments['set'] = query.doc.defaultset(action.focus.Class)
+                else:
+                    try:
+                        actionassignments['set'] = query.doc.defaultset(action.focus.Class)
+                    except folia.NoDefaultError:
+                        pass #no default set to assign (may result in a DeclarationError later on)
             if action.focus.Class.REQUIRED_ATTRIBS and folia.Attrib.ID in action.focus.Class.REQUIRED_ATTRIBS:
                 actionassignments['id'] = getrandomid(query, "corrected." + action.focus.Class.XMLTAG + ".")
 

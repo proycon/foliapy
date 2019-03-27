@@ -666,12 +666,13 @@ class AbstractElement(object):
                 self.set = doc.alias_set[self.set]
         else:
             #check new style declarations (with provenance) for a default set
-            defaultset = doc.defaultset(annotationtype,raiseexception=False)
+            try:
+                defaultset = doc.defaultset(annotationtype)
+            except NoSuchAnnotation:
+                #no such annotation is declared, that's fine and very common, it just means we don't have a default set and continue with set = None (i.e. a setless annotation)
+                defaultset = False
             if defaultset is not False: #caution: None is a valid set so we check explicitly!
                 self.set = defaultset
-            elif annotationtype in doc.annotationdefaults and len(doc.annotationdefaults[annotationtype]) == 1:
-                #check old style declarations for a default set
-                self.set = list(doc.annotationdefaults[annotationtype].keys())[0]
             elif Attrib.CLASS in required: #or (hasattr(self,'SETONLY') and self.SETONLY):
                 raise ValueError("Set is required for " + self.__class__.__name__)
 
@@ -990,8 +991,8 @@ class AbstractElement(object):
                     elif FOLIA2:
                         raise DeclarationError("Encountered an instance without proper declaration: " + self.__class__.__name__ + " <" + self.__class__.XMLTAG + ">!")
             #check for ambiguity
-            if self.set is None and self.__class__.PRIMARYELEMENT and annotationtype in self.doc.annotationdefaults and len(self.doc.annotationdefaults[annotationtype]) > 1:
-                raise DeclarationError("No set assigned for " + self.__class__.__name__ + " <" + self.__class__.XMLTAG + "> but no default available either due to multiple possible declarations: " + ", ".join([str(s) for s in self.doc.annotationdefaults[annotationtype].keys()]))
+            if self.set is None and self.__class__.PRIMARYELEMENT and self.doc.declared(annotationtype) and self.doc.defaultset(annotationtype) is False:
+                raise DeclarationError("No set assigned for " + self.__class__.__name__ + " <" + self.__class__.XMLTAG + "> but no default available either due to multiple possible declarations!")# + ", ".join([str(s) for s in self.doc.annotationdefaults[annotationtype].keys()]))
 
 
     def description(self):
@@ -1437,7 +1438,7 @@ class AbstractElement(object):
         if self.id != other.id:
             if self.doc and self.doc.debug: print("[FoLiA DEBUG] AbstractElement Equality Check - ID mismatch: " + str(self.id) + " vs " + str(other.id),file=stderr)
             return False
-        if self.set != other.set and not (self.set is None and other.set == "undefined"): #the latter condition gives us some lenience in comparisons with pre 2.0 documents
+        if self.set != other.set and not (self.set is "" and other.set == "undefined"): #the latter condition gives us some lenience in comparisons with pre 2.0 documents
             if self.doc and self.doc.debug: print("[FoLiA DEBUG] AbstractElement Equality Check - Set mismatch: " + str(self.set) + " vs " + str(other.set),file=stderr)
             return False
         if self.cls != other.cls:
@@ -1687,7 +1688,7 @@ class AbstractElement(object):
 
 
     @classmethod
-    def addable(Class, parent, set=None, raiseexceptions=True):
+    def addable(Class, parent, set=False, raiseexceptions=True):
         """Tests whether a new element of this class can be added to the parent.
 
         This method is mostly for internal use.
@@ -1695,7 +1696,7 @@ class AbstractElement(object):
 
         Parameters:
             parent (:class:`AbstractElement`): The element that is being added to
-            set (str or None): The set
+            set (str,None, or False): The set
             raiseexceptions (bool): Raise an exception if the element can't be added?
 
         Returns:
@@ -2009,9 +2010,8 @@ class AbstractElement(object):
             if 'set' in kwargs:
                 set = kwargs['set']
             else:
-                try:
-                    set = self.doc.defaultset(layerclass)
-                except KeyError:
+                set = self.doc.defaultset(layerclass)
+                if set is False:
                     raise Exception("No set defined when adding span annotation and none could be inferred")
 
         if addspanfromspanned: #pylint: disable=too-many-nested-blocks
@@ -2047,7 +2047,7 @@ class AbstractElement(object):
 
 
     @classmethod
-    def findreplaceables(Class, parent, set=None,**kwargs):
+    def findreplaceables(Class, parent, set=False,**kwargs):
         """Internal method to find replaceable elements. Auxiliary function used by :meth:`AbstractElement.replace`. Can be overriden for more fine-grained control."""
         return list(parent.select(Class,set,False))
 
@@ -2425,14 +2425,14 @@ class AbstractElement(object):
         return str(ElementTree.tostring(self.xml(), xml_declaration=False, pretty_print=pretty_print, encoding='utf-8'),'utf-8')
 
 
-    def select(self, Class, set=None, recursive=True,  ignore=True, node=None): #pylint: disable=bad-classmethod-argument,redefined-builtin
+    def select(self, Class, set=False, recursive=True,  ignore=True, node=None): #pylint: disable=bad-classmethod-argument,redefined-builtin
         """Select child elements of the specified class.
 
         A further restriction can be made based on set.
 
         Arguments:
             Class (class): The class to select; any python class (not instance) subclassed off :class:`AbstractElement`
-            Set (str): The set to match against, only elements pertaining to this set will be returned. If set to None (default), all elements regardless of set will be returned.
+            Set (str): The set to match against, only elements pertaining to this set will be returned. If set to False (default), all elements regardless of set will be returned.
             recursive (bool): Select recursively? Descending into child elements? Defaults to ``True``.
             ignore: A list of Classes to ignore, if set to ``True`` instead of a list, all non-authoritative elements will be skipped (this is the default behaviour and corresponds to the following elements: :class:`Alternative`, :class:`AlternativeLayers`, :class:`Suggestion`, and :class:`folia.Original`. These elements and those contained within are never *authorative*. You may also include the boolean True as a member of a list, if you want to skip additional tags along the predefined non-authoritative ones.
             * ``node``: Reserved for internal usage, used in recursion.
@@ -2479,7 +2479,7 @@ class AbstractElement(object):
                         continue
 
                 if isinstance(e, Class):
-                    if not set is None:
+                    if set is not None:
                         try:
                             if e.set != set:
                                 continue
@@ -2488,7 +2488,7 @@ class AbstractElement(object):
                     yield e
                 if recursive:
                     for e2 in e.select(Class, set, recursive, ignore, e):
-                        if not set is None:
+                        if set is not None:
                             try:
                                 if e2.set != set:
                                     continue
@@ -2496,7 +2496,7 @@ class AbstractElement(object):
                                 continue
                         yield e2
 
-    def count(self, Class, set=None, recursive=True,  ignore=True, node=None):
+    def count(self, Class, set=False, recursive=True,  ignore=True, node=None):
         """Like :meth:`AbstractElement.select`, but instead of returning the elements, it merely counts them.
 
         Returns:
@@ -3261,14 +3261,14 @@ class AllowInlineAnnotation(AllowCorrections):
     """Elements that allow token annotation (including extended annotation) must inherit from this class"""
 
 
-    def annotations(self,Class,set=None):
+    def annotations(self,Class,set=False):
         """Obtain child elements (annotations) of the specified class.
 
         A further restriction can be made based on set.
 
         Arguments:
             Class (class): The class to select; any python class (not instance) subclassed off :class:`AbstractElement`
-            Set (str): The set to match against, only elements pertaining to this set will be returned. If set to None (default), all elements regardless of set will be returned.
+            Set (str): The set to match against, only elements pertaining to this set will be returned. If set to False (default), all elements regardless of set will be returned.
 
         Yields:
             Elements (instances derived from :class:`AbstractElement`)
@@ -3292,20 +3292,20 @@ class AllowInlineAnnotation(AllowCorrections):
         if not found:
             raise NoSuchAnnotation()
 
-    def hasannotation(self,Class,set=None):
+    def hasannotation(self,Class,set=False):
         """Returns an integer indicating whether such as annotation exists, and if so, how many.
 
         See :meth:`AllowInlineAnnotation.annotations`` for a description of the parameters."""
         return sum( 1 for _ in self.select(Class,set,True,default_ignore_annotations))
 
-    def annotation(self, type, set=None):
+    def annotation(self, type, set=False):
         """Obtain a single annotation element.
 
         A further restriction can be made based on set.
 
         Arguments:
             Class (class): The class to select; any python class (not instance) subclassed off :class:`AbstractElement`
-            Set (str): The set to match against, only elements pertaining to this set will be returned. If set to None (default), all elements regardless of set will be returned.
+            Set (str): The set to match against, only elements pertaining to this set will be returned. If set to False (default), all elements regardless of set will be returned.
 
         Returns:
             An element (instance derived from :class:`AbstractElement`)
@@ -3326,7 +3326,7 @@ class AllowInlineAnnotation(AllowCorrections):
             return e
         raise NoSuchAnnotation()
 
-    def alternatives(self, Class=None, set=None):
+    def alternatives(self, Class=None, set=False):
         """Generator over alternatives, either all or only of a specific annotation type, and possibly restrained also by set.
 
         Arguments:
@@ -3369,35 +3369,35 @@ class AbstractWord: #interface grouping elements that act like words
         """Obtain the deepest division this word is a part of, otherwise return None"""
         return self.ancestor(Division)
 
-    def pos(self,set=None):
+    def pos(self,set=False):
         """Shortcut: returns the FoLiA class of the PoS annotation (will return only one if there are multiple!)"""
         return self.annotation(PosAnnotation,set).cls
 
-    def lemma(self, set=None):
+    def lemma(self, set=False):
         """Shortcut: returns the FoLiA class of the lemma annotation (will return only one if there are multiple!)"""
         return self.annotation(LemmaAnnotation,set).cls
 
-    def sense(self,set=None):
+    def sense(self,set=False):
         """Shortcut: returns the FoLiA class of the sense annotation (will return only one if there are multiple!)"""
         return self.annotation(SenseAnnotation,set).cls
 
-    def domain(self,set=None):
+    def domain(self,set=False):
         """Shortcut: returns the FoLiA class of the domain annotation (will return only one if there are multiple!)"""
         return self.annotation(DomainAnnotation,set).cls
 
-    def morphemes(self,set=None):
+    def morphemes(self,set=False):
         """Generator yielding all morphemes (in a particular set if specified). For retrieving one specific morpheme by index, use morpheme() instead"""
         for layer in self.select(MorphologyLayer):
             for m in layer.select(Morpheme, set):
                 yield m
 
-    def phonemes(self,set=None):
+    def phonemes(self,set=False):
         """Generator yielding all phonemes (in a particular set if specified). For retrieving one specific morpheme by index, use morpheme() instead"""
         for layer in self.select(PhonologyLayer):
             for p in layer.select(Phoneme, set):
                 yield p
 
-    def morpheme(self,index, set=None):
+    def morpheme(self,index, set=False):
         """Returns a specific morpheme, the n'th morpheme (given the particular set if specified)."""
         for layer in self.select(MorphologyLayer):
             for i, m in enumerate(layer.select(Morpheme, set)):
@@ -3406,7 +3406,7 @@ class AbstractWord: #interface grouping elements that act like words
         raise NoSuchAnnotation
 
 
-    def phoneme(self,index, set=None):
+    def phoneme(self,index, set=False):
         """Returns a specific phoneme, the n'th morpheme (given the particular set if specified)."""
         for layer in self.select(PhonologyLayer):
             for i, p in enumerate(layer.select(Phoneme, set)):
@@ -3414,13 +3414,13 @@ class AbstractWord: #interface grouping elements that act like words
                     return p
         raise NoSuchAnnotation
 
-    def getcorrection(self,set=None,cls=None):
+    def getcorrection(self,set=False,cls=None):
         try:
             return self.getcorrections(set,cls)[0]
         except:
             raise NoSuchAnnotation
 
-    def getcorrections(self, set=None,cls=None):
+    def getcorrections(self, set=False,cls=None):
         try:
             l = []
             for correction in self.annotations(Correction):
@@ -3430,7 +3430,7 @@ class AbstractWord: #interface grouping elements that act like words
         except NoSuchAnnotation:
             raise
 
-    def findspans(self, type,set=None):
+    def findspans(self, type,set=False):
         """Yields span annotation elements of the specified type that include this word.
 
         Arguments:
@@ -3593,11 +3593,11 @@ class AbstractStructureElement(AbstractElement, AllowInlineAnnotation, AllowGene
             * ``index``: If set to an integer, will retrieve and return the n'th element (starting at 0) instead of returning the list of all
         """
         if index is None:
-            return self.select(Word,None,True,default_ignore_structure)
+            return self.select(Word,False,True,default_ignore_structure)
         else:
             if index < 0:
-                index = self.count(Word,None,True,default_ignore_structure) + index
-            for i, e in enumerate(self.select(Word,None,True,default_ignore_structure)):
+                index = self.count(Word,False,True,default_ignore_structure) + index
+            for i, e in enumerate(self.select(Word,False,True,default_ignore_structure)):
                 if i == index:
                     return e
             raise IndexError
@@ -3626,21 +3626,21 @@ class AbstractStructureElement(AbstractElement, AllowInlineAnnotation, AllowGene
             index (int or None): If set to an integer, will retrieve and return the n'th element (starting at 0) instead of returning a generator of all
         """
         if index is None:
-            return self.select(Sentence,None,True,default_ignore_structure)
+            return self.select(Sentence,False,True,default_ignore_structure)
         else:
             if index < 0:
-                index = self.count(Sentence,None,True,default_ignore_structure) + index
-            for i,e in enumerate(self.select(Sentence,None,True,default_ignore_structure)):
+                index = self.count(Sentence,False,True,default_ignore_structure) + index
+            for i,e in enumerate(self.select(Sentence,False,True,default_ignore_structure)):
                 if i == index:
                     return e
             raise IndexError
 
-    def layers(self, annotationtype=None,set=None):
+    def layers(self, annotationtype=None,set=False):
         """Returns a list of annotation layers found *directly* under this element, does not include alternative layers"""
         if inspect.isclass(annotationtype): annotationtype = annotationtype.ANNOTATIONTYPE
         return [ x for x in self.select(AbstractAnnotationLayer,set,False,True) if annotationtype is None or x.ANNOTATIONTYPE == annotationtype ]
 
-    def hasannotationlayer(self, annotationtype=None,set=None):
+    def hasannotationlayer(self, annotationtype=None,set=False):
         """Does the specified annotation layer exist?"""
         l = self.layers(annotationtype, set)
         return (len(l) > 0)
@@ -4638,11 +4638,11 @@ class AbstractSpanAnnotation(AbstractElement, AllowGenerateID, AllowCorrections)
     def add(self, child, *args, **kwargs): #alias for append
         return self.append(child, *args, **kwargs)
 
-    def hasannotation(self,Class,set=None):
+    def hasannotation(self,Class,set=False):
         """Returns an integer indicating whether such as annotation exists, and if so, how many. See ``annotations()`` for a description of the parameters."""
         return self.count(Class,set,True,default_ignore_annotations)
 
-    def annotation(self, type, set=None):
+    def annotation(self, type, set=False):
         """Will return a **single** annotation (even if there are multiple). Raises a ``NoSuchAnnotation`` exception if none was found"""
         l = list(self.select(type,set,True,default_ignore_annotations))
         if len(l) >= 1:
@@ -4650,7 +4650,7 @@ class AbstractSpanAnnotation(AbstractElement, AllowGenerateID, AllowCorrections)
         else:
             raise NoSuchAnnotation()
 
-    def annotations(self,Class,set=None):
+    def annotations(self,Class,set=False):
         """Obtain annotations. Very similar to ``select()`` but raises an error if the annotation was not found.
 
         Arguments:
@@ -4886,12 +4886,12 @@ class AbstractAnnotationLayer(AbstractElement, AllowGenerateID, AllowCorrections
     def add(self, child, *args, **kwargs): #alias for append
         return self.append(child, *args, **kwargs)
 
-    def annotations(self,Class,set=None):
+    def annotations(self,Class,set=False):
         """Obtain annotations. Very similar to ``select()`` but raises an error if the annotation was not found.
 
         Arguments:
             * ``Class`` - The Class you want to retrieve (e.g. PosAnnotation)
-            * ``set``   - The set you want to retrieve (defaults to None, which selects irregardless of set)
+            * ``set``   - The set you want to retrieve (defaults to False, which selects irregardless of set)
 
         Yields:
             elements
@@ -4906,17 +4906,17 @@ class AbstractAnnotationLayer(AbstractElement, AllowGenerateID, AllowCorrections
         if not found:
             raise NoSuchAnnotation()
 
-    def hasannotation(self,Class,set=None):
+    def hasannotation(self,Class,set=False):
         """Returns an integer indicating whether such as annotation exists, and if so, how many. See ``annotations()`` for a description of the parameters."""
         return self.count(Class,set,True,default_ignore_annotations)
 
-    def annotation(self, type, set=None):
+    def annotation(self, type, set=False):
         """Will return a **single** annotation (even if there are multiple). Raises a ``NoSuchAnnotation`` exception if none was found"""
         for e in self.select(type,set,True,default_ignore_annotations):
             return e
         raise NoSuchAnnotation()
 
-    def alternatives(self, Class=None, set=None):
+    def alternatives(self, Class=None, set=False):
         """Generator over alternatives, either all or only of a specific annotation type, and possibly restrained also by set.
 
         Arguments:
@@ -5257,7 +5257,7 @@ class Suggestion(AbstractCorrectionChild):
 class New(AbstractCorrectionChild):
 
     @classmethod
-    def addable(Class, parent, set=None, raiseexceptions=True):#pylint: disable=bad-classmethod-argument
+    def addable(Class, parent, set=False, raiseexceptions=True):#pylint: disable=bad-classmethod-argument
         if not super(New,Class).addable(parent,set,raiseexceptions): return False
         if any( ( isinstance(c, Current) for c in parent ) ):
             if raiseexceptions:
@@ -5273,7 +5273,7 @@ class Original(AbstractCorrectionChild):
     """Used in the context of :class:`Correction` to encapsulate the original annotations *prior* to correction."""
 
     @classmethod
-    def addable(Class, parent, set=None, raiseexceptions=True):#pylint: disable=bad-classmethod-argument
+    def addable(Class, parent, set=False, raiseexceptions=True):#pylint: disable=bad-classmethod-argument
         if not super(Original,Class).addable(parent,set,raiseexceptions): return False
         if any( ( isinstance(c, Current)  for c in parent ) ):
             if raiseexceptions:
@@ -5290,7 +5290,7 @@ class Current(AbstractCorrectionChild):
     """
 
     @classmethod
-    def addable(Class, parent, set=None, raiseexceptions=True):
+    def addable(Class, parent, set=False, raiseexceptions=True):
         if not super(Current,Class).addable(parent,set,raiseexceptions): return False
         if any( ( isinstance(c, New) or isinstance(c, Original) for c in parent ) ):
             if raiseexceptions:
@@ -5763,7 +5763,7 @@ class External(AbstractHigherOrderAnnotation):
         return RXE.define( RXE.element(RXE.attribute(RXE.text(), name='src'), RXE.optional(RXE.attribute(RXE.text(), name='include')), name=cls.XMLTAG), name=cls.XMLTAG, ns=NSFOLIA)
 
 
-    def select(self, Class, set=None, recursive=True,  ignore=True, node=None):
+    def select(self, Class, set=False, recursive=True,  ignore=True, node=None):
         """See :meth:`AbstractElement.select`"""
         if self.include:
             return self.subdoc.data[0].select(Class,set,recursive, ignore, node) #pass it on to the text node of the subdoc
@@ -5912,12 +5912,12 @@ class SpanRelation(AbstractHigherOrderAnnotation):
     """Span Relation"""
 
     #same as for AbstractSpanAnnotation, which this technically is not (hence copy)
-    def hasannotation(self,Class,set=None):
+    def hasannotation(self,Class,set=False):
         """Returns an integer indicating whether such as annotation exists, and if so, how many. See ``annotations()`` for a description of the parameters."""
         return self.count(Class,set,True,default_ignore_annotations)
 
     #same as for AbstractSpanAnnotation, which this technically is not (hence copy)
-    def annotation(self, type, set=None):
+    def annotation(self, type, set=False):
         """Will return a **single** annotation (even if there are multiple). Raises a ``NoSuchAnnotation`` exception if none was found"""
         l = self.count(type,set,True,default_ignore_annotations)
         if len(l) >= 1:
@@ -5931,7 +5931,7 @@ class FunctionFeature(Feature):
 class Morpheme(AbstractSubtokenAnnotation):
     """Morpheme element, represents one morpheme in morphological analysis, subtoken annotation element to be used in :class:`MorphologyLayer`"""
 
-    def findspans(self, type,set=None):
+    def findspans(self, type,set=False):
         """Find span annotation of the specified type that include this word"""
         if issubclass(type, AbstractAnnotationLayer):
             layerclass = type
@@ -5954,7 +5954,7 @@ class Morpheme(AbstractSubtokenAnnotation):
 class Phoneme(AbstractSubtokenAnnotation):
     """Phone element, represents one phone in phonetic analysis, subtoken annotation element to be used in :class:`PhonologyLayer`"""
 
-    def findspans(self, type,set=None): #TODO: this is a copy of the methods in Morpheme in Word, abstract into separate class and inherit
+    def findspans(self, type,set=False): #TODO: this is a copy of the methods in Morpheme in Word, abstract into separate class and inherit
         """Find span annotation of the specified type that include this phoneme.
 
         See :meth:`Word.findspans` for usage.
@@ -6422,7 +6422,7 @@ class ForeignData(AbstractHigherOrderAnnotation):
     def parsexml(Class, node, doc, **kwargs):
         return ForeignData(doc, node=node)
 
-    def select(self, Class, set=None, recursive=True,  ignore=True, node=None): #pylint: disable=bad-classmethod-argument,redefined-builtin
+    def select(self, Class, set=False, recursive=True,  ignore=True, node=None): #pylint: disable=bad-classmethod-argument,redefined-builtin
         """This is a dummy method that returns an empty generator, select() does not work on ForeignData"""
         #select can never descend into ForeignData, empty generator:
         return
@@ -7387,7 +7387,7 @@ class Document(object):
         """
         if inspect.isclass(annotationtype):
             annotationtype = annotationtype.ANNOTATIONTYPE
-        if set is None:
+        if set is None: #empty set or unspecified set
             #We assume default sets for TEXT and PHON (if not explicitly declared otherwise)
             if annotationtype == AnnotationType.TEXT:
                 set = DEFAULT_TEXT_SET
@@ -7397,12 +7397,13 @@ class Document(object):
                 if self.debug >= 1: print("[FoLiA DEBUG] No set specified for phon, auto-declaring default phon set", file=stderr)
             elif self.FOLIA1:
                 set = "undefined" #only for FoLiA < v2
+            #else we maintain the value None
         if annotationtype in (AnnotationType.TEXT, AnnotationType.PHON) and annotationtype in self.annotationdefaults and 'undefined' in self.annotationdefaults[annotationtype]:
             #override any 'undefined' declarations (for FoLiA <2), so
             #we don't end up with two declarations
             del self.annotationdefaults[annotationtype]['undefined']
-        if set is not None and not isinstance(set,str):
-            raise ValueError("Set parameter for declare() must be a string or None, got " + repr(set))
+        if set is not None  and not isinstance(set,str):
+            raise ValueError("Set parameter for declare() must be a string, None (no set)")
 
         if annotationtype in self.alias_set and set in self.alias_set[annotationtype]:
             raise ValueError("Set " + set + " conflicts with alias, may not be equal!")
@@ -7563,7 +7564,7 @@ class Document(object):
 
         Arguments:
             annotationtype: The type of annotation, this is conveyed by passing the corresponding annototion class (such as :class:`PosAnnotation` for example), or a member of :class:`AnnotationType`, such as ``AnnotationType.POS``.
-            set (str): the set, should formally be a URL pointing to the set definition (aliases are also supported)
+            set (str/None/False): the set, should formally be a URL pointing to the set definition (aliases are also supported). If set to False, checks regardless of set (i.e. matching any set). If set to None, there is no associated set.
 
         Example::
 
@@ -7574,7 +7575,7 @@ class Document(object):
             bool
         """
         if inspect.isclass(annotationtype): annotationtype = annotationtype.ANNOTATIONTYPE
-        if set is None:
+        if set is False:
             for atype,_  in self.annotations:
                 if annotationtype == atype:
                     return True
@@ -7583,14 +7584,14 @@ class Document(object):
             return ( (annotationtype,set) in self.annotations) or (set in self.alias_set and self.alias_set[set] and (annotationtype, self.alias_set[set]) in self.annotations )
 
 
-    def defaultset(self, annotationtype, raiseexception=True):
+    def defaultset(self, annotationtype):
         """Obtain the default set for the specified annotation type.
 
         Arguments:
             annotationtype: The type of annotation, this is conveyed by passing the corresponding annototion class (such as :class:`PosAnnotation` for example), or a member of :class:`AnnotationType`, such as ``AnnotationType.POS``.
 
         Returns:
-            the set (str)
+            the set (str or None), or False if there is no default set. Take care to explicitly distinguish between False and None!
 
         Raises:
             :class:`NoDefaultError` if the annotation type does not exist or if there is ambiguity (multiple sets for the same type). Or returns False instead if raiseexception = False
@@ -7599,17 +7600,22 @@ class Document(object):
         if inspect.isclass(annotationtype) or isinstance(annotationtype,AbstractElement): annotationtype = annotationtype.ANNOTATIONTYPE
 
         #new style, with provenance data
-        if annotationtype in self.annotators and len(self.annotators[annotationtype]) == 1:
-            return list(self.annotators[annotationtype].keys())[0]
+        if annotationtype in self.annotators:
+            l = len(self.annotators[annotationtype])
+            if l == 1:
+                return list(self.annotators[annotationtype].keys())[0]
+            elif l > 1:
+                return False
 
         #old style, witout provenance data
-        if annotationtype in self.annotationdefaults and len(self.annotationdefaults[annotationtype])== 1:
-            return list(self.annotationdefaults[annotationtype].keys())[0]
+        if annotationtype in self.annotationdefaults:
+            l = len(self.annotationdefaults[annotationtype])
+            if l == 1:
+                return list(self.annotationdefaults[annotationtype].keys())[0]
+            elif l > 1:
+                return False
 
-        if raiseexception:
-            raise NoDefaultError
-        else:
-            return False
+        raise NoSuchAnnotation
 
     def getannotators(self, annotationtype, annotationset):
         """Get all annotators for the given annotationtype and set. This is a generator that yields Annotator instances, these resolve to a Processor when called. See also `:meth:AbstractElement.getprocessors` to obtain processors directly, which is most likely what you want."""
@@ -7646,12 +7652,12 @@ class Document(object):
         elif l > 1:
             raise NoDefaultError("No processor specified for <" + ANNOTATIONTYPE2XML[annotationtype] +  ">, but the presence of multiple declarations prevent assigning a default")
 
-    def defaultannotator(self, annotationtype, set=None):
+    def defaultannotator(self, annotationtype, set=False):
         """Obtain the default annotator for the specified annotation type and set.
 
         Arguments:
             annotationtype: The type of annotation, this is conveyed by passing the corresponding annototion class (such as :class:`PosAnnotation` for example), or a member of :class:`AnnotationType`, such as ``AnnotationType.POS``.
-            set (str): the set, should formally be a URL pointing to the set definition
+            set (str/None/False): the set, should formally be a URL pointing to the set definition or None for setless annotations. If set to False, the default set will be inferred automatically, but an exception will occur if there is none!
 
         Returns:
             the set (str)
@@ -7661,18 +7667,18 @@ class Document(object):
         """
 
         if inspect.isclass(annotationtype) or isinstance(annotationtype,AbstractElement): annotationtype = annotationtype.ANNOTATIONTYPE
-        if not set: set = self.defaultset(annotationtype)
         try:
+            if set is False: set = self.defaultset(annotationtype)
             return self.annotationdefaults[annotationtype][set]['annotator']
-        except KeyError:
+        except (NoSuchAnnotation, KeyError):
             raise NoDefaultError
 
-    def defaultannotatortype(self, annotationtype,set=None):
+    def defaultannotatortype(self, annotationtype,set=False):
         """Obtain the default annotator type for the specified annotation type and set.
 
         Arguments:
             annotationtype: The type of annotation, this is conveyed by passing the corresponding annototion class (such as :class:`PosAnnotation` for example), or a member of :class:`AnnotationType`, such as ``AnnotationType.POS``.
-            set (str): the set, should formally be a URL pointing to the set definition
+            set (str/None/False): the set, should formally be a URL pointing to the set definition or None for setless annotations. If set to False, the default set will be inferred automatically, but an exception will occur if there is none!
 
         Returns:
             ``AnnotatorType.AUTO`` or ``AnnotatorType.MANUAL``
@@ -7681,19 +7687,19 @@ class Document(object):
             :class:`NoDefaultError` if the annotation type does not exist or if there is ambiguity (multiple sets for the same type)
         """
         if inspect.isclass(annotationtype) or isinstance(annotationtype,AbstractElement): annotationtype = annotationtype.ANNOTATIONTYPE
-        if not set: set = self.defaultset(annotationtype)
         try:
+            if set is False: set = self.defaultset(annotationtype)
             return self.annotationdefaults[annotationtype][set]['annotatortype']
-        except KeyError:
+        except (NoSuchAnnotation, KeyError):
             raise NoDefaultError
 
 
-    def defaultdatetime(self, annotationtype,set=None):
+    def defaultdatetime(self, annotationtype,set=False):
         """Obtain the default datetime for the specified annotation type and set.
 
         Arguments:
             annotationtype: The type of annotation, this is conveyed by passing the corresponding annototion class (such as :class:`PosAnnotation` for example), or a member of :class:`AnnotationType`, such as ``AnnotationType.POS``.
-            set (str): the set, should formally be a URL pointing to the set definition
+            set (str/None/False): the set, should formally be a URL pointing to the set definition or None for setless annotations. If set to False, the default set will be inferred automatically, but an exception will occur if there is none!
 
         Returns:
             the set (str)
@@ -7702,10 +7708,10 @@ class Document(object):
             :class:`NoDefaultError` if the annotation type does not exist or if there is ambiguity (multiple sets for the same type)
         """
         if inspect.isclass(annotationtype) or isinstance(annotationtype,AbstractElement): annotationtype = annotationtype.ANNOTATIONTYPE
-        if not set: set = self.defaultset(annotationtype)
         try:
+            if set is False: set = self.defaultset(annotationtype)
             return self.annotationdefaults[annotationtype][set]['datetime']
-        except KeyError:
+        except (NoSuchAnnotation, KeyError):
             raise NoDefaultError
 
 
@@ -8009,7 +8015,7 @@ class Document(object):
                             raise
 
 
-    def select(self, Class, set=None, recursive=True,  ignore=True):
+    def select(self, Class, set=False, recursive=True,  ignore=True):
         """See :meth:`AbstractElement.select`"""
         if self.mode == Mode.MEMORY:
             for t in self.data:
@@ -8019,7 +8025,7 @@ class Document(object):
                     for e in t.select(Class,set,recursive,ignore):
                         yield e
 
-    def count(self, Class, set=None, recursive=True,ignore=True):
+    def count(self, Class, set=False, recursive=True,ignore=True):
         """See :meth:`AbstractElement.count`"""
         if self.mode == Mode.MEMORY:
             s = 0
@@ -8473,7 +8479,7 @@ def findwords(doc, worditerator, *args, **kwargs):
                         try:
                             set = doc.defaultset(pattern.matchannotation.ANNOTATIONTYPE)
                             items = list(word.select(pattern.matchannotation, set, True, [Original, Suggestion, Alternative] ))
-                        except KeyError:
+                        except (NoSuchAnnotation, KeyError):
                             continue
                     if len(items) == 1:
                         value = items[0].cls
