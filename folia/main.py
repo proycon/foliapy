@@ -664,10 +664,16 @@ class AbstractElement(object):
             del kwargs['set']
             if doc and self.set and self.set in doc.alias_set:
                 self.set = doc.alias_set[self.set]
-        elif annotationtype in doc.annotationdefaults and len(doc.annotationdefaults[annotationtype]) == 1:
-            self.set = list(doc.annotationdefaults[annotationtype].keys())[0]
-        elif Attrib.CLASS in required: #or (hasattr(self,'SETONLY') and self.SETONLY):
-            raise ValueError("Set is required for " + self.__class__.__name__)
+        else:
+            #check new style declarations (with provenance) for a default set
+            defaultset = doc.defaultset(annotationtype,raiseexception=False)
+            if defaultset is not False: #caution: None is a valid set so we check explicitly!
+                self.set = defaultset
+            elif annotationtype in doc.annotationdefaults and len(doc.annotationdefaults[annotationtype]) == 1:
+                #check old style declarations for a default set
+                self.set = list(doc.annotationdefaults[annotationtype].keys())[0]
+            elif Attrib.CLASS in required: #or (hasattr(self,'SETONLY') and self.SETONLY):
+                raise ValueError("Set is required for " + self.__class__.__name__)
 
         self.checkdeclaration()
 
@@ -7577,7 +7583,7 @@ class Document(object):
             return ( (annotationtype,set) in self.annotations) or (set in self.alias_set and self.alias_set[set] and (annotationtype, self.alias_set[set]) in self.annotations )
 
 
-    def defaultset(self, annotationtype):
+    def defaultset(self, annotationtype, raiseexception=True):
         """Obtain the default set for the specified annotation type.
 
         Arguments:
@@ -7587,16 +7593,23 @@ class Document(object):
             the set (str)
 
         Raises:
-            :class:`NoDefaultError` if the annotation type does not exist or if there is ambiguity (multiple sets for the same type)
+            :class:`NoDefaultError` if the annotation type does not exist or if there is ambiguity (multiple sets for the same type). Or returns False instead if raiseexception = False
         """
 
         if inspect.isclass(annotationtype) or isinstance(annotationtype,AbstractElement): annotationtype = annotationtype.ANNOTATIONTYPE
-        try:
+
+        #new style, with provenance data
+        if annotationtype in self.annotators and len(self.annotators[annotationtype]) == 1:
+            return list(self.annotators[annotationtype].keys())[0]
+
+        #old style, witout provenance data
+        if annotationtype in self.annotationdefaults and len(self.annotationdefaults[annotationtype])== 1:
             return list(self.annotationdefaults[annotationtype].keys())[0]
-        except KeyError:
+
+        if raiseexception:
             raise NoDefaultError
-        except IndexError:
-            raise NoDefaultError
+        else:
+            return False
 
     def getannotators(self, annotationtype, annotationset):
         """Get all annotators for the given annotationtype and set. This is a generator that yields Annotator instances, these resolve to a Processor when called. See also `:meth:AbstractElement.getprocessors` to obtain processors directly, which is most likely what you want."""
