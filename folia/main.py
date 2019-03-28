@@ -671,7 +671,6 @@ class AbstractElement(object):
             except NoSuchAnnotation:
                 #no such annotation is declared, that's fine and very common, it just means we don't have a default set and continue with set = None (i.e. a setless annotation)
                 defaultset = False
-            print(defaultset,file=sys.stderr)
             if defaultset is not False: #caution: None is a valid set so we check explicitly!
                 self.set = defaultset
             elif Attrib.CLASS in required: #or (hasattr(self,'SETONLY') and self.SETONLY):
@@ -1001,7 +1000,7 @@ class AbstractElement(object):
                     elif FOLIA2:
                         raise DeclarationError("Encountered an instance without proper declaration: " + self.__class__.__name__ + " <" + self.__class__.XMLTAG + ">!")
             #check for ambiguity
-            if self.set is None and self.__class__.PRIMARYELEMENT and self.doc.declared(annotationtype) and self.doc.defaultset(annotationtype) is False:
+            if self.set is None and self.__class__.PRIMARYELEMENT and self.doc.declared(annotationtype,self.set) and self.doc.defaultset(annotationtype) is False:
                 raise DeclarationError("No set assigned for " + self.__class__.__name__ + " <" + self.__class__.XMLTAG + "> but no default available either due to multiple possible declarations!")# + ", ".join([str(s) for s in self.doc.annotationdefaults[annotationtype].keys()]))
 
 
@@ -1448,7 +1447,7 @@ class AbstractElement(object):
         if self.id != other.id:
             if self.doc and self.doc.debug: print("[FoLiA DEBUG] AbstractElement Equality Check - ID mismatch: " + str(self.id) + " vs " + str(other.id),file=stderr)
             return False
-        if self.set != other.set and not (self.set is "" and other.set == "undefined"): #the latter condition gives us some lenience in comparisons with pre 2.0 documents
+        if self.set != other.set and not (self.set is None and other.set == "undefined"): #the latter condition gives us some lenience in comparisons with pre 2.0 documents
             if self.doc and self.doc.debug: print("[FoLiA DEBUG] AbstractElement Equality Check - Set mismatch: " + str(self.set) + " vs " + str(other.set),file=stderr)
             return False
         if self.cls != other.cls:
@@ -2191,26 +2190,32 @@ class AbstractElement(object):
             attribs['{http://www.w3.org/XML/1998/namespace}id'] = self.id
 
 
-        #Some attributes only need to be added if they are not the same as what's already set in the declaration
-        if not isinstance(self, AbstractAnnotationLayer):
-            if 'set' not in attribs: #do not override if overloaded function already set it
-                try:
-                    if self.set:
-                        if not self.ANNOTATIONTYPE in self.doc.annotationdefaults or len(self.doc.annotationdefaults[self.ANNOTATIONTYPE]) != 1 or list(self.doc.annotationdefaults[self.ANNOTATIONTYPE].keys())[0] != self.set:
-                            if self.set != None:
-                                if self.ANNOTATIONTYPE in self.doc.set_alias and self.set in self.doc.set_alias[self.ANNOTATIONTYPE]:
-                                    attribs['set'] = self.doc.set_alias[self.ANNOTATIONTYPE][self.set] #use alias instead
-                                else:
-                                    attribs['set'] = self.set
-                except AttributeError:
-                    pass
+        #The set attribute is only added on elements that can take classes
+        takes_class = (self.REQUIRED_ATTRIBS and Attrib.CLASS in self.REQUIRED_ATTRIBS) or (self.OPTIONAL_ATTRIBS and Attrib.CLASS in self.OPTIONAL_ATTRIBS)
+        if takes_class and not isinstance(self, AbstractAnnotationLayer):
+            if self.set and 'set' not in attribs: #do not override if overloaded function already set it
+                if self.doc:
+                    #Is there a default set? If so, we need not serialise the set attribute
+                    try:
+                        defaultset = self.doc.defaultset(self.ANNOTATIONTYPE)
+                    except NoSuchAnnotation:
+                        if not FOLIA1: #This may happen for FoLiA v1 as not everything is declared there, for FoLiA v2 we can be strict though
+                            raise
+                        defaultset = False
+                    if self.set != defaultset:
+                        if self.ANNOTATIONTYPE in self.doc.set_alias and self.set in self.doc.set_alias[self.ANNOTATIONTYPE]:
+                            attribs['set'] = self.doc.set_alias[self.ANNOTATIONTYPE][self.set] #use alias instead
+                        elif FOLIA1 and self.doc.keepversion and self.set == "undefined":
+                            pass #we don't output the 'undefined' set in FoLiA v1, it is the implicit default
+                        else:
+                            attribs['set'] = self.set
+                else:
+                    #no document so no declarations, serialise everything
+                    attribs['set'] = self.set
 
         if 'class' not in attribs: #do not override if caller already set it
-            try:
-                if self.cls:
-                    attribs['class'] = self.cls
-            except AttributeError:
-                pass
+            if self.cls:
+                attribs['class'] = self.cls
 
         if 'processor' not in attribs: #do not override if caller already set it
             if self.ANNOTATIONTYPE in self.doc.annotators and self.set in self.doc.annotators[self.ANNOTATIONTYPE] and self.doc.annotators[self.ANNOTATIONTYPE][self.set]:
@@ -2489,7 +2494,7 @@ class AbstractElement(object):
                         continue
 
                 if isinstance(e, Class):
-                    if set is not None:
+                    if set is not False:
                         try:
                             if e.set != set:
                                 continue
@@ -2498,7 +2503,7 @@ class AbstractElement(object):
                     yield e
                 if recursive:
                     for e2 in e.select(Class, set, recursive, ignore, e):
-                        if set is not None:
+                        if set is not False:
                             try:
                                 if e2.set != set:
                                     continue
@@ -3620,11 +3625,11 @@ class AbstractStructureElement(AbstractElement, AllowInlineAnnotation, AllowGene
             index (int or None): If set to an integer, will retrieve and return the n'th element (starting at 0) instead of returning the generator of all
         """
         if index is None:
-            return self.select(Paragraph,None,True,default_ignore_structure)
+            return self.select(Paragraph,False,True,default_ignore_structure)
         else:
             if index < 0:
-                index = self.count(Paragraph,None,True,default_ignore_structure) + index
-            for i,e in enumerate(self.select(Paragraph,None,True,default_ignore_structure)):
+                index = self.count(Paragraph,False,True,default_ignore_structure) + index
+            for i,e in enumerate(self.select(Paragraph,False,True,default_ignore_structure)):
                 if i == index:
                     return e
             raise IndexError
@@ -4937,7 +4942,7 @@ class AbstractAnnotationLayer(AbstractElement, AllowGenerateID, AllowCorrections
             Generator over Alternative elements
         """
 
-        for e in self.select(AlternativeLayers,None, True, ['Original','Suggestion']): #pylint: disable=too-many-nested-blocks
+        for e in self.select(AlternativeLayers,False, True, ['Original','Suggestion']): #pylint: disable=too-many-nested-blocks
             if Class is None:
                 yield e
             elif len(e) >= 1: #child elements?
@@ -4960,7 +4965,7 @@ class AbstractAnnotationLayer(AbstractElement, AllowGenerateID, AllowCorrections
             :meth:`Word.findspans`
         """
 
-        for span in self.select(AbstractSpanAnnotation,None,True):
+        for span in self.select(AbstractSpanAnnotation,False,True):
             if tuple(span.wrefs()) == words:
                 return span
         raise NoSuchAnnotation
@@ -5197,7 +5202,7 @@ class Relation(AbstractElement):
     def resolve(self, documents=None):
         if documents is None: documents = {}
         #documents is a dictionary of urls to document instances, to aid in resolving cross-document alignments
-        for x in self.select(LinkReference,None,True,False):
+        for x in self.select(LinkReference,False,True,False):
             yield x.resolve(self, documents)
 
     @classmethod
@@ -5339,28 +5344,28 @@ class Correction(AbstractHigherOrderAnnotation, AllowGenerateID):
 
     def hasnew(self,allowempty=False):
         """Does the correction define new corrected annotations?"""
-        for e in  self.select(New,None,False, False):
+        for e in  self.select(New,False,False, False):
             if not allowempty and len(e) == 0: continue
             return True
         return False
 
     def hasoriginal(self,allowempty=False):
         """Does the correction record the old annotations prior to correction?"""
-        for e in self.select(Original,None,False, False):
+        for e in self.select(Original,False,False, False):
             if not allowempty and len(e) == 0: continue
             return True
         return False
 
     def hascurrent(self, allowempty=False):
         """Does the correction record the current authoritative annotation (needed only in a structural context when suggestions are proposed)"""
-        for e in self.select(Current,None,False, False):
+        for e in self.select(Current,False,False, False):
             if not allowempty and len(e) == 0: continue
             return True
         return False
 
     def hassuggestions(self,allowempty=False):
         """Does the correction propose suggestions for correction?"""
-        for e in self.select(Suggestion,None,False, False):
+        for e in self.select(Suggestion,False,False, False):
             if not allowempty and len(e) == 0: continue
             return True
         return False
@@ -5475,11 +5480,11 @@ class Correction(AbstractHigherOrderAnnotation, AllowGenerateID):
 
         if index is None:
             try:
-                return next(self.select(New,None,False))
+                return next(self.select(New,False,False))
             except StopIteration:
                 raise NoSuchAnnotation
         else:
-            for e in self.select(New,None,False):
+            for e in self.select(New,False,False):
                 return e[index]
             raise NoSuchAnnotation
 
@@ -5496,11 +5501,11 @@ class Correction(AbstractHigherOrderAnnotation, AllowGenerateID):
         """
         if index is None:
             try:
-                return next(self.select(Original,None,False, False))
+                return next(self.select(Original,False,False, False))
             except StopIteration:
                 raise NoSuchAnnotation
         else:
-            for e in self.select(Original,None,False, False):
+            for e in self.select(Original,False,False, False):
                 return e[index]
             raise NoSuchAnnotation
 
@@ -5517,11 +5522,11 @@ class Correction(AbstractHigherOrderAnnotation, AllowGenerateID):
         """
         if index is None:
             try:
-                return next(self.select(Current,None,False))
+                return next(self.select(Current,False,False))
             except StopIteration:
                 raise NoSuchAnnotation
         else:
-            for e in self.select(Current,None,False):
+            for e in self.select(Current,False,False):
                 return e[index]
             raise NoSuchAnnotation
 
@@ -5538,9 +5543,9 @@ class Correction(AbstractHigherOrderAnnotation, AllowGenerateID):
             :class:`IndexError`
         """
         if index is None:
-            return self.select(Suggestion,None,False, False)
+            return self.select(Suggestion,False,False, False)
         else:
-            for i, e in enumerate(self.select(Suggestion,None,False, False)):
+            for i, e in enumerate(self.select(Suggestion,False,False, False)):
                 if index == i:
                     return e
             raise IndexError
@@ -7106,7 +7111,7 @@ class Document(object):
 
 
             attribs = {}
-            if set and (set != 'undefined' or self.FOLIA2):
+            if set and (set != 'undefined' or self.FOLIA2): #'undefined' sets for FoLiA v1 can be left out and are implicit, but not so for FoLiA v2
                 attribs['set'] = set
 
             if not self.hasprocessors(annotationtype, set) and self.hasdefaults(annotationtype, set):
@@ -7157,8 +7162,8 @@ class Document(object):
                     break
             #gather attribs
 
-            if (annotationtype == AnnotationType.TEXT or annotationtype == AnnotationType.PHON) and set == 'undefined' and len(self.annotationdefaults[annotationtype][set]) == 0:
-                #this is the implicit TextContent declaration, no need to output it explicitly
+            if self.FOLIA1 and self.keepversion and annotationtype in ( AnnotationType.TEXT, AnnotationType.PHON) and set in ('undefined', DEFAULT_TEXT_SET, DEFAULT_PHON_SET):
+                #this is the implicit TextContent or PhonContent declaration for FoLiA v1 output, no need to output it explicitly
                 continue
 
             jsonnode = {'annotationtype': label.lower()}
@@ -7569,7 +7574,7 @@ class Document(object):
 
 
 
-    def declared(self, annotationtype, set=None):
+    def declared(self, annotationtype, set=False):
         """Checks if the annotation type is present (i.e. declared) in the document.
 
         Arguments:
@@ -8063,12 +8068,12 @@ class Document(object):
 
         If an index is specified, return the n'th sentence only (starting at 0)"""
         if index is None:
-            return self.select(Sentence,None,True,[Quote])
+            return self.select(Sentence,False,True,[Quote])
         else:
             if index < 0:
-                index = sum(t.count(Sentence,None,True,[Quote]) for t in self.data) + index
+                index = sum(t.count(Sentence,False,True,[Quote]) for t in self.data) + index
             for t in self.data:
-                for i,e in enumerate(t.select(Sentence,None,True,[Quote])) :
+                for i,e in enumerate(t.select(Sentence,False,True,[Quote])) :
                     if i == index:
                         return e
             raise IndexError
@@ -8079,12 +8084,12 @@ class Document(object):
 
         If an index is specified, return the n'th word only (starting at 0)"""
         if index is None:
-            return self.select(Word,None,True,default_ignore_structure)
+            return self.select(Word,False,True,default_ignore_structure)
         else:
             if index < 0:
-                index = sum(t.count(Word,None,True,default_ignore_structure) for t in self.data)  + index
+                index = sum(t.count(Word,False,True,default_ignore_structure) for t in self.data)  + index
             for t in self.data:
-                for i, e in enumerate(t.select(Word,None,True,default_ignore_structure)):
+                for i, e in enumerate(t.select(Word,False,True,default_ignore_structure)):
                     if i == index:
                         return e
             raise IndexError
