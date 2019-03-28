@@ -2091,7 +2091,7 @@ class AbstractElement(object):
             try:
                 set = child.set
             except AttributeError:
-                set = None
+                set = False
 
         if inspect.isclass(child):
             Class = child
