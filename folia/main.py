@@ -665,16 +665,22 @@ class AbstractElement(object):
             if doc and self.set and self.set in doc.alias_set:
                 self.set = doc.alias_set[self.set]
         else:
-            #check new style declarations (with provenance) for a default set
+            #check declarations (both with and without provenance) for a default set
             try:
                 defaultset = doc.defaultset(annotationtype)
             except NoSuchAnnotation:
                 #no such annotation is declared, that's fine and very common, it just means we don't have a default set and continue with set = None (i.e. a setless annotation)
                 defaultset = False
+            print(defaultset,file=sys.stderr)
             if defaultset is not False: #caution: None is a valid set so we check explicitly!
                 self.set = defaultset
             elif Attrib.CLASS in required: #or (hasattr(self,'SETONLY') and self.SETONLY):
                 raise ValueError("Set is required for " + self.__class__.__name__)
+            else:
+                if doc.FOLIA1:
+                    self.set ="undefined" #FoLiA <2.0 allowed a 'default' undefined set, FoLiA 2.0 doesn't
+                else:
+                    self.set = None
 
         self.checkdeclaration()
 
@@ -987,7 +993,11 @@ class AbstractElement(object):
                             if self.doc.debug >= 1: print("[FoLiA DEBUG] Auto-declaring " + self.__class__.__name__ + " (no set)", file=stderr)
                             self.doc.declare(annotationtype)
                     elif self.set:
-                        raise DeclarationError("Set '" + str(self.set) + "' is used for " + self.__class__.__name__ + " <" + self.__class__.XMLTAG + ">, but has no declaration!")
+                        if self.doc.FOLIA1 and self.set == "undefined":
+                            #undefined sets could have been left undeclared in FoLiA v1
+                            pass
+                        else:
+                            raise DeclarationError("Set '" + str(self.set) + "' is used for " + self.__class__.__name__ + " <" + self.__class__.XMLTAG + ">, but has no declaration!")
                     elif FOLIA2:
                         raise DeclarationError("Encountered an instance without proper declaration: " + self.__class__.__name__ + " <" + self.__class__.XMLTAG + ">!")
             #check for ambiguity
