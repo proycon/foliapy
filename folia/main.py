@@ -696,7 +696,7 @@ class AbstractElement(object):
         elif Attrib.CLASS in required:
             raise ValueError("Class is required for " + self.__class__.__name__)
 
-        if self.cls and not self.set:
+        if self.cls and self.set is False:
             #we have a class but no set!
             if doc and doc.autodeclare:
                 #If autodeclare is enabled and it is an old FoLiA v1 document,
@@ -3352,7 +3352,7 @@ class AllowInlineAnnotation(AllowCorrections):
             :class:`Alternative` elements
         """
 
-        for e in self.select(Alternative,None, True, []): #pylint: disable=too-many-nested-blocks
+        for e in self.select(Alternative,False, True, []): #pylint: disable=too-many-nested-blocks
             if Class is None:
                 yield e
             elif len(e) >= 1: #child elements?
@@ -3360,7 +3360,7 @@ class AllowInlineAnnotation(AllowCorrections):
                     try:
                         if isinstance(e2, Class):
                             try:
-                                if set is None or e2.set == set:
+                                if set is False or e2.set == set:
                                     yield e #not e2
                                     break #yield an alternative only once (in case there are multiple matches)
                             except AttributeError:
@@ -3450,7 +3450,7 @@ class AbstractWord: #interface grouping elements that act like words
 
         Arguments:
             type: The annotation type, can be passed as using any of the :class:`AnnotationType` member, or by passing the relevant :class:`AbstractSpanAnnotation` or :class:`AbstractAnnotationLayer` class.
-            set (str or None): Constrain by set
+            set (str/None/False): Constrain by set. Set to False to return regardless of set.
 
         Example::
 
@@ -4854,13 +4854,13 @@ class AbstractAnnotationLayer(AbstractElement, AllowGenerateID, AllowCorrections
     """Annotation layers for Span Annotation are derived from this abstract base class"""
 
     def __init__(self, doc, *args, **kwargs):
+        self.set = False # This is the initial default and we retain this value to indicate we don't know the set yet, but it will be assigned as soon as elements are appended
         if 'set' in kwargs:
             self.set = kwargs['set']
-        elif self.ANNOTATIONTYPE in doc.annotationdefaults and len(doc.annotationdefaults[self.ANNOTATIONTYPE]) == 1:
-            self.set = list(doc.annotationdefaults[self.ANNOTATIONTYPE].keys())[0]
-        else:
-            self.set = False
-            # ok, let's not raise an error yet, may may still be able to derive a set from elements that are appended
+        elif doc:
+            defaultset = doc.defaultset(self.ANNOTATIONTYPE)
+            if defaultset is not False:
+                self.set = defaultset
         super(AbstractAnnotationLayer,self).__init__(doc, *args, **kwargs)
 
 
@@ -4950,7 +4950,7 @@ class AbstractAnnotationLayer(AbstractElement, AllowGenerateID, AllowCorrections
                     try:
                         if isinstance(e2, Class):
                             try:
-                                if set is None or e2.set == set:
+                                if set is False or e2.set == set:
                                     yield e #not e2
                                     break #yield an alternative only once (in case there are multiple matches)
                             except AttributeError:
