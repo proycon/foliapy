@@ -1049,8 +1049,7 @@ class Correction(object): #AS CORRECTION/SUGGESTION expression...
             actionassignments[key] = value
 
         if actionassignments:
-            if ('set' not in actionassignments or actionassignments['set'] is None) and action.focus.Class:
-                print(query.defaultsets,file=sys.stderr)
+            if ('set' not in actionassignments or actionassignments['set'] is False) and action.focus.Class:
                 if action.focus.Class.XMLTAG in query.defaultsets:
                     actionassignments['set'] = query.defaultsets[action.focus.Class.XMLTAG]
                 else:
@@ -1101,7 +1100,7 @@ class Correction(object): #AS CORRECTION/SUGGESTION expression...
             elif focus and action.action not in ('PREPEND','APPEND'):
                 if isinstance(focus, folia.AbstractStructureElement):
                     kwargs['current'] = focus #current only needed for structure annotation
-                if correction and (not 'set' in kwargs or correction.set == kwargs['set']) and (not 'cls' in kwargs or correction.cls == kwargs['cls']): #reuse the existing correction element
+                if correction and ('set' not in kwargs or correction.set == kwargs['set']) and ('cls' not in kwargs or correction.cls == kwargs['cls']): #reuse the existing correction element
                     print("Reusing " + correction.id,file=sys.stderr)
                     kwargs['reuse'] = correction
 
@@ -1126,7 +1125,7 @@ class Correction(object): #AS CORRECTION/SUGGESTION expression...
                     if not key in subassignments:
                         if key == 'class': key = 'cls'
                         subassignments[key] = value
-                if (not 'set' in subassignments or subassignments['set'] is None) and action.focus.Class:
+                if ('set' not in subassignments or subassignments['set'] is False) and action.focus.Class:
                     try:
                         subassignments['set'] = query.defaultsets[action.focus.Class.XMLTAG]
                     except KeyError:
@@ -1164,7 +1163,7 @@ class Correction(object): #AS CORRECTION/SUGGESTION expression...
 
 
     def autodeclare(self,doc):
-        if self.set:
+        if self.set is not False:
             if not doc.declared(folia.Correction, self.set):
                 doc.declare(folia.Correction, self.set)
 
@@ -1265,7 +1264,7 @@ class Correction(object): #AS CORRECTION/SUGGESTION expression...
 
         for i, (Class, actionassignments, subactions) in enumerate(substitution['new']):
             if actionassignments:
-                if (not 'set' in actionassignments or actionassignments['set'] is None):
+                if (not 'set' in actionassignments or actionassignments['set'] is False):
                     try:
                         actionassignments['set'] = query.defaultsets[Class.XMLTAG]
                     except KeyError:
@@ -1296,7 +1295,7 @@ class Correction(object): #AS CORRECTION/SUGGESTION expression...
                 for key, value in action.assignments.items():
                     if key == 'class': key = 'cls'
                     subassignments[key] = value
-                if (not 'set' in subassignments or subassignments['set'] is None) and action.focus.Class:
+                if (not 'set' in subassignments or subassignments['set'] is False) and action.focus.Class:
                     try:
                         subassignments['set'] = query.defaultsets[action.focus.Class.XMLTAG]
                     except KeyError:

@@ -652,20 +652,18 @@ class AbstractElement(object):
 
 
         if 'set' in kwargs:
+            #a set was specified
             if Attrib.CLASS not in supported and not self.SETONLY:
                 raise ValueError("Set is not supported on " + self.__class__.__name__)
             if kwargs['set']:
                 self.set = kwargs['set']
             else:
-                if doc.FOLIA1 and Attrib.CLASS in supported:
-                    self.set ="undefined" #FoLiA <2.0 allowed a 'default' undefined set, FoLiA 2.0 doesn't
-                else:
-                    self.set = False
-            del kwargs['set']
+                #the specified set was None (no set) or False (any set),
+                kwargs['set'] = False #deferred until next if block
             if doc and self.set and self.set in doc.alias_set:
                 self.set = doc.alias_set[self.set]
-        else:
-            #check declarations (both with and without provenance) for a default set
+        if 'set' not in kwargs or kwargs['set'] is False:
+            #no, set explicitly specified; check declarations (both with and without provenance) for a default set
             try:
                 defaultset = doc.defaultset(annotationtype)
             except NoSuchAnnotation:
@@ -673,13 +671,23 @@ class AbstractElement(object):
                 defaultset = False
             if defaultset is not False: #caution: None is a valid set so we check explicitly!
                 self.set = defaultset
-            elif Attrib.CLASS in required: #or (hasattr(self,'SETONLY') and self.SETONLY):
-                raise ValueError("Set is required for " + self.__class__.__name__)
-            else:
-                if doc.FOLIA1 and Attrib.CLASS in supported:
+            elif Attrib.CLASS in supported:
+                if doc.FOLIA1:
                     self.set ="undefined" #FoLiA <2.0 allowed a 'default' undefined set, FoLiA 2.0 doesn't
                 else:
                     self.set = False
+            if Attrib.CLASS in required and not self.set:
+                raise ValueError("Set is required for " + self.__class__.__name__)
+
+        if 'set' in kwargs:
+            del kwargs['set']
+
+        if not self.set:
+            #We define a default set for TextContent and PhonContent in FoLiA v2
+            if isinstance(self, TextContent):
+                self.set = DEFAULT_TEXT_SET
+            if isinstance(self, PhonContent):
+                self.set = DEFAULT_PHON_SET
 
         self.checkdeclaration()
 
@@ -994,7 +1002,7 @@ class AbstractElement(object):
                     elif self.set:
                         if self.doc.FOLIA1 and self.set == "undefined":
                             #undefined sets could have been left undeclared in FoLiA v1
-                            #this only works if there are alreader other sets declared
+                            #this only works if there are already other sets declared
                             for atype, aset in self.doc.annotations:
                                 if atype == annotationtype and aset and aset != "undefined":
                                     raise DeclarationError("Set '" + str(self.set) + "' is used for " + self.__class__.__name__ + " <" + self.__class__.XMLTAG + ">, but there are already defined sets!")
