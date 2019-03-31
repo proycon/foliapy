@@ -994,7 +994,10 @@ class AbstractElement(object):
                     elif self.set:
                         if self.doc.FOLIA1 and self.set == "undefined":
                             #undefined sets could have been left undeclared in FoLiA v1
-                            pass
+                            #this only works if there are alreader other sets declared
+                            for atype, aset in self.doc.annotations:
+                                if atype == annotationtype and aset and aset != "undefined":
+                                    raise DeclarationError("Set '" + str(self.set) + "' is used for " + self.__class__.__name__ + " <" + self.__class__.XMLTAG + ">, but there are already defined sets!")
                         else:
                             raise DeclarationError("Set '" + str(self.set) + "' is used for " + self.__class__.__name__ + " <" + self.__class__.XMLTAG + ">, but has no declaration!")
                     elif FOLIA2:
