@@ -657,10 +657,10 @@ class AbstractElement(object):
             if kwargs['set']:
                 self.set = kwargs['set']
             else:
-                if doc.FOLIA1:
+                if doc.FOLIA1 and Attrib.CLASS in supported:
                     self.set ="undefined" #FoLiA <2.0 allowed a 'default' undefined set, FoLiA 2.0 doesn't
                 else:
-                    self.set = None
+                    self.set = False
             del kwargs['set']
             if doc and self.set and self.set in doc.alias_set:
                 self.set = doc.alias_set[self.set]
@@ -676,10 +676,10 @@ class AbstractElement(object):
             elif Attrib.CLASS in required: #or (hasattr(self,'SETONLY') and self.SETONLY):
                 raise ValueError("Set is required for " + self.__class__.__name__)
             else:
-                if doc.FOLIA1:
+                if doc.FOLIA1 and Attrib.CLASS in supported:
                     self.set ="undefined" #FoLiA <2.0 allowed a 'default' undefined set, FoLiA 2.0 doesn't
                 else:
-                    self.set = None
+                    self.set = False
 
         self.checkdeclaration()
 
@@ -2350,7 +2350,7 @@ class AbstractElement(object):
                             e[-1].tail = child
 
                 else:
-                    xml = child.xml() #may return None in rare occassions, meaning we wan to skip
+                    xml = child.xml() #may return None in rare occassions, meaning we want to skip
                     if not xml is None:
                         e.append(xml)
 
@@ -4867,29 +4867,34 @@ class AbstractAnnotationLayer(AbstractElement, AllowGenerateID, AllowCorrections
     def xml(self, attribs = None,elements = None, skipchildren = False):
         """See :meth:`AbstractElement.xml`"""
         if self.set is False:
-            if len(self.data) == 0: #just skip if there are no children
+            if len(self.data) == 0: #just skip the entire layer if there are no children at all
                 return None
             else:
-                raise ValueError("No set specified or derivable for annotation layer " + self.__class__.__name__)
+                #this should have been prevented by the AbstractAnnotationLayer.append() method which will assign a set
+                #we just keep it set to False
+                #raise ValueError("No set specified or derivable for annotation layer " + self.__class__.__name__) #too strict at this point, leads to problems
+                pass
         return super(AbstractAnnotationLayer, self).xml(attribs, elements, skipchildren)
 
     def append(self, child, *args, **kwargs):
         """See :meth:`AbstractElement.append`"""
         #if no set is associated with the layer yet, we learn it from span annotation elements that are added
         if self.set is False:
-            if inspect.isclass(child):
-                if issubclass(child,AbstractSpanAnnotation):
+            if inspect.isclass(child) and child.ANNOTATIONTYPE == self.ANNOTATIONTYPE:
+                if issubclass(child,(AbstractSpanAnnotation,AbstractSubtokenAnnotation)):
                     if 'set' in kwargs:
                         self.set = kwargs['set']
-            elif isinstance(child, AbstractSpanAnnotation):
-                if child.set:
+            elif isinstance(child, (AbstractSpanAnnotation,AbstractSubtokenAnnotation)) and child.ANNOTATIONTYPE == self.ANNOTATIONTYPE:
+                if child.set is not False:
                     self.set = child.set
             elif isinstance(child, Correction):
                 #descend into corrections to find the proper set for this layer (derived from span annotation elements)
                 for e in itertools.chain( child.new(), child.original(), child.suggestions() ):
-                    if isinstance(e, AbstractSpanAnnotation) and e.set:
+                    if isinstance(e, (AbstractSpanAnnotation, AbstractSubtokenAnnotation)) and e.set is not False and child.ANNOTATIONTYPE == self.ANNOTATIONTYPE:
                         self.set = e.set
                         break
+            if self.set is not False and self.doc and self.doc.debug >= 1:
+                print("[FoLiA DEBUG] Derived set " + repr(self.set) + " for " + self.__class__.__name__,file=stderr)
 
         return super(AbstractAnnotationLayer, self).append(child, *args, **kwargs)
 
@@ -7412,6 +7417,7 @@ class Document(object):
                 if self.debug >= 1: print("[FoLiA DEBUG] No set specified for phon, auto-declaring default phon set", file=stderr)
             elif self.FOLIA1:
                 set = "undefined" #only for FoLiA < v2
+                if self.debug >= 1: print("[FoLiA DEBUG] No set specified for " + ANNOTATIONTYPE2XML[annotationtype] + " in FoLiA v1 document; auto-declaring undefined", file=stderr)
             #else we maintain the value None
         if annotationtype in (AnnotationType.TEXT, AnnotationType.PHON) and annotationtype in self.annotationdefaults and 'undefined' in self.annotationdefaults[annotationtype]:
             #override any 'undefined' declarations (for FoLiA <2), so

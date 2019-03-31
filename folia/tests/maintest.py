@@ -1344,7 +1344,7 @@ class Test02Sanity(unittest.TestCase):
         self.assertEqual( list(doc['example.text.1'].select(folia.Gap))[1].set, 'extended-gap-set' )
 
     def test102d1_declarations(self):
-        """Sanity Check - Declarations - Multiple sets for the same annotation type (testing failure)"""
+        """Sanity Check - Declarations - Missing set in when multiple sets for the same annotation type are declared (testing failure)"""
         xml = """<?xml version="1.0"?>\n
 <FoLiA xmlns="http://ilk.uvt.nl/folia" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="test" version="1.5.0" generator="{generator}">
   <metadata type="native">
