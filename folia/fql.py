@@ -367,7 +367,7 @@ class SpanSet(list):
 
 
 class Selector(object):
-    def __init__(self, Class, set=None,id=None, filter=None, nextselector=None, expansion = None):
+    def __init__(self, Class, set=False,id=None, filter=None, nextselector=None, expansion = None):
         self.Class = Class
         self.set = set
         self.id = id
@@ -387,7 +387,7 @@ class Selector(object):
     @staticmethod
     def parse(q, i=0, allowexpansion=False):
         l = len(q)
-        set = None
+        set = False
         id = None
         filter = None
         expansion = None
