@@ -612,6 +612,7 @@ class Test3Evaluation(unittest.TestCase):
     def test26_correct_span(self):
         """Correction of span annotation"""
         q = fql.Query(Qcorrect_span)
+        #print(repr(q.action.focus),file=sys.stderr)
         results = q(self.doc)
         self.assertIsInstance(results[0], folia.Correction)
         self.assertIsInstance(results[0].new(0), folia.Entity)

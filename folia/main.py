@@ -676,8 +676,8 @@ class AbstractElement(object):
                     self.set ="undefined" #FoLiA <2.0 allowed a 'default' undefined set, FoLiA 2.0 doesn't
                 else:
                     self.set = False
-            if Attrib.CLASS in required and not self.set:
-                raise ValueError("Set is required for " + self.__class__.__name__)
+        if Attrib.CLASS in required and not self.set:
+            raise ValueError("Set is required for " + self.__class__.__name__)
 
         if 'set' in kwargs:
             del kwargs['set']
@@ -1489,7 +1489,7 @@ class AbstractElement(object):
         return True
 
     def __repr__(self):
-        return "<" + self.__class__.__name__ + " at " + str(id(self)) + " id=" + str(self.id) + ">"
+        return "<" + self.__class__.__name__ + " at " + str(id(self)) + " id=" + str(self.id) + " set="+ str(self.set) + " class="+ str(self.cls) + ">"
 
     def __len__(self):
         """Returns the number of child elements under the current element."""
