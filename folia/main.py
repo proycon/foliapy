@@ -662,7 +662,7 @@ class AbstractElement(object):
                 kwargs['set'] = False #deferred until next if block
             if doc and self.set and self.set in doc.alias_set:
                 self.set = doc.alias_set[self.set]
-        if 'set' not in kwargs or kwargs['set'] is False:
+        if 'set' not in kwargs or kwargs['set'] is False and annotationtype is not None:
             #no, set explicitly specified; check declarations (both with and without provenance) for a default set
             try:
                 defaultset = doc.defaultset(annotationtype)
@@ -7629,7 +7629,12 @@ class Document(object):
             :class:`NoDefaultError` if the annotation type does not exist or if there is ambiguity (multiple sets for the same type). Or returns False instead if raiseexception = False
         """
 
-        if inspect.isclass(annotationtype) or isinstance(annotationtype,AbstractElement): annotationtype = annotationtype.ANNOTATIONTYPE
+        if inspect.isclass(annotationtype):
+            annotationtype = annotationtype.ANNOTATIONTYPE
+        elif isinstance(annotationtype,AbstractElement):
+            annotationtype = annotationtype.__class__.ANNOTATIONTYPE
+        if annotationtype is None:
+            return False
 
         #new style, with provenance data
         if annotationtype in self.annotators:
@@ -7647,7 +7652,7 @@ class Document(object):
             elif l > 1:
                 return False
 
-        raise NoSuchAnnotation
+        raise NoSuchAnnotation("No declaration for annotation type " + ANNOTATIONTYPE2XML[annotationtype])
 
     def getannotators(self, annotationtype, annotationset):
         """Get all annotators for the given annotationtype and set. This is a generator that yields Annotator instances, these resolve to a Processor when called. See also `:meth:AbstractElement.getprocessors` to obtain processors directly, which is most likely what you want."""
