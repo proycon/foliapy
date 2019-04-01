@@ -476,6 +476,14 @@ def xmltreefromfile(filename):
     except TypeError:
         return ElementTree.parse(filename, ElementTree.XMLParser()) #older lxml, may leak!!
 
+def annotationtype2str(annotationtype):
+    """Find the 'label' for the declarations dynamically (aka: AnnotationType --> String)"""
+    assert annotationtype is not None
+    for key, value in vars(AnnotationType).items():
+        if value == annotationtype:
+            return key
+    return None
+
 
 def commonancestors(Class, *args):
     """Generator function to find common ancestors of a particular type for any two or more FoLiA element instances.
@@ -7113,13 +7121,8 @@ class Document(object):
         l = []
 
         for annotationtype, set in self.annotations:
-            label = None
             #Find the 'label' for the declarations dynamically (aka: AnnotationType --> String)
-            for key, value in vars(AnnotationType).items():
-                if value == annotationtype:
-                    label = key
-                    break
-            #gather attribs
+            label = annotationtype2str(annotationtype)
 
             if self.FOLIA1 and self.keepversion and annotationtype in ( AnnotationType.TEXT, AnnotationType.PHON) and set in ('undefined', DEFAULT_TEXT_SET, DEFAULT_PHON_SET):
                 #this is the implicit TextContent or PhonContent declaration for FoLiA v1 output, no need to output it explicitly
@@ -7428,7 +7431,7 @@ class Document(object):
                 if self.debug >= 1: print("[FoLiA DEBUG] No set specified for phon, auto-declaring default phon set", file=stderr)
             elif self.FOLIA1:
                 set = "undefined" #only for FoLiA < v2
-                if self.debug >= 1: print("[FoLiA DEBUG] No set specified for " + ANNOTATIONTYPE2XML[annotationtype] + " in FoLiA v1 document; auto-declaring undefined", file=stderr)
+                if self.debug >= 1: print("[FoLiA DEBUG] No set specified for " + annotationtype2str(annotationtype) + " in FoLiA v1 document; auto-declaring undefined", file=stderr)
             #else we maintain the value None
         if annotationtype in (AnnotationType.TEXT, AnnotationType.PHON) and annotationtype in self.annotationdefaults and 'undefined' in self.annotationdefaults[annotationtype]:
             #override any 'undefined' declarations (for FoLiA <2), so
@@ -7475,7 +7478,7 @@ class Document(object):
 
 
         if self.debug >= 1:
-            print("[FoLiA DEBUG] Declaring " + ANNOTATIONTYPE2XML[annotationtype] + ", set " + str(set), file=stderr)
+            print("[FoLiA DEBUG] Declaring " + annotationtype2str(annotationtype) + ", set " + str(set), file=stderr)
 
         #add the document main processor
         if self.processor and (not args or args[0] != self.processor):
@@ -7507,7 +7510,7 @@ class Document(object):
                 annotator_new = all( a.processor_id != processor.id for a in self.annotators[annotationtype][set] )
                 if annotator_new:
                     if self.debug >= 1:
-                        print("[FoLiA DEBUG] Adding annotator for " + ANNOTATIONTYPE2XML[annotationtype] + " to processor  " + processor.name + ", ID " + processor.id, file=stderr)
+                        print("[FoLiA DEBUG] Adding annotator for " + annotationtype2str(annotationtype) + " to processor  " + processor.name + ", ID " + processor.id, file=stderr)
                     self.annotators[annotationtype][set].append(Annotator(processor.id, self))
 
             if processor_new:
@@ -7652,7 +7655,7 @@ class Document(object):
             elif l > 1:
                 return False
 
-        raise NoSuchAnnotation("No declaration for annotation type " + ANNOTATIONTYPE2XML[annotationtype])
+        raise NoSuchAnnotation("No declaration for annotation type " + annotationtype2str(annotationtype))
 
     def getannotators(self, annotationtype, annotationset):
         """Get all annotators for the given annotationtype and set. This is a generator that yields Annotator instances, these resolve to a Processor when called. See also `:meth:AbstractElement.getprocessors` to obtain processors directly, which is most likely what you want."""
