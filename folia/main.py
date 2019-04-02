@@ -53,7 +53,7 @@ from folia import LIBVERSION
 
 #foliaspec:version:FOLIAVERSION
 #The FoLiA version
-FOLIAVERSION = "2.0.1"
+FOLIAVERSION = "2.0.2"
 
 #foliaspec:namespace:NSFOLIA
 #The FoLiA XML namespace
@@ -8691,7 +8691,7 @@ def validate(filename,schema=None,deep=False):
 #================================= FOLIA SPECIFICATION ==========================================================
 
 #foliaspec:header
-#This file was last updated according to the FoLiA specification for version 2.0.1 on 2019-03-19 13:20:12, using foliaspec.py
+#This file was last updated according to the FoLiA specification for version 2.0.2 on 2019-04-02 22:31:35, using foliaspec.py
 #Code blocks after a foliaspec comment (until the next newline) are automatically generated. **DO NOT EDIT THOSE** and **DO NOT REMOVE ANY FOLIASPEC COMMENTS** !!!
 
 #foliaspec:structurescope:STRUCTURESCOPE
@@ -9416,6 +9416,7 @@ SpanRelationLayer.XMLTAG = "spanrelations"
 #------ Speech -------
 Speech.ACCEPTED_DATA = (AbstractAnnotationLayer, AbstractInlineAnnotation, Alternative, AlternativeLayers, Comment, Correction, Description, Division, Entry, Event, Example, External, Feature, ForeignData, Gap, Hiddenword, List, Metric, Note, Paragraph, Part, PhonContent, Quote, Reference, Relation, Sentence, String, TextContent, Utterance, Word,)
 Speech.LABEL = "Speech Body"
+Speech.OPTIONAL_ATTRIBS = (Attrib.ID, Attrib.ANNOTATOR, Attrib.DATETIME, Attrib.SRC, Attrib.BEGINTIME, Attrib.ENDTIME, Attrib.SPEAKER, Attrib.METADATA, Attrib.SPACE,)
 Speech.TEXTDELIMITER = "\n\n\n"
 Speech.XMLTAG = "speech"
 #------ Statement -------
@@ -9491,6 +9492,7 @@ Term.XMLTAG = "term"
 #------ Text -------
 Text.ACCEPTED_DATA = (AbstractAnnotationLayer, AbstractInlineAnnotation, Alternative, AlternativeLayers, Comment, Correction, Description, Division, Entry, Event, Example, External, Feature, Figure, ForeignData, Gap, Hiddenword, Linebreak, List, Metric, Note, Paragraph, Part, PhonContent, Quote, Reference, Relation, Sentence, String, Table, TextContent, Whitespace, Word,)
 Text.LABEL = "Text Body"
+Text.OPTIONAL_ATTRIBS = (Attrib.ID, Attrib.ANNOTATOR, Attrib.DATETIME, Attrib.SRC, Attrib.BEGINTIME, Attrib.ENDTIME, Attrib.SPEAKER, Attrib.METADATA, Attrib.SPACE,)
 Text.TEXTDELIMITER = "\n\n\n"
 Text.XMLTAG = "text"
 #------ TextContent -------
