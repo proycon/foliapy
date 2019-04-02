@@ -5967,50 +5967,17 @@ class SpanRelation(AbstractHigherOrderAnnotation):
 class FunctionFeature(Feature):
     """Function feature, to be used with :class:`Morpheme`"""
 
-class Morpheme(AbstractSubtokenAnnotation):
+class Morpheme(AbstractSubtokenAnnotation, AbstractWord):
     """Morpheme element, represents one morpheme in morphological analysis, subtoken annotation element to be used in :class:`MorphologyLayer`"""
 
-    def findspans(self, type,set=False):
-        """Find span annotation of the specified type that include this word"""
-        if issubclass(type, AbstractAnnotationLayer):
-            layerclass = type
-        else:
-            layerclass = ANNOTATIONTYPE2LAYERCLASS[type.ANNOTATIONTYPE]
-        e = self
-        while True:
-            if not e.parent: break
-            e = e.parent
-            for layer in e.select(layerclass,set,False):
-                for e2 in layer:
-                    if isinstance(e2, AbstractSpanAnnotation):
-                        if self in e2.wrefs():
-                            yield e2
 
     def textvalidation(self, warnonly=None): #warnonly will change at some point in the future to be stricter
         return True
 
 
-class Phoneme(AbstractSubtokenAnnotation):
+class Phoneme(AbstractSubtokenAnnotation, AbstractWord):
     """Phone element, represents one phone in phonetic analysis, subtoken annotation element to be used in :class:`PhonologyLayer`"""
-
-    def findspans(self, type,set=False): #TODO: this is a copy of the methods in Morpheme in Word, abstract into separate class and inherit
-        """Find span annotation of the specified type that include this phoneme.
-
-        See :meth:`Word.findspans` for usage.
-        """
-        if issubclass(type, AbstractAnnotationLayer):
-            layerclass = type
-        else:
-            layerclass = ANNOTATIONTYPE2LAYERCLASS[type.ANNOTATIONTYPE]
-        e = self
-        while True:
-            if not e.parent: break
-            e = e.parent
-            for layer in e.select(layerclass,set,False):
-                for e2 in layer:
-                    if isinstance(e2, AbstractSpanAnnotation):
-                        if self in e2.wrefs():
-                            yield e2
+    pass
 
 #class Subentity(AbstractSubtokenAnnotation):
 #    """Subentity element, for named entities within a single token, subtoken annotation element to be used in SubentitiesLayer"""
