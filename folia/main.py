@@ -302,6 +302,24 @@ class Processor:
             elements.append(subprocessor.xml())
         return E.processor(*elements, **attribs)
 
+    def json(self):
+        jsonnode = {}
+        jsonnode['id'] = self.id
+        for key in ('name','type', 'version','document_version', 'folia_version','command','host','user','begindatetime','enddatetime', 'resourcelink'):
+            if hasattr(self,key) and getattr(self,key) is not None:
+                jsonnode[key] = getattr(self, key)
+                if isinstance(jsonnode[key], datetime):
+                    jsonnode[key] = jsonnode[key].strftime("%Y-%m-%dT%H:%M:%S")
+        jsonnode['processors'] = []
+        jsonnode['metadata'] = {}
+        if isinstance(self.metadata, NativeMetaData): #serialize metadata on the processor
+            for key, value in self.metadata.items():
+                jsonnode['metadata'][key] = value
+        #serialize subprocessors
+        for subprocessor in self:
+            jsonnode['processors'].append(subprocessor.json())
+        return jsonnode
+
     def __getitem__(self, id):
         for processor in self.processors:
             if processor.id == id:
@@ -390,6 +408,9 @@ class Provenance:
     def xml(self):
         processors = [ processor.xml() for processor in self ]
         return E.provenance(*processors)
+
+    def json(self):
+        return { "processors": [ processor.json() for processor in self ] }
 
 def checkversion(version, REFVERSION=FOLIAVERSION):
     """Checks FoLiA version, returns 1 if the document is newer than the library, -1 if it is older, 0 if it is equal"""
@@ -2405,13 +2426,16 @@ class AbstractElement(object):
             jsonnode['set'] = self.set
         if self.cls:
             jsonnode['class'] = self.cls
-        if self.annotator:
-            jsonnode['annotator'] = self.annotator
-        if self.annotatortype:
-            if self.annotatortype == AnnotatorType.AUTO:
-                jsonnode['annotatortype'] = "auto"
-            elif self.annotatortype == AnnotatorType.MANUAL:
-                jsonnode['annotatortype'] = "manual"
+        if self.processor:
+            jsonnode['processor'] = self.processor.id
+        else:
+            if self.annotator:
+                jsonnode['annotator'] = self.annotator
+            if self.annotatortype:
+                if self.annotatortype == AnnotatorType.AUTO:
+                    jsonnode['annotatortype'] = "auto"
+                elif self.annotatortype == AnnotatorType.MANUAL:
+                    jsonnode['annotatortype'] = "manual"
         if self.confidence is not None:
             jsonnode['confidence'] = self.confidence
         if self.n:
@@ -7140,13 +7164,8 @@ class Document(object):
         """
         l = []
         for annotationtype, set in self.annotations:
-            label = None
             #Find the 'label' for the declarations dynamically (aka: AnnotationType --> String)
-            for key, value in vars(AnnotationType).items():
-                if value == annotationtype:
-                    label = key
-                    break
-            #gather attribs
+            label = annotationtype2str(annotationtype)
 
             if self.FOLIA1 and self.keepversion and annotationtype in ( AnnotationType.TEXT, AnnotationType.PHON) and set in ('undefined', DEFAULT_TEXT_SET, DEFAULT_PHON_SET):
                 #this is the implicit TextContent or PhonContent declaration for FoLiA v1 output, no need to output it explicitly
@@ -7157,16 +7176,26 @@ class Document(object):
                 jsonnode['set'] = set
 
 
-            for key, value in self.annotationdefaults[annotationtype][set].items():
-                if key == 'annotatortype':
-                    if value == AnnotatorType.MANUAL:
-                        jsonnode[key] = 'manual'
-                    elif value == AnnotatorType.AUTO:
-                        jsonnode[key] = 'auto'
-                elif key == 'datetime':
-                    jsonnode[key] = value.strftime("%Y-%m-%dT%H:%M:%S") #proper iso-formatting
-                elif value:
-                    jsonnode[key] = value
+            if not self.hasprocessors(annotationtype, set) and self.hasdefaults(annotationtype, set):
+                #there are no new-style processors associated with this declaration, but there are old-style defaults, fall back to those:
+                for key, value in self.annotationdefaults[annotationtype][set].items():
+                    if key == 'annotatortype':
+                        if value == AnnotatorType.MANUAL:
+                            jsonnode[key] = 'manual'
+                        elif value == AnnotatorType.AUTO:
+                            jsonnode[key] = 'auto'
+                    elif key == 'datetime':
+                        jsonnode[key] = value.strftime("%Y-%m-%dT%H:%M:%S") #proper iso-formatting
+                    elif value:
+                        jsonnode[key] = value
+            jsonnode["annotators"] = []
+            if not (self.FOLIA1 and self.keepversion):
+                if annotationtypeisspan(annotationtype):
+                    if self.groupannotations[annotationtype][set]:
+                        jsonnode["groupannotations"] = True
+                if annotationtype in self.annotators and set in self.annotators[annotationtype]:
+                    for annotator in self.annotators[annotationtype][set]:
+                        jsonnode["annotators"].append(annotator.processor_id)
             if label:
                 l.append( jsonnode  )
             else:
@@ -7235,7 +7264,7 @@ class Document(object):
         self.pendingvalidation()
         self.pendingsort()
 
-        jsondoc = {'id': self.id, 'children': [], 'declarations': self.jsondeclarations() }
+        jsondoc = {'id': self.id, 'children': [], 'declarations': self.jsondeclarations(), 'provenance': self.jsonprovenance()}
         if self.keepversion:
             jsondoc['version'] = self.version
         else:
@@ -7256,6 +7285,14 @@ class Document(object):
             return []
 
 
+    def jsonprovenance(self):
+        """Internal method to serialize provenance data to JSON"""
+        if self.keepversion and self.FOLIA1:
+            return {}
+        elif self.provenance:
+            return self.provenance.json()
+        else:
+            return {}
 
     def xmlmetadata(self):
         """Internal method to serialize metadata to XML"""
