@@ -180,6 +180,8 @@ Qprovenance_nested_no_id = "PROCESSOR name \"test.pos\" type \"auto\" IN PROCESS
 
 Qprovenance_nested_no_id2 = "PROCESSOR name \"test.pos\" type \"auto\" IN PROCESSOR name \"test\" ADD pos OF \"https://raw.githubusercontent.com/proycon/folia/master/setdefinitions/universal-pos.foliaset.ttl\" WITH class \"NOUN\" FOR w ID \"example.p.1.s.2.w.4\""
 
+Qprovenance_nested_no_id3 = "PROCESSOR name \"test2.pos\" type \"auto\" IN PROCESSOR name \"test\" ADD pos OF \"https://raw.githubusercontent.com/proycon/folia/master/setdefinitions/universal-pos.foliaset.ttl\" WITH class \"NOUN2\" FOR w ID \"example.p.1.s.2.w.4\""
+
 Qprovenance_nested_no_id_edit = "PROCESSOR name \"test2.pos\" type \"auto\" IN PROCESSOR name \"test\" EDIT pos OF \"https://raw.githubusercontent.com/proycon/folia/master/setdefinitions/universal-pos.foliaset.ttl\" WITH class \"VERB\" FOR w ID \"example.p.1.s.1.w.2\""
 
 class Test1UnparsedQuery(unittest.TestCase):
@@ -1092,9 +1094,29 @@ class Test5Provenance(unittest.TestCase):
         self.assertEqual(processor1, processor)
         self.assertEqual(processor.name, 'test.pos')
         self.assertEqual(processor.type, folia.ProcessorType.AUTO)
+        self.assertEqual(len(processor.parent), 1)
         self.assertTrue(processor.parent in doc.provenance)
 
     def test6_addprocessor_nested_no_id(self):
+        q = fql.Query(Qprovenance_nested_no_id)
+        results = q(self.doc)
+        doc = results[0].doc
+        processor = results[0].processor
+        self.assertEqual(results[0].cls, 'NOUN')
+        self.assertEqual(processor.name, 'test.pos')
+        self.assertEqual(processor.type, folia.ProcessorType.AUTO)
+
+        q = fql.Query(Qprovenance_nested_no_id3)
+        results = q(self.doc)
+        processor2 = results[0].processor
+
+        self.assertEqual(results[0].cls, 'NOUN2')
+        self.assertEqual(processor2.name, 'test2.pos')
+        self.assertEqual(processor2.type, folia.ProcessorType.AUTO)
+        self.assertEqual(len(processor.parent), 2)
+        self.assertTrue(processor.parent in doc.provenance)
+
+    def test7_addprocessor_nested_no_id(self):
         q = fql.Query(Qprovenance_nested_no_id)
         results = q(self.doc)
         doc = results[0].doc
