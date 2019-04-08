@@ -1643,6 +1643,8 @@ class Action(object): #Action expression
 
                             if action.action == "EDIT":
                                 if debug: print("[FQL EVALUATION DEBUG] Action - Applying EDIT to focus ", repr(focus),file=sys.stderr)
+                                if query.doc.processor:
+                                    focus.processor = query.doc.processor
                                 for attr, value in action.assignments.items():
                                     if attr in ("text","value","phon"):
                                         if isinstance(focus, (folia.Description, folia.Comment, folia.Content)):
