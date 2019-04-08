@@ -348,6 +348,15 @@ class Processor:
         else:
             raise ValueError("No processors")
 
+    def match(self, processor):
+        """Check if this processor matches against a dictionary of processor attributes (all supplied attributes must match and that suffices)"""
+        if isinstance(processor, Processor):
+            processor = processor.json() #we need a dict
+        assert isinstance(processor, dict)
+        for key, value in processor.items():
+            if getattr(self, key) != value:
+                return False
+        return True
 
 class Provenance:
     def __init__(self):

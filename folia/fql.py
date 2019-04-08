@@ -1389,14 +1389,13 @@ def getassignments(q, i, assignments,  focus=None):
 
 def getprocessor(q,i):
     if q.kw(i, 'PROCESSOR'):
-        assignments = {"id": "fql." + ("%08x" % random.getrandbits(16)), "type": "auto", "folia_version": FOLIAVERSION}
+        assignments = {"type": "auto", "folia_version": FOLIAVERSION} #assignments also act as attributes for query in case no ID is specified
         l = len(q)
         sub = False
         i += 1
         while i < l:
             if q.kw(i, "IN"):
-                assignments['parent'] = q[i+1]
-                i += 2
+                assignments['parent'], i = getprocessor(q,i+1)
             elif q.kw(i, "NONE"):
                 assignments['reset'] = True
                 i += 1
@@ -1413,6 +1412,8 @@ def getprocessor(q,i):
                     assignments[q[i]] = folia.ProcessorType.MANUAL
                 elif q[i+1] == "generator":
                     assignments[q[i]] = folia.ProcessorType.GENERATOR
+                elif q[i+1] == "datasource":
+                    assignments[q[i]] = folia.ProcessorType.DATASOURCE
                 elif q[i+1] == "NONE":
                     assignments[q[i]] = None
                 else:
@@ -1441,6 +1442,7 @@ def getprocessor(q,i):
         return assignments, i
     else:
         raise SyntaxError("Expected PROCESSOR, got " + str(q[i]) + " in: " + str(q))
+
 
 class Action(object): #Action expression
     def __init__(self, action, focus, assignments={}):
@@ -1899,7 +1901,7 @@ class Query(object):
         self.request = copy(context.request)
         self.defaults = copy(context.defaults)
         self.defaultsets = copy(context.defaultsets)
-        self.processors = []
+        self.processor = None
         self.parse(q)
 
     def parse(self, q, i=0):
@@ -1934,7 +1936,7 @@ class Query(object):
                 self.declarations.append( (Class, decset, defaults)  )
             elif q.kw(i,"PROCESSOR"):
                 processor, i = getprocessor(q,i)
-                self.processors.append(processor)
+                self.processor = processor
             else:
                 break
 
@@ -1962,6 +1964,69 @@ class Query(object):
         if i != l:
             raise SyntaxError("Expected end of query, got " + str(q[i]) + " in: " + str(q))
 
+
+    def setprocessor(self, doc, processor, debug=False):
+        """Selects and if necessary adds the necessary processor or (nested) processors"""
+        if isinstance(processor, folia.Processor):
+            processor = processor.json()
+
+        if processor.get('reset'):
+            return None
+
+        if 'parent' in processor and processor['parent']:
+            parent_processor = self.setprocessor(doc, processor['parent'], debug)
+        else:
+            parent_processor = None
+
+
+        matchingprocessor = None
+        if 'id' in processor:
+            try:
+                if debug: print("[FQL EVALUATION DEBUG] Selecting processor with ID ", processor['id'],file=sys.stderr)
+                existing_processor = doc.provenance[processor['id']] #processor already exists
+                existing_processor.update(**processor)
+                return existing_processor
+            except KeyError:
+                pass #no problem, we will add a new processor later
+        elif parent_processor:
+            for subprocessor in parent_processor:
+                if subprocessor.match(processor):
+                    return subprocessor
+        else:
+            if debug: print("[FQL EVALUATION DEBUG] Attempting to match processor without ID based on attributes",file=sys.stderr)
+            #we assume the last processor in the provenance chain matches and attempt to falsify this
+            try:
+                matchingprocessor = doc.provenance.last()
+            except ValueError: #no processors
+                matchingprocessor = None #no problem, this simply means we have no matching to do
+            if matchingprocessor is not None:
+                #check if the last processor is a good match
+                if matchingprocessor.match(processor):
+                    return matchingprocessor
+                matchingprocessor = None #no it wasn't
+        if matchingprocessor is None and 'name' in processor:
+            #we generate an ID
+            processor['id'] = "proc." + processor['name'].replace(":",".").replace(" ","_").lower() + "."  + ("%08x" % random.getrandbits(32)) #assign ID with random elements if none provided
+        if 'id' in processor:
+            #processor is new, instantiate and add to provenance chain
+            procname = processor['name']
+            del processor['name']
+            if parent_processor:
+                if debug: print("[FQL EVALUATION DEBUG] Adding processor ", procname, ", ID=", processor['id'],"as child of", parent_processor.id, file=sys.stderr)
+                new_processor = folia.Processor(procname, **processor)
+                parent_processor.append(new_processor)
+            else:
+                if debug: print("[FQL EVALUATION DEBUG] Adding processor ", procname, ", ID=", processor['id'],file=sys.stderr)
+                new_processor = folia.Processor(procname, **processor)
+                doc.provenance.append(new_processor)
+            return new_processor
+
+        raise ValueError("Processor not found " + repr(processor))
+
+
+
+
+
     def __call__(self, doc, wrap=True,debug=False):
         """Execute the query on the specified document"""
 
@@ -1969,31 +2034,8 @@ class Query(object):
 
         if debug: print("[FQL EVALUATION DEBUG] Query  - Starting on document ", doc.id,file=sys.stderr)
 
-        if self.processors:
-            for processor in self.processors:
-                if 'reset' in processor:
-                    doc.processor = None
-                else:
-                    try:
-                        if debug: print("[FQL EVALUATION DEBUG] Selecting processor with ID ", processor['id'],file=sys.stderr)
-                        existing_processor = doc.provenance[processor['id']] #processor already exists
-                        existing_processor.update(**processor)
-                        processor = existing_processor
-                    except KeyError:
-                        #processor is new, instantiate and add to provenance chain
-                        procname = processor['name']
-                        del processor['name']
-                        if 'parent' in processor:
-                            #processor is a subprocessor,
-                            if debug: print("[FQL EVALUATION DEBUG] Adding processor ", processor['name'], ", ID=", processor['id'],"as child of", processor['parent'], file=sys.stderr)
-                            parent_processor = doc.provenance[processor['parent']]
-                            processor = folia.Processor(procname, **processor)
-                            parent_processor.append(processor)
-                        else:
-                            if debug: print("[FQL EVALUATION DEBUG] Adding processor ", processor['name'], ", ID=", processor['id'],file=sys.stderr)
-                            processor = folia.Processor(procname, **processor)
-                            doc.provenance.append(processor)
-                    doc.processor = processor
+        if self.processor:
+            doc.processor = self.setprocessor(doc, self.processor, debug)
 
         if self.declarations:
             for Class, decset, defaults in self.declarations:
