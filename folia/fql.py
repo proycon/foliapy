@@ -1909,6 +1909,7 @@ class Query(object):
     def parse(self, q, i=0):
         if not isinstance(q,UnparsedQuery):
             q = UnparsedQuery(q)
+        self.unparsedquery = q
 
         l = len(q)
         while i < l:
@@ -1976,7 +1977,9 @@ class Query(object):
             return None
 
         if 'parent' in processor and processor['parent']:
+            if debug: print("[FQL EVALUATION DEBUG] Processor - Handling parent processor",file=sys.stderr)
             parent_processor = self.setprocessor(doc, processor['parent'], debug)
+            if debug: print("[FQL EVALUATION DEBUG] Processor - Done handling parent processor",file=sys.stderr)
         else:
             parent_processor = None
 
@@ -1984,18 +1987,21 @@ class Query(object):
         matchingprocessor = None
         if 'id' in processor:
             try:
-                if debug: print("[FQL EVALUATION DEBUG] Selecting processor with ID ", processor['id'],file=sys.stderr)
+                if debug: print("[FQL EVALUATION DEBUG] Processor - Selecting processor with ID ", processor['id'],file=sys.stderr)
                 existing_processor = doc.provenance[processor['id']] #processor already exists
                 existing_processor.update(**processor)
+                if debug: print("[FQL EVALUATION DEBUG] Processor - Selected",file=sys.stderr)
                 return existing_processor
             except KeyError:
+                if debug: print("[FQL EVALUATION DEBUG] Processor - ID not found",file=sys.stderr)
                 pass #no problem, we will add a new processor later
         elif parent_processor:
             for subprocessor in parent_processor:
                 if subprocessor.match(processor):
+                    if debug: print("[FQL EVALUATION DEBUG] Processor - Selected matching subprocessor: ",subprocessor['id'],file=sys.stderr)
                     return subprocessor
         else:
-            if debug: print("[FQL EVALUATION DEBUG] Attempting to match processor without ID based on attributes",file=sys.stderr)
+            if debug: print("[FQL EVALUATION DEBUG] Processor - Attempting to match processor",processor.get('name',"")," (without ID) based on attributes:", repr(processor),file=sys.stderr)
             #we assume the last processor in the provenance chain matches and attempt to falsify this
             try:
                 matchingprocessor = doc.provenance.last()
@@ -2004,6 +2010,7 @@ class Query(object):
             if matchingprocessor is not None:
                 #check if the last processor is a good match
                 if matchingprocessor.match(processor):
+                    if debug: print("[FQL EVALUATION DEBUG] Processor - Returning matching processor: ",matchingprocessor['id'],file=sys.stderr)
                     return matchingprocessor
                 matchingprocessor = None #no it wasn't
         if matchingprocessor is None and 'name' in processor:
@@ -2014,11 +2021,11 @@ class Query(object):
             procname = processor['name']
             del processor['name']
             if parent_processor:
-                if debug: print("[FQL EVALUATION DEBUG] Adding processor ", procname, ", ID=", processor['id'],"as child of", parent_processor.id, file=sys.stderr)
+                if debug: print("[FQL EVALUATION DEBUG] Processor - Adding new processor ", procname, ", ID=", processor['id'],"as child of", parent_processor.id, file=sys.stderr)
                 new_processor = folia.Processor(procname, **processor)
                 parent_processor.append(new_processor)
             else:
-                if debug: print("[FQL EVALUATION DEBUG] Adding processor ", procname, ", ID=", processor['id'],file=sys.stderr)
+                if debug: print("[FQL EVALUATION DEBUG] Processor - Adding new processor ", procname, ", ID=", processor['id'],file=sys.stderr)
                 new_processor = folia.Processor(procname, **processor)
                 doc.provenance.append(new_processor)
             return new_processor
@@ -2034,7 +2041,7 @@ class Query(object):
 
         self.doc = doc
 
-        if debug: print("[FQL EVALUATION DEBUG] Query  - Starting on document ", doc.id,file=sys.stderr)
+        if debug: print("[FQL EVALUATION DEBUG] Query  - Starting on document ", doc.id, ":", str(self.unparsedquery), file=sys.stderr)
 
         if self.processor:
             doc.processor = self.setprocessor(doc, self.processor, debug)

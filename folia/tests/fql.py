@@ -1087,8 +1087,8 @@ class Test5Provenance(unittest.TestCase):
         doc = results[0].doc
         processor1 = results[0].processor
 
-        q = fql.Query(Qprovenance_nested_no_id2)
-        results = q(self.doc)
+        q2 = fql.Query(Qprovenance_nested_no_id2)
+        results = q2(self.doc)
         processor = results[0].processor
 
         self.assertEqual(processor1, processor)
@@ -1107,7 +1107,7 @@ class Test5Provenance(unittest.TestCase):
         self.assertEqual(processor.type, folia.ProcessorType.AUTO)
 
         q = fql.Query(Qprovenance_nested_no_id3)
-        results = q(self.doc)
+        results = q(self.doc,debug=True)
         processor2 = results[0].processor
 
         self.assertEqual(results[0].cls, 'NOUN2')
