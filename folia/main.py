@@ -6789,6 +6789,7 @@ class Document(object):
         self.annotations = [] #Ordered list of (AnnotationType, set (str))
         self.annotators = {} #AnnotationType => set => Annotator    (leaf value resolves to Processor when called)
         self.groupannotations = {} #AnnotationType -> set -> bool  (used to store whether inline annotations are allowed in certain span annotations)
+        self.setdefinitionformat = {} #AnnotationType -> set -> str (mime type)  (used to store the format of the set definitions)
 
 
         self.index = {} #all IDs go here
@@ -7137,6 +7138,9 @@ class Document(object):
             if set and (set != 'undefined' or self.FOLIA2): #'undefined' sets for FoLiA v1 can be left out and are implicit, but not so for FoLiA v2
                 attribs['set'] = set
 
+            if annotationtype in self.setdefinitionformat and set in self.setdefinitionformat[annotationtype]:
+                attribs['format'] = self.setdefinitionformat[annotationtype][set]
+
             if not self.hasprocessors(annotationtype, set) and self.hasdefaults(annotationtype, set):
                 #there are no new-style processors associated with this declaration, but there are old-style defaults, fall back to those:
                 for key, value in self.annotationdefaults[annotationtype][set].items():
@@ -7372,7 +7376,6 @@ class Document(object):
                 if set not in self.annotators[type]:
                     self.annotators[type][set] = []
 
-                #parse subnodes
                 for annotatornode in subnode:
                     if not isinstance(annotatornode, ElementTree._Comment): #don't trip over comments #pylint: disable=protected-access
                         if annotatornode.tag == '{' + NSFOLIA + '}annotator':
@@ -7492,6 +7495,10 @@ class Document(object):
             self.set_alias[annotationtype][set] = kwargs['alias']
 
 
+        if 'format' in kwargs and set:
+            if annotationtype not in self.setdefinitionformat:
+                self.setdefinitionformat[annotationtype] = {}
+            self.setdefinitionformat[annotationtype][set] = kwargs['format']
 
 
         if self.debug >= 1:
@@ -8318,6 +8325,7 @@ def relaxng_declarations():
                 RXE.optional( RXE.attribute(RXE.data(type='string',datatypeLibrary='http://www.w3.org/2001/XMLSchema-datatypes'), name='annotatortype') ), #pre-provenance, FoLiA <2.0
                 RXE.optional( RXE.attribute(RXE.data(type='dateTime',datatypeLibrary='http://www.w3.org/2001/XMLSchema-datatypes'), name='datetime') ), #pre-provenance, FoLiA <2.0
                 RXE.optional( RXE.attribute(RXE.data(type='string',datatypeLibrary='http://www.w3.org/2001/XMLSchema-datatypes'), name='groupannotations') ), #(this overstretches, only valid on span elements),
+                RXE.optional( RXE.attribute(RXE.data(type='string',datatypeLibrary='http://www.w3.org/2001/XMLSchema-datatypes'), name='format') ),
                 RXE.zeroOrMore(
                     RXE.element(RXE.attribute(RXE.data(type='IDREF',datatypeLibrary='http://www.w3.org/2001/XMLSchema-datatypes'), name="processor"), name="annotator")
                 )
@@ -8330,6 +8338,7 @@ def relaxng_declarations():
                     RXE.optional( RXE.attribute(RXE.data(type='string',datatypeLibrary='http://www.w3.org/2001/XMLSchema-datatypes'), name='annotator') ), #pre-provenance, FoLiA <2.0
                     RXE.optional( RXE.attribute(RXE.data(type='string',datatypeLibrary='http://www.w3.org/2001/XMLSchema-datatypes'), name='annotatortype') ), #pre-provenance, FoLiA <2.0
                     RXE.optional( RXE.attribute(RXE.data(type='dateTime',datatypeLibrary='http://www.w3.org/2001/XMLSchema-datatypes'), name='datetime') ), #pre-provenance, FoLiA <2.0
+                    RXE.optional( RXE.attribute(RXE.data(type='string',datatypeLibrary='http://www.w3.org/2001/XMLSchema-datatypes'), name='format') ),
                     RXE.zeroOrMore(
                         RXE.element(RXE.attribute(RXE.data(type='IDREF',datatypeLibrary='http://www.w3.org/2001/XMLSchema-datatypes'), name="processor"), name="annotator")
                     )
