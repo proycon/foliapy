@@ -418,6 +418,10 @@ class Provenance:
         processors = [ processor.xml() for processor in self ]
         return E.provenance(*processors)
 
+    def xmlstring(self, pretty_print=False):
+        """Serialises this FoLiA element and all its contents to XML."""
+        return str(ElementTree.tostring(self.xml(), xml_declaration=False, pretty_print=pretty_print, encoding='utf-8'),'utf-8')
+
     def json(self):
         return { "processors": [ processor.json() for processor in self ] }
 

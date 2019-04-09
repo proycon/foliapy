@@ -1725,6 +1725,9 @@ class Action(object): #Action expression
                         else:
                             action.assignments['set'] = action.focus.set = query.doc.defaultset(action.focus.Class)
 
+                    if query.doc.processor and 'processor' not in action.assignments:
+                        action.assignments['processor'] = query.doc.processor
+
 
                     if isinstance(contextselector, tuple) and len(contextselector) == 2:
                         targetselection = contextselector[0](*contextselector[1])

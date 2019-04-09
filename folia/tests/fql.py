@@ -1090,6 +1090,7 @@ class Test5Provenance(unittest.TestCase):
         q = fql.Query(Qprovenance_nested_no_id2)
         results = q(self.doc)
         processor = results[0].processor
+        print(self.doc.provenance.xmlstring(pretty_print=True), file=sys.stderr)
 
         self.assertEqual(processor1, processor)
         self.assertEqual(processor.name, 'test.pos')
