@@ -6785,7 +6785,7 @@ class Document(object):
         self.annotations = [] #Ordered list of (AnnotationType, set (str))
         self.annotators = {} #AnnotationType => set => Annotator    (leaf value resolves to Processor when called)
         self.groupannotations = {} #AnnotationType -> set -> bool  (used to store whether inline annotations are allowed in certain span annotations)
-        selt.setdefinitionformat = {} #AnnotationType -> set -> str (mime type)  (used to store the format of the set definitions)
+        self.setdefinitionformat = {} #AnnotationType -> set -> str (mime type)  (used to store the format of the set definitions)
 
 
         self.index = {} #all IDs go here
