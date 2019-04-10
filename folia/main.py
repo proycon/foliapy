@@ -7523,7 +7523,7 @@ class Document(object):
                 processor_new = processor not in self.provenance
                 if not processor_new:
                     processor = self.provenance[processor]
-                elif debug:
+                elif self.debug >= 1:
                     print("[FoLiA DEBUG] Processor",processor.id,"is new",file=sys.stderr)
             else:
                 #assume we got passed a processor ID of an already existing processor, resolve it
