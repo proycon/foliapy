@@ -1999,9 +1999,10 @@ class Query(object):
                 if debug: print("[FQL EVALUATION DEBUG] Processor - ID not found",file=sys.stderr)
                 pass #no problem, we will add a new processor later
         elif parent_processor:
+            if debug: print("[FQL EVALUATION DEBUG] Processor - Looking for matching subprocessor in ", parent_processor.id,":",repr(processor),file=sys.stderr)
             for subprocessor in parent_processor:
                 if subprocessor.match(processor):
-                    if debug: print("[FQL EVALUATION DEBUG] Processor - Selected matching subprocessor: ",subprocessor['id'],file=sys.stderr)
+                    if debug: print("[FQL EVALUATION DEBUG] Processor - Selected matching subprocessor: ",subprocessor.id,file=sys.stderr)
                     return subprocessor
         else:
             if debug: print("[FQL EVALUATION DEBUG] Processor - Attempting to match processor",processor.get('name',"")," (without ID) based on attributes:", repr(processor),file=sys.stderr)
@@ -2013,7 +2014,7 @@ class Query(object):
             if matchingprocessor is not None:
                 #check if the last processor is a good match
                 if matchingprocessor.match(processor):
-                    if debug: print("[FQL EVALUATION DEBUG] Processor - Returning matching processor: ",matchingprocessor['id'],file=sys.stderr)
+                    if debug: print("[FQL EVALUATION DEBUG] Processor - Returning matching processor: ",matchingprocessor.id,file=sys.stderr)
                     return matchingprocessor
                 matchingprocessor = None #no it wasn't
         if matchingprocessor is None and 'name' in processor:
@@ -2028,7 +2029,7 @@ class Query(object):
                 new_processor = folia.Processor(procname, **processor)
                 parent_processor.append(new_processor)
             else:
-                if debug: print("[FQL EVALUATION DEBUG] Processor - Adding new processor ", procname, ", ID=", processor['id'],file=sys.stderr)
+                if debug: print("[FQL EVALUATION DEBUG] Processor - Adding new processor ", procname, " to provenance chain, ID=", processor['id'],file=sys.stderr)
                 new_processor = folia.Processor(procname, **processor)
                 doc.provenance.append(new_processor)
             return new_processor

@@ -354,7 +354,7 @@ class Processor:
             processor = processor.json() #we need a dict
         assert isinstance(processor, dict)
         for key, value in processor.items():
-            if getattr(self, key) != value:
+            if key not in ('parent','processors') and getattr(self, key) != value:
                 return False
         return True
 
@@ -386,7 +386,7 @@ class Provenance:
         raise KeyError("No such processor: " + str(id))
 
 
-    def __exists__(self, id):
+    def __contains__(self, id):
         if isinstance(id, Processor): id = id.id
         for processor in self.processors:
             if processor.id == id:
@@ -7523,6 +7523,8 @@ class Document(object):
                 processor_new = processor not in self.provenance
                 if not processor_new:
                     processor = self.provenance[processor]
+                elif debug:
+                    print("[FoLiA DEBUG] Processor",processor.id,"is new",file=sys.stderr)
             else:
                 #assume we got passed a processor ID of an already existing processor, resolve it
                 processor = self.provenance[processor]
