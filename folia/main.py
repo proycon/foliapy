@@ -1006,6 +1006,8 @@ class AbstractElement(object):
         if isinstance(processor,str) and self.doc:
             processor = self.doc.provenance[processor]
         assert isinstance(processor, Processor)
+        if self.ANNOTATIONTYPE is None:
+            raise ValueError("Unable to set processor on " + self.__class__.__name__ + ". AnnotationType is None!")
         self.processor = processor
         if not any( annotator() == processor for annotator in self.doc.getannotators(self.ANNOTATIONTYPE, self.set)):
             if self.doc.autodeclare:
@@ -7686,6 +7688,8 @@ class Document(object):
     def getannotators(self, annotationtype, annotationset):
         """Get all annotators for the given annotationtype and set. This is a generator that yields Annotator instances, these resolve to a Processor when called. See also `:meth:AbstractElement.getprocessors` to obtain processors directly, which is most likely what you want."""
         if inspect.isclass(annotationtype) or isinstance(annotationtype,AbstractElement): annotationtype = annotationtype.ANNOTATIONTYPE
+        if annotationtype not in self.annotators: self.annotators[annotationtype] = {}
+        if annotationset not in self.annotators[annotationtype]: self.annotators[annotationtype][annotationset] = []
         for annotator in self.annotators[annotationtype][annotationset]:
             yield annotator
 
