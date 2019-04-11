@@ -8723,7 +8723,7 @@ def validate(filename,schema=None,deep=False):
 #================================= FOLIA SPECIFICATION ==========================================================
 
 #foliaspec:header
-#This file was last updated according to the FoLiA specification for version 2.0.2 on 2019-04-02 22:31:35, using foliaspec.py
+#This file was last updated according to the FoLiA specification for version 2.0.2 on 2019-04-12 00:07:37, using foliaspec.py
 #Code blocks after a foliaspec comment (until the next newline) are automatically generated. **DO NOT EDIT THOSE** and **DO NOT REMOVE ANY FOLIASPEC COMMENTS** !!!
 
 #foliaspec:structurescope:STRUCTURESCOPE
@@ -9106,8 +9106,10 @@ Correction.SPEAKABLE = True
 Correction.TEXTDELIMITER = None
 Correction.XMLTAG = "correction"
 #------ Current -------
+Current.ANNOTATIONTYPE = AnnotationType.CORRECTION
 Current.OCCURRENCES = 1
 Current.OPTIONAL_ATTRIBS = None
+Current.PRIMARYELEMENT = False
 Current.XMLTAG = "current"
 #------ Definition -------
 Definition.ACCEPTED_DATA = (AbstractAnnotationLayer, AbstractInlineAnnotation, Alternative, AlternativeLayers, Comment, Correction, Description, Feature, Figure, ForeignData, Hiddenword, Linebreak, List, Metric, Paragraph, Part, PhonContent, Reference, Relation, Sentence, String, Table, TextContent, Utterance, Whitespace, Word,)
@@ -9298,8 +9300,10 @@ MorphologyLayer.ANNOTATIONTYPE = AnnotationType.MORPHOLOGICAL
 MorphologyLayer.PRIMARYELEMENT = False
 MorphologyLayer.XMLTAG = "morphology"
 #------ New -------
+New.ANNOTATIONTYPE = AnnotationType.CORRECTION
 New.OCCURRENCES = 1
 New.OPTIONAL_ATTRIBS = None
+New.PRIMARYELEMENT = False
 New.XMLTAG = "new"
 #------ Note -------
 Note.ACCEPTED_DATA = (AbstractAnnotationLayer, AbstractInlineAnnotation, Alternative, AlternativeLayers, Comment, Correction, Description, Example, Feature, Figure, ForeignData, Head, Hiddenword, Linebreak, List, Metric, Paragraph, Part, PhonContent, Reference, Relation, Sentence, String, Table, TextContent, Utterance, Whitespace, Word,)
@@ -9317,9 +9321,11 @@ ObservationLayer.ANNOTATIONTYPE = AnnotationType.OBSERVATION
 ObservationLayer.PRIMARYELEMENT = False
 ObservationLayer.XMLTAG = "observations"
 #------ Original -------
+Original.ANNOTATIONTYPE = AnnotationType.CORRECTION
 Original.AUTH = False
 Original.OCCURRENCES = 1
 Original.OPTIONAL_ATTRIBS = None
+Original.PRIMARYELEMENT = False
 Original.XMLTAG = "original"
 #------ Paragraph -------
 Paragraph.ACCEPTED_DATA = (AbstractAnnotationLayer, AbstractInlineAnnotation, Alternative, AlternativeLayers, Comment, Correction, Description, Entry, Event, Example, Feature, Figure, ForeignData, Gap, Head, Hiddenword, Linebreak, List, Metric, Note, Part, PhonContent, Quote, Reference, Relation, Sentence, String, TextContent, Whitespace, Word,)
@@ -9485,8 +9491,10 @@ SubjectivityAnnotation.ANNOTATIONTYPE = AnnotationType.SUBJECTIVITY
 SubjectivityAnnotation.LABEL = "Subjectivity/Sentiment"
 SubjectivityAnnotation.XMLTAG = "subjectivity"
 #------ Suggestion -------
+Suggestion.ANNOTATIONTYPE = AnnotationType.CORRECTION
 Suggestion.AUTH = False
 Suggestion.OCCURRENCES = 0
+Suggestion.PRIMARYELEMENT = False
 Suggestion.XMLTAG = "suggestion"
 #------ SynsetFeature -------
 SynsetFeature.SUBSET = "synset"
