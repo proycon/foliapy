@@ -777,10 +777,7 @@ class AbstractElement(object):
         if 'processor' in kwargs:
             if Attrib.ANNOTATOR not in supported:   #(ANNOTATOR attribute also subsumes Processor)
                 raise ValueError("Processor is not supported for " + self.__class__.__name__)
-            if isinstance(kwargs['processor'], Processor):
-                self.processor = kwargs['processor']
-            else:
-                self.processor = doc.provenance[kwargs['processor']]
+            self.setprocessor(kwargs['processor']) #this also takes care of adding an annotator to the declarations
             #Both processor and annotator are specified! This is valid only if the annotator equals the processor name!
             if 'annotator' in kwargs and kwargs.annotator:
                 if kwargs['annotator'] != self.processor.name:
@@ -1011,7 +1008,10 @@ class AbstractElement(object):
         assert isinstance(processor, Processor)
         self.processor = processor
         if not any( annotator() == processor for annotator in self.doc.getannotators(self.ANNOTATIONTYPE, self.set)):
-            self.doc.annotators[self.ANNOTATIONTYPE][self.set].append(Annotator(processor, self.doc))
+            if self.doc.autodeclare:
+                self.doc.annotators[self.ANNOTATIONTYPE][self.set].append(Annotator(processor, self.doc))
+            else:
+                raise DeclarationError("Processor " + processor.id + " is used for annotationtype " + annotationtype2str(self.ANNOTATIONTYPE) + ", set " + str(self.set) + ", but has no corresponding <annotator> referring to it from the annotations declaration block!")
 
     def checkdeclaration(self):
         """Internal method (usually no need to call this) that checks whether the element's annotation type is properly declared, raises an exception if not so, or auto-declares the annotation type if need be."""
