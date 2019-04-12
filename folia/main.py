@@ -786,7 +786,7 @@ class AbstractElement(object):
                 if kwargs['annotatortype'] != self.processor.type:
                     raise ValueError("Annotatortype attribute " + kwargs['annotatortype'] + " does not equal processor type (" + self.processor.type + ")")
             del kwargs['processor']
-        elif doc and annotationtype in doc.annotators and self.set in doc.annotators[annotationtype] and doc.annotators[annotationtype][self.set]:
+        elif doc and annotationtype in doc.annotators and self.set in doc.annotators[annotationtype] and doc.annotators[annotationtype][self.set] and Attrib.ANNOTATOR in supported:
             try:
                 self.processor = doc.getdefaultprocessor(annotationtype,self.set)
             except NoDefaultError as e:
@@ -2278,7 +2278,7 @@ class AbstractElement(object):
                 try:
                     defaultprocessor = self.doc.getdefaultprocessor(self.ANNOTATIONTYPE, self.set)
                 except NoDefaultError:
-                    if not (FOLIA1 and self.doc.keepversion):
+                    if not (FOLIA1 and self.doc.keepversion) and self.processor:
                         attribs['processor'] = self.processor.id
 
 
@@ -7726,7 +7726,7 @@ class Document(object):
             for processor in self.getprocessors(annotationtype, annotationset): #should only iterate over one!
                 return processor
         elif l > 1:
-            raise NoDefaultError("No processor specified for <" + ANNOTATIONTYPE2XML[annotationtype] +  ">, but the presence of multiple declarations prevent assigning a default")
+            raise NoDefaultError("No processor specified for <" + ANNOTATIONTYPE2XML[annotationtype] +  ">, but the presence of multiple declarations prevents assigning a default")
 
     def defaultannotator(self, annotationtype, set=False):
         """Obtain the default annotator for the specified annotation type and set.
