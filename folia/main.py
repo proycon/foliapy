@@ -5306,6 +5306,12 @@ class Suggestion(AbstractCorrectionChild):
             kwargs['split'] = node.attrib['split']
         if 'merge' in node.attrib:
             kwargs['merge'] = node.attrib['merge']
+        if 'annotator' in node.attrib:
+            print("WARNING: Usage of annotator attribute on <suggestion> element is deprecated in FoLiA v2! Ignoring value '" + node.attrib['annotator'] + "'",file=sys.stderr)
+            del kwargs['annotator']
+        if 'annotatortype' in node.attrib:
+            print("WARNING: Usage of annotatortype attribute on <suggestion> element is deprecated in FoLiA v2! Ignoring value '" + node.attrib['annotatortype'] + "'",file=sys.stderr)
+            del kwargs['annotatortype']
         return super(Suggestion,Class).parsexml(node, doc, **kwargs)
 
     def xml(self, attribs = None,elements = None, skipchildren = False):
@@ -8723,7 +8729,7 @@ def validate(filename,schema=None,deep=False):
 #================================= FOLIA SPECIFICATION ==========================================================
 
 #foliaspec:header
-#This file was last updated according to the FoLiA specification for version 2.0.2 on 2019-04-12 00:07:37, using foliaspec.py
+#This file was last updated according to the FoLiA specification for version 2.0.2 on 2019-04-12 11:40:25, using foliaspec.py
 #Code blocks after a foliaspec comment (until the next newline) are automatically generated. **DO NOT EDIT THOSE** and **DO NOT REMOVE ANY FOLIASPEC COMMENTS** !!!
 
 #foliaspec:structurescope:STRUCTURESCOPE
@@ -9494,6 +9500,7 @@ SubjectivityAnnotation.XMLTAG = "subjectivity"
 Suggestion.ANNOTATIONTYPE = AnnotationType.CORRECTION
 Suggestion.AUTH = False
 Suggestion.OCCURRENCES = 0
+Suggestion.OPTIONAL_ATTRIBS = (Attrib.CONFIDENCE, Attrib.N,)
 Suggestion.PRIMARYELEMENT = False
 Suggestion.XMLTAG = "suggestion"
 #------ SynsetFeature -------

@@ -2700,13 +2700,11 @@ class Test05Correction(unittest.TestCase):
         self.assertEqual( w.text(), 'stippellijn')
         self.assertEqual( len(list(w.annotations(folia.Correction))), 1 )
         self.assertEqual( w.annotation(folia.Correction).suggestions(0).text() , 'stippellijn' )
-        self.assertEqual( w.annotation(folia.Correction).suggestions(0).annotator , 'testscript' )
-        self.assertEqual( w.annotation(folia.Correction).suggestions(0).annotatortype , folia.AnnotatorType.AUTO)
         self.assertEqual( w.annotation(folia.Correction).new(0).text() , 'stippellijn' )
         self.assertEqual( w.annotation(folia.Correction).annotator , 'John Doe' )
         self.assertEqual( w.annotation(folia.Correction).annotatortype , folia.AnnotatorType.MANUAL)
 
-        self.assertTrue( xmlcheck(w.xmlstring(), '<w xmlns="http://ilk.uvt.nl/folia" xml:id="WR-P-E-J-0000000001.p.1.s.8.w.11"><pos set="https://raw.githubusercontent.com/proycon/folia/master/setdefinitions/frog-mbpos-cgn" class="FOUTN(soort,ev,basis,zijd,stan)"/><lemma class="stippelijn"/><correction xml:id="WR-P-E-J-0000000001.p.1.s.8.w.11.correction.1" class="spelling" annotator="John Doe"><suggestion annotator="testscript" auth="no" annotatortype="auto"><t>stippellijn</t></suggestion><new><t>stippellijn</t></new><original auth="no"><t>stippelijn</t></original></correction></w>'))
+        self.assertTrue( xmlcheck(w.xmlstring(), '<w xmlns="http://ilk.uvt.nl/folia" xml:id="WR-P-E-J-0000000001.p.1.s.8.w.11"><pos set="https://raw.githubusercontent.com/proycon/folia/master/setdefinitions/frog-mbpos-cgn" class="FOUTN(soort,ev,basis,zijd,stan)"/><lemma class="stippelijn"/><correction xml:id="WR-P-E-J-0000000001.p.1.s.8.w.11.correction.1" class="spelling" annotator="John Doe"><suggestion auth="no"><t>stippellijn</t></suggestion><new><t>stippellijn</t></new><original auth="no"><t>stippelijn</t></original></correction></w>'))
 
     def test006_deletionsuggestion(self):
         """Correction - Suggestion for deletion with parent merge suggestion"""
