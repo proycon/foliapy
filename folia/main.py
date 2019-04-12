@@ -4542,9 +4542,28 @@ class Word(AbstractStructureElement, AbstractWord, AllowCorrections):
 
 class Hiddenword(AbstractStructureElement, AbstractWord, AllowCorrections):
     """Hidden word (aka token) element. Holds a word/token and all its related token annotations, but the word is ignored for most intents and purposes. It may act as a dummy for e.g. syntactic movement annotation."""
-    pass
 
+    def hiddentext(self, cls='current', retaintokenisation=False, previousdelimiter="",strict=False, correctionhandling=CorrectionHandling.CURRENT, normalize_spaces=False):
+        """Because hidden words are hidden and not PRINTABLE, the text() method won't work. This method provides a workaround that still allows you to access any text associated with the hidden word."""
+        self.PRINTABLE = True #we cheat by temporarily making the element printable like any other
+        try:
+            text = self.text(cls,retaintokenisation,previousdelimiter,strict,correctionhandling,normalize_spaces)
+        except NoSuchText:
+            self.PRINTABLE = False
+            raise
+        self.PRINTABLE = False
+        return text
 
+    def hiddentextcontent(self, cls='current', correctionhandling=CorrectionHandling.CURRENT):
+        """Because hidden words are hidden and not PRINTABLE, the text() method won't work. This method provides a workaround that still allows you to access any text associated with the hidden word. Return TextContent instance."""
+        self.PRINTABLE = True #we cheat by temporarily making the element printable like any other
+        try:
+            textcontent = self.textcontent(cls,correctionhandling)
+        except NoSuchText:
+            self.PRINTABLE = False
+            raise
+        self.PRINTABLE = False
+        return textcontent
 
 class Feature(AbstractElement):
     """Feature elements can be used to associate subsets and subclasses with almost any
