@@ -2692,7 +2692,10 @@ class AbstractElement(object):
         if Class is True: Class = self.__class__
         if scope is True: scope = STRUCTURESCOPE
 
-        structural = Class is not None and issubclass(Class,AbstractStructureElement)
+        if isinstance(Class, (tuple,list)):
+            structural = any(issubclass(C,AbstractStructureElement) for C in Class)
+        else:
+            structural = Class is not None and issubclass(Class,AbstractStructureElement)
 
         if reverse:
             order = reversed
