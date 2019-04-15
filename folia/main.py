@@ -1271,7 +1271,7 @@ class AbstractElement(object):
                 #was: e.PRINTABLE and not isinstance(e, TextContent) and not isinstance(e, String):
                 if isinstance(e, (AbstractStructureElement, Correction, AbstractSpanAnnotation)):   #AbstractSpanAnnotation is needed when requesting text() on nested span annotations
                     try:
-                        s += e.text(cls,retaintokenisation, delimiter,False,correctionhandling)
+                        s += e.text(cls,retaintokenisation, delimiter,False,correctionhandling=correctionhandling, hidden=hidden)
 
                         #delimiter will be buffered and only printed upon next iteration, this prevents the delimiter being outputted at the end of a sequence and to be compounded with other delimiters
                         delimiter = e.gettextdelimiter(retaintokenisation)
