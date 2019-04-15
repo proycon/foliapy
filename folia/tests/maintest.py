@@ -161,8 +161,23 @@ class Test_Exxx_Hidden_Tokens(unittest.TestCase): #xxx -> replace with a number 
 
     def test_text2(self):
         """Text serialisation on syntactic unit (no hidden words)"""
-        sentence = self.doc['example.s.1.su.1']
-        self.assertEqual( sentence.text() , "Isn't a whole lot left." )
+        su = self.doc['example.s.1.su.1']
+        self.assertEqual( su.text() , "Isn't a whole lot left." )
+
+    def test_text_hiddenword(self):
+        """Text serialisation on the hidden word itself"""
+        word = self.doc['example.s.1.w.0']
+        self.assertEqual( word.text(hidden=True) , "*exp*" )
+
+    def test_wrefs(self):
+        """Check whether hidden word is part of wrefs of syntactic unit"""
+        su = self.doc['example.s.1.su.1']
+        self.assertEqual([ w.id for w in su.wrefs() ], ["example.s.1.w.0","example.s.1.w.1","example.s.1.w.2","example.s.1.w.3","example.s.1.w.4","example.s.1.w.5","example.s.1.w.6","example.s.1.w.7"])
+
+    def test_text_hidden(self):
+        """Text serialisation on syntactic unit (with hidden words)"""
+        su = self.doc['example.s.1.su.1']
+        self.assertEqual( su.text(hidden=True) , "*exp* Isn't a whole lot left." )
 
 class Test_Exxx_Invalid_Wref(unittest.TestCase): #xxx -> replace with a number at some point when there are more new tests
     """Invalid Wref test"""
