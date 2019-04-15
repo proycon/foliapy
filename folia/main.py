@@ -8453,6 +8453,8 @@ def relaxng(filename=None):
                     RXE.optional(RXE.attribute(RXE.data(type='string',datatypeLibrary='http://www.w3.org/2001/XMLSchema-datatypes'), name='host')),
                     RXE.optional(RXE.attribute(RXE.data(type='string',datatypeLibrary='http://www.w3.org/2001/XMLSchema-datatypes'), name='user')),
                     RXE.optional(RXE.attribute(RXE.data(type='string',datatypeLibrary='http://www.w3.org/2001/XMLSchema-datatypes'), name='folia_version')),
+                    RXE.optional(RXE.attribute(RXE.data(type='string',datatypeLibrary='http://www.w3.org/2001/XMLSchema-datatypes'), name='src')),
+                    RXE.optional(RXE.attribute(RXE.data(type='string',datatypeLibrary='http://www.w3.org/2001/XMLSchema-datatypes'), name='format')),
                     RXE.optional(RXE.attribute(RXE.data(type='dateTime',datatypeLibrary='http://www.w3.org/2001/XMLSchema-datatypes'), name='begindatetime')),
                     RXE.optional(RXE.attribute(RXE.data(type='dateTime',datatypeLibrary='http://www.w3.org/2001/XMLSchema-datatypes'), name='enddatetime')),
                     RXE.interleave(
