@@ -2746,7 +2746,7 @@ class AbstractElement(object):
         """Returns the previous element, if it is of the specified type and if it does not cross the boundary of the defined scope. Returns None if no next element is found. Non-authoritative elements are never returned.
 
         Arguments:
-            * ``Class``: The class to select; any python class subclassed off `'AbstractElement``. Set to ``True`` to constrain to the same class as that of the current instance, set to ``None`` to not constrain at all
+            * ``Class``: The class to select; any python class subclassed off `'AbstractElement``, may also be a tuple of multiple classes. Set to ``True`` to constrain to the same class as that of the current instance, set to ``None`` to not constrain at all
             * ``scope``: A list of classes which are never crossed looking for a next element. Set to ``True`` to constrain to a default list of structure elements (Sentence,Paragraph,Division,Event, ListItem,Caption), set to ``None`` to not constrain at all.
 
         """
