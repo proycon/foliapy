@@ -265,7 +265,7 @@ class Processor:
 
         if 'generator' not in kwargs or not kwargs['generator']:
             #Add a subprocessor with generator information about this FoLiA library
-            processor.append(Processor(id=processor.id+'.generator', name="foliapy", type=ProcessorType.GENERATOR, version=LIBVERSION, folia_version=FOLIAVERSION))
+            processor.append(Processor(id=processor.id+'.generator', name="foliapy", type=ProcessorType.GENERATOR, version=LIBVERSION, folia_version=FOLIAVERSION, src="https://github.com/proycon/foliapy"))
         return processor
 
 
