@@ -199,7 +199,7 @@ class Annotator:
         return self().name
 
 class Processor:
-    def __init__(self, name, type=ProcessorType.AUTO, id=None, version=None, document_version=None, folia_version=None, command=None, host=None, user=None, begindatetime=None, enddatetime=None, src=None, format=None,resourcelink=None, parent=None):
+    def __init__(self, name, type=ProcessorType.AUTO, id=None, version=None, document_version=None, folia_version=None, command=None, host=None, user=None, begindatetime=None, enddatetime=None, src=None, format=None,resourcelink=None, parent=None, metadata=None):
         self.name = name
         if id is None:
             self.id = "proc." + self.name.replace(":",".").replace(" ","_").lower() + "."  + ("%08x" % random.getrandbits(32)) #assign ID with random elements if none provided
@@ -217,7 +217,10 @@ class Processor:
         self.begindatetime = begindatetime
         self.enddatetime = enddatetime
         self.processors = []
-        self.metadata = NativeMetaData()
+        if metadata:
+            self.metadata = NativeMetaData(**metadata)
+        else:
+            self.metadata = NativeMetaData()
         self.src = src
         self.format = format
         self.resourcelink = resourcelink
