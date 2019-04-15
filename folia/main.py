@@ -228,6 +228,11 @@ class Processor:
             elif key in ('version','folia_version','document_version') and value:
                 setattr(self, key, str(value))
 
+    def insert(self, index, processor):
+        assert isinstance(processor, Processor)
+        self.processors.insert(index, processor)
+        processor.parent = self
+
     def append(self, processor):
         assert isinstance(processor, Processor)
         self.processors.append(processor)
