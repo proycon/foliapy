@@ -4753,7 +4753,7 @@ class AbstractSpanAnnotation(AbstractElement, AllowGenerateID, AllowCorrections)
     def _helper_wrefs(self, targets, recurse=True):
         """Internal helper function"""
         for c in self:
-            if isinstance(c,Word) or isinstance(c,Morpheme) or isinstance(c, Phoneme):
+            if isinstance(c, wrefables):
                 targets.append(c)
             elif isinstance(c,WordReference):
                 try:
