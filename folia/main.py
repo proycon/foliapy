@@ -837,7 +837,11 @@ class AbstractElement(object):
                 self.annotatortype = doc.annotationdefaults[annotationtype][self.set]['annotatortype']
             elif Attrib.ANNOTATOR in required:
                 raise ValueError("Annotatortype is required for " + self.__class__.__name__)
-
+        else:
+            if 'annotator' in kwargs:
+                del kwargs['annotator']
+            if 'annotatortype' in kwargs:
+                del kwargs['annotatortype']
 
         if 'confidence' in kwargs:
             if not Attrib.CONFIDENCE in supported:
