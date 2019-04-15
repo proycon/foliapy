@@ -1069,7 +1069,7 @@ class AbstractElement(object):
                 return e.value
         raise NoSuchAnnotation
 
-    def textcontent(self, cls='current', correctionhandling=CorrectionHandling.CURRENT):
+    def textcontent(self, cls='current', correctionhandling=CorrectionHandling.CURRENT, hidden=False):
         """Get the text content explicitly associated with this element (of the specified class).
 
         Unlike :meth:`text`, this method does not recurse into child elements (with the sole exception of the Correction/New element), and it returns the :class:`TextContent` instance rather than the actual text!
@@ -1077,6 +1077,7 @@ class AbstractElement(object):
         Parameters:
             cls (str): The class of the text content to obtain, defaults to ``current``.
             correctionhandling: Specifies what content to retrieve when corrections are encountered. The default is ``CorrectionHandling.CURRENT``, which will retrieve the corrected/current content. You can set this to ``CorrectionHandling.ORIGINAL`` if you want the content prior to correction, and ``CorrectionHandling.EITHER`` if you don't care.
+            hidden (bool): Include hidden elements, defaults to ``False``.
 
         Returns:
             The phonetic content (:class:`TextContent`)
@@ -1089,7 +1090,7 @@ class AbstractElement(object):
             :meth:`phoncontent`
             :meth:`phon`
         """
-        if not self.PRINTABLE: #only printable elements can hold text
+        if not self.PRINTABLE or (self.HIDDEN and not hidden): #only printable elements can hold text and hidden elements don't have text unless explicitly asked for
             raise NoSuchText
 
 
@@ -1100,7 +1101,7 @@ class AbstractElement(object):
                     return e
             elif isinstance(e, Correction):
                 try:
-                    return e.textcontent(cls, correctionhandling)
+                    return e.textcontent(cls, correctionhandling, hidden)
                 except NoSuchText:
                     pass
         raise NoSuchText
@@ -1176,6 +1177,8 @@ class AbstractElement(object):
             bool
         """
 
+        #note: hidden text (i.e. in Hidden words) is never considered in text validation
+
         if warnonly is None and self.doc and self.doc.version:
             warnonly = (checkversion(self.doc.version, '1.5.0') < 0) #warn only for documents older than FoLiA v1.5
         valid = True
@@ -1188,8 +1191,8 @@ class AbstractElement(object):
                     if self.doc and self.doc.debug: print("[FoLiA DEBUG] SKIPPING Text validation on " + repr(self) + ", too complex to handle (nested corrections or inconsistent use)",file=stderr)
                     return True #just assume it's valid then
 
-                strictnormtext = self.text(cls,retaintokenisation=False,strict=True, normalize_spaces=True)
-                deepnormtext = self.text(cls,retaintokenisation=False,strict=False, normalize_spaces=True)
+                strictnormtext = self.text(cls,retaintokenisation=False,strict=True, normalize_spaces=True, hidden=False )
+                deepnormtext = self.text(cls,retaintokenisation=False,strict=False, normalize_spaces=True, hidden=False)
                 if strictnormtext != deepnormtext:
                     valid = False
                     deviation = 0
@@ -1216,7 +1219,7 @@ class AbstractElement(object):
         """Alias for :meth:`text` with ``retaintokenisation=True``"""
         return self.text(cls,retaintokenisation=True)
 
-    def text(self, cls='current', retaintokenisation=False, previousdelimiter="",strict=False, correctionhandling=CorrectionHandling.CURRENT, normalize_spaces=False):
+    def text(self, cls='current', retaintokenisation=False, previousdelimiter="",strict=False, correctionhandling=CorrectionHandling.CURRENT, normalize_spaces=False, hidden=False):
         """Get the text associated with this element (of the specified class)
 
         The text will be constructed from child-elements whereever possible, as they are more specific.
@@ -1230,6 +1233,7 @@ class AbstractElement(object):
             strict (bool):  Set this iif you are strictly interested in the text explicitly associated with the element, without recursing into children. Defaults to ``False``.
             correctionhandling: Specifies what text to retrieve when corrections are encountered. The default is ``CorrectionHandling.CURRENT``, which will retrieve the corrected/current text. You can set this to ``CorrectionHandling.ORIGINAL`` if you want the text prior to correction, and ``CorrectionHandling.EITHER`` if you don't care.
             normalize_spaces (bool): Return the text with multiple spaces, linebreaks, tabs normalized to single spaces
+            hidden (bool): Include hidden elements, defaults to ``False``.
 
         Example::
 
@@ -1243,7 +1247,7 @@ class AbstractElement(object):
         """
 
         if strict:
-            return self.textcontent(cls, correctionhandling).text(normalize_spaces=normalize_spaces)
+            return self.textcontent(cls, correctionhandling,hidden=hidden).text(normalize_spaces=normalize_spaces)
 
         if self.TEXTCONTAINER:
             s = ""
@@ -1257,7 +1261,7 @@ class AbstractElement(object):
                 return norm_spaces(s)
             else:
                 return s
-        elif not self.PRINTABLE: #only printable elements can hold text
+        elif not self.PRINTABLE or (self.HIDDEN and not hidden): #only printable elements can hold text and hidden elements don't contain text unless explicitly queried
             raise NoSuchText
         else:
             #Get text from children first
@@ -1275,8 +1279,8 @@ class AbstractElement(object):
                         #No text, that's okay, just continue
                         continue
 
-            if not s and self.hastext(cls, correctionhandling):
-                s = self.textcontent(cls, correctionhandling).text()
+            if not s and self.hastext(cls, correctionhandling, hidden=hidden):
+                s = self.textcontent(cls, correctionhandling, hidden=hidden).text()
 
             if s and previousdelimiter:
                 s = previousdelimiter + s
@@ -1289,7 +1293,7 @@ class AbstractElement(object):
                 #No text found at all :`(
                 raise NoSuchText
 
-    def phoncontent(self, cls='current', correctionhandling=CorrectionHandling.CURRENT):
+    def phoncontent(self, cls='current', correctionhandling=CorrectionHandling.CURRENT, hidden=False):
         """Get the phonetic content explicitly associated with this element (of the specified class).
 
         Unlike :meth:`phon`, this method does not recurse into child elements (with the sole exception of the Correction/New element), and it returns the PhonContent instance rather than the actual text!
@@ -1309,7 +1313,7 @@ class AbstractElement(object):
             :meth:`textcontent`
             :meth:`text`
         """
-        if not self.SPEAKABLE: #only printable elements can hold text
+        if not self.SPEAKABLE or (self.HIDDEN and not hidden): #only printable elements can hold text
             raise NoSuchPhon
 
 
@@ -1320,7 +1324,7 @@ class AbstractElement(object):
                     return e
             elif isinstance(e, Correction):
                 try:
-                    return e.phoncontent(cls, correctionhandling)
+                    return e.phoncontent(cls, correctionhandling=correctionhandling, hidden=hidden)
                 except NoSuchPhon:
                     pass
         raise NoSuchPhon
@@ -1358,7 +1362,7 @@ class AbstractElement(object):
 
 
 
-    def phon(self, cls='current', previousdelimiter="", strict=False,correctionhandling=CorrectionHandling.CURRENT):
+    def phon(self, cls='current', previousdelimiter="", strict=False,correctionhandling=CorrectionHandling.CURRENT, hidden=False):
         """Get the phonetic representation associated with this element (of the specified class)
 
         The phonetic content will be constructed from child-elements whereever possible, as they are more specific.
@@ -1371,6 +1375,7 @@ class AbstractElement(object):
             previousdelimiter (str): Can be set to a delimiter that was last outputed, useful when chaining calls to :meth:`phon`. Defaults to an empty string.
             strict (bool):  Set this if you are strictly interested in the phonetic content explicitly associated with the element, without recursing into children. Defaults to ``False``.
             correctionhandling: Specifies what phonetic content to retrieve when corrections are encountered. The default is ``CorrectionHandling.CURRENT``, which will retrieve the corrected/current phonetic content. You can set this to ``CorrectionHandling.ORIGINAL`` if you want the phonetic content prior to correction, and ``CorrectionHandling.EITHER`` if you don't care.
+            hidden (bool): Include hidden elements, defaults to ``False``.
 
         Example::
 
@@ -1389,7 +1394,7 @@ class AbstractElement(object):
         """
 
         if strict:
-            return self.phoncontent(cls,correctionhandling).phon()
+            return self.phoncontent(cls,correctionhandling,hidden=hidden).phon()
 
         if self.PHONCONTAINER:
             s = ""
@@ -1412,7 +1417,7 @@ class AbstractElement(object):
             for e in self:
                 if e.SPEAKABLE and not isinstance(e, PhonContent) and not isinstance(e,String):
                     try:
-                        s += e.phon(cls, delimiter,False,correctionhandling)
+                        s += e.phon(cls, delimiter,False,correctionhandling,hidden=hidden)
 
                         #delimiter will be buffered and only printed upon next iteration, this prevents the delimiter being outputted at the end of a sequence and to be compounded with other delimiters
                         delimiter = e.gettextdelimiter() #We use TEXTDELIMITER for phon too
@@ -1420,8 +1425,8 @@ class AbstractElement(object):
                         #No text, that's okay, just continue
                         continue
 
-            if not s and self.hasphon(cls):
-                s = self.phoncontent(cls,correctionhandling).phon()
+            if not s and self.hasphon(cls,correctionhandling, hidden=hidden):
+                s = self.phoncontent(cls,correctionhandling,hidden=hidden).phon()
 
             if s and previousdelimiter:
                 return previousdelimiter + s
@@ -1635,7 +1640,7 @@ class AbstractElement(object):
             if isinstance(c, AbstractElement):
                 c.setdoc(newdoc)
 
-    def hastext(self,cls='current',strict=True, correctionhandling=CorrectionHandling.CURRENT): #pylint: disable=too-many-return-statements
+    def hastext(self,cls='current',strict=True, correctionhandling=CorrectionHandling.CURRENT, hidden=False): #pylint: disable=too-many-return-statements
         """Does this element have text (of the specified class)
 
         By default, and unlike :meth:`text`, this checks strictly, i.e. the element itself must have the text and it is not inherited from its children.
@@ -1648,28 +1653,28 @@ class AbstractElement(object):
         Returns:
             bool
         """
-        if not self.PRINTABLE: #only printable elements can hold text
+        if not self.PRINTABLE or (self.HIDDEN and not hidden): #only printable elements can hold text and hidden elements only have text if explicitly asked for
             return False
         elif self.TEXTCONTAINER:
             return True
         else:
             try:
                 if strict:
-                    self.textcontent(cls, correctionhandling) #will raise NoSuchTextException when not found
+                    self.textcontent(cls, correctionhandling, hidden) #will raise NoSuchTextException when not found
                     return True
                 else:
                     #Check children
                     for e in self:
                         if e.PRINTABLE and not isinstance(e, TextContent):
-                            if e.hastext(cls, strict, correctionhandling):
+                            if e.hastext(cls, strict, correctionhandling, hidden):
                                 return True
 
-                    self.textcontent(cls, correctionhandling)  #will raise NoSuchTextException when not found
+                    self.textcontent(cls, correctionhandling, hidden)  #will raise NoSuchTextException when not found
                     return True
             except NoSuchText:
                 return False
 
-    def hasphon(self,cls='current',strict=True,correctionhandling=CorrectionHandling.CURRENT): #pylint: disable=too-many-return-statements
+    def hasphon(self,cls='current',strict=True,correctionhandling=CorrectionHandling.CURRENT, hidden=False): #pylint: disable=too-many-return-statements
         """Does this element have phonetic content (of the specified class)
 
         By default, and unlike :meth:`phon`, this checks strictly, i.e. the element itself must have the phonetic content and it is not inherited from its children.
@@ -1682,23 +1687,23 @@ class AbstractElement(object):
         Returns:
             bool
         """
-        if not self.SPEAKABLE: #only printable elements can hold text
+        if not self.SPEAKABLE or (self.HIDDEN and not hidden): #only speakable elements can hold phoentics and hidden elements only have phonetics if explicitly asked for
             return False
         elif self.PHONCONTAINER:
             return True
         else:
             try:
                 if strict:
-                    self.phoncontent(cls, correctionhandling)
+                    self.phoncontent(cls, correctionhandling, hidden)
                     return True
                 else:
                     #Check children
                     for e in self:
                         if e.SPEAKABLE and not isinstance(e, PhonContent):
-                            if e.hasphon(cls, strict, correctionhandling):
+                            if e.hasphon(cls, strict, correctionhandling,hidden):
                                 return True
 
-                    self.phoncontent(cls)  #will raise NoSuchTextException when not found
+                    self.phoncontent(cls, hidden=hidden)  #will raise NoSuchTextException when not found
                     return True
             except NoSuchPhon:
                 return False
@@ -4398,7 +4403,7 @@ class Linebreak(AbstractStructureElement, AbstractTextMarkup): #this element has
         super(Linebreak, self).__init__(doc, *args, **kwargs)
 
 
-    def text(self, cls='current', retaintokenisation=False, previousdelimiter="", strict=False, correctionhandling=None, normalize_spaces=False):
+    def text(self, cls='current', retaintokenisation=False, previousdelimiter="", strict=False, correctionhandling=None, normalize_spaces=False, hidden=False):
         if normalize_spaces:
             return " "
         else:
@@ -4459,7 +4464,7 @@ class Hyphbreak(AbstractTextMarkup):
             self.newpage = False
         super(Hyphbreak, self).__init__(doc, *args, **kwargs)
 
-    def text(self, cls='current', retaintokenisation=False, previousdelimiter="", strict=False, correctionhandling=None, normalize_spaces=False):
+    def text(self, cls='current', retaintokenisation=False, previousdelimiter="", strict=False, correctionhandling=None, normalize_spaces=False, hidden=False):
         return ""
 
     @classmethod
@@ -4499,7 +4504,7 @@ class Hyphbreak(AbstractTextMarkup):
 class Whitespace(AbstractStructureElement):
     """Whitespace element, signals a vertical whitespace"""
 
-    def text(self, cls='current', retaintokenisation=False, previousdelimiter="", strict=False,correctionhandling=None, normalize_spaces=False):
+    def text(self, cls='current', retaintokenisation=False, previousdelimiter="", strict=False, correctionhandling=None, normalize_spaces=False, hidden=False):
         if normalize_spaces:
             return " "
         else:
@@ -4542,28 +4547,8 @@ class Word(AbstractStructureElement, AbstractWord, AllowCorrections):
 
 class Hiddenword(AbstractStructureElement, AbstractWord, AllowCorrections):
     """Hidden word (aka token) element. Holds a word/token and all its related token annotations, but the word is ignored for most intents and purposes. It may act as a dummy for e.g. syntactic movement annotation."""
+    pass
 
-    def hiddentext(self, cls='current', retaintokenisation=False, previousdelimiter="",strict=False, correctionhandling=CorrectionHandling.CURRENT, normalize_spaces=False):
-        """Because hidden words are hidden and not PRINTABLE, the text() method won't work. This method provides a workaround that still allows you to access any text associated with the hidden word."""
-        self.PRINTABLE = True #we cheat by temporarily making the element printable like any other
-        try:
-            text = self.text(cls,retaintokenisation,previousdelimiter,strict,correctionhandling,normalize_spaces)
-        except NoSuchText:
-            self.PRINTABLE = False
-            raise
-        self.PRINTABLE = False
-        return text
-
-    def hiddentextcontent(self, cls='current', correctionhandling=CorrectionHandling.CURRENT):
-        """Because hidden words are hidden and not PRINTABLE, the text() method won't work. This method provides a workaround that still allows you to access any text associated with the hidden word. Return TextContent instance."""
-        self.PRINTABLE = True #we cheat by temporarily making the element printable like any other
-        try:
-            textcontent = self.textcontent(cls,correctionhandling)
-        except NoSuchText:
-            self.PRINTABLE = False
-            raise
-        self.PRINTABLE = False
-        return textcontent
 
 class Feature(AbstractElement):
     """Feature elements can be used to associate subsets and subclasses with almost any
@@ -5461,17 +5446,17 @@ class Correction(AbstractHigherOrderAnnotation, AllowGenerateID):
             return True
         return False
 
-    def textcontent(self, cls='current', correctionhandling=CorrectionHandling.CURRENT):
+    def textcontent(self, cls='current', correctionhandling=CorrectionHandling.CURRENT, hidden=False):
         """See :meth:`AbstractElement.textcontent`"""
         if cls == 'original': correctionhandling = CorrectionHandling.ORIGINAL #backward compatibility
         if correctionhandling in (CorrectionHandling.CURRENT, CorrectionHandling.EITHER):
             for e in self:
                 if isinstance(e, New) or isinstance(e, Current):
-                    return e.textcontent(cls,correctionhandling)
+                    return e.textcontent(cls,correctionhandling, hidden)
         if correctionhandling in (CorrectionHandling.ORIGINAL, CorrectionHandling.EITHER):
             for e in self:
                 if isinstance(e, Original):
-                    return e.textcontent(cls,correctionhandling)
+                    return e.textcontent(cls,correctionhandling, hidden)
         raise NoSuchText
 
 
@@ -5502,7 +5487,7 @@ class Correction(AbstractHigherOrderAnnotation, AllowGenerateID):
                     return e.hastext(cls,strict, correctionhandling)
         return False
 
-    def text(self, cls = 'current', retaintokenisation=False, previousdelimiter="",strict=False, correctionhandling=CorrectionHandling.CURRENT, normalize_spaces=False):
+    def text(self, cls = 'current', retaintokenisation=False, previousdelimiter="",strict=False, correctionhandling=CorrectionHandling.CURRENT, normalize_spaces=False, hidden=False):
         """See :meth:`AbstractElement.text`"""
         if cls == 'original': correctionhandling = CorrectionHandling.ORIGINAL #backward compatibility
         if correctionhandling in (CorrectionHandling.CURRENT, CorrectionHandling.EITHER):
@@ -8179,7 +8164,7 @@ class Document(object):
 
 
 
-    def text(self, cls='current', retaintokenisation=False):
+    def text(self, cls='current', retaintokenisation=False, hidden=False):
         """Returns the text of the entire document (returns a unicode instance)
 
         See also:
@@ -8195,7 +8180,7 @@ class Document(object):
         for c in self.data:
             if s: s += "\n\n\n"
             try:
-                s += c.text(cls, retaintokenisation)
+                s += c.text(cls, retaintokenisation=retaintokenisation, hidden=hidden)
             except NoSuchText:
                 continue
         return s
@@ -8751,7 +8736,7 @@ def validate(filename,schema=None,deep=False):
 #================================= FOLIA SPECIFICATION ==========================================================
 
 #foliaspec:header
-#This file was last updated according to the FoLiA specification for version 2.0.2 on 2019-04-12 11:40:25, using foliaspec.py
+#This file was last updated according to the FoLiA specification for version 2.0.2 on 2019-04-15 13:14:30, using foliaspec.py
 #Code blocks after a foliaspec comment (until the next newline) are automatically generated. **DO NOT EDIT THOSE** and **DO NOT REMOVE ANY FOLIASPEC COMMENTS** !!!
 
 #foliaspec:structurescope:STRUCTURESCOPE
@@ -8970,6 +8955,7 @@ AbstractElement.ACCEPTED_DATA = (Description, Comment,)
 AbstractElement.ANNOTATIONTYPE = None
 AbstractElement.AUTH = True
 AbstractElement.AUTO_GENERATE_ID = False
+AbstractElement.HIDDEN = False
 AbstractElement.OCCURRENCES = 0
 AbstractElement.OCCURRENCES_PER_SET = 0
 AbstractElement.OPTIONAL_ATTRIBS = None
@@ -9258,10 +9244,9 @@ Headspan.XMLTAG = "hd"
 #------ Hiddenword -------
 Hiddenword.ACCEPTED_DATA = (AbstractAnnotationLayer, AbstractInlineAnnotation, Alternative, AlternativeLayers, Comment, Correction, Description, Feature, ForeignData, Metric, Part, PhonContent, Reference, Relation, String, TextContent,)
 Hiddenword.ANNOTATIONTYPE = AnnotationType.HIDDENTOKEN
+Hiddenword.HIDDEN = True
 Hiddenword.LABEL = "Hidden Word/Token"
 Hiddenword.OPTIONAL_ATTRIBS = (Attrib.ID, Attrib.CLASS, Attrib.ANNOTATOR, Attrib.N, Attrib.CONFIDENCE, Attrib.DATETIME, Attrib.SRC, Attrib.BEGINTIME, Attrib.ENDTIME, Attrib.SPEAKER, Attrib.TEXTCLASS, Attrib.METADATA, Attrib.SPACE,)
-Hiddenword.PRINTABLE = False
-Hiddenword.SPEAKABLE = False
 Hiddenword.TEXTDELIMITER = " "
 Hiddenword.WREFABLE = True
 Hiddenword.XMLTAG = "hiddenw"
