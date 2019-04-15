@@ -199,7 +199,7 @@ class Annotator:
         return self().name
 
 class Processor:
-    def __init__(self, name, type=ProcessorType.AUTO, id=None, version=None, document_version=None, folia_version=None, command=None, host=None, user=None, begindatetime=None, enddatetime=None, resourcelink=None, parent=None):
+    def __init__(self, name, type=ProcessorType.AUTO, id=None, version=None, document_version=None, folia_version=None, command=None, host=None, user=None, begindatetime=None, enddatetime=None, src=None, format=None,resourcelink=None, parent=None):
         self.name = name
         if id is None:
             self.id = "proc." + self.name.replace(":",".").replace(" ","_").lower() + "."  + ("%08x" % random.getrandbits(32)) #assign ID with random elements if none provided
@@ -218,12 +218,14 @@ class Processor:
         self.enddatetime = enddatetime
         self.processors = []
         self.metadata = NativeMetaData()
+        self.src = src
+        self.format = format
         self.resourcelink = resourcelink
         self.parent = parent
 
     def update(self, **kwargs):
         for key, value in kwargs:
-            if key in ('type','command','host','user','begindatetime','enddatetime','resourcelink') and value:
+            if key in ('type','command','host','user','begindatetime','enddatetime','src','format','resourcelink') and value:
                 setattr(self, key, value)
             elif key in ('version','folia_version','document_version') and value:
                 setattr(self, key, str(value))
@@ -277,7 +279,7 @@ class Processor:
             if begindatetime: begindatetime = parse_datetime(begindatetime)
             enddatetime = node.attrib.get('enddatetime', None)
             if enddatetime: enddatetime = parse_datetime(enddatetime)
-            processor = Processor(node.attrib['name'],id=node.attrib['{http://www.w3.org/XML/1998/namespace}id'],  type=node.attrib.get('type', ProcessorType.AUTO), version=node.attrib.get('version',None), document_version=node.attrib.get('document_version', None), folia_version=node.attrib.get('folia_version', None), command=node.attrib.get('command', None),host=node.attrib.get('host', None),user=node.attrib.get('user', None),begindatetime=begindatetime,enddatetime=enddatetime, resourcelink=node.attrib.get('resourcelink', None))
+            processor = Processor(node.attrib['name'],id=node.attrib['{http://www.w3.org/XML/1998/namespace}id'],  type=node.attrib.get('type', ProcessorType.AUTO), version=node.attrib.get('version',None), document_version=node.attrib.get('document_version', None), folia_version=node.attrib.get('folia_version', None), command=node.attrib.get('command', None),host=node.attrib.get('host', None),user=node.attrib.get('user', None),begindatetime=begindatetime,enddatetime=enddatetime, resourcelink=node.attrib.get('resourcelink', None), src=node.attrib.get('src',None), format=node.attrib.get('format',None))
             for subnode in node:
                 if not isinstance(subnode, ElementTree._Comment): #pylint: disable=protected-access
                     if subnode.tag == '{' + NSFOLIA + '}processor':
@@ -293,7 +295,7 @@ class Processor:
     def xml(self):
         attribs = {}
         attribs['{http://www.w3.org/XML/1998/namespace}id'] = self.id
-        for key in ('name','type', 'version','document_version', 'folia_version','command','host','user','begindatetime','enddatetime', 'resourcelink'):
+        for key in ('name','type', 'version','document_version', 'folia_version','command','host','user','begindatetime','enddatetime', 'src', 'format', 'resourcelink'):
             if hasattr(self,key) and getattr(self,key) is not None:
                 attribs[key] = getattr(self, key)
                 if isinstance(attribs[key], datetime):
@@ -310,7 +312,7 @@ class Processor:
     def json(self):
         jsonnode = {}
         jsonnode['id'] = self.id
-        for key in ('name','type', 'version','document_version', 'folia_version','command','host','user','begindatetime','enddatetime', 'resourcelink'):
+        for key in ('name','type', 'version','document_version', 'folia_version','command','host','user','begindatetime','enddatetime', 'src','format','resourcelink'):
             if hasattr(self,key) and getattr(self,key) is not None:
                 jsonnode[key] = getattr(self, key)
                 if isinstance(jsonnode[key], datetime):
@@ -371,6 +373,11 @@ class Provenance:
         assert isinstance(processor, Processor)
         self.processors.append(processor)
         return processor
+
+    def insert(self, index, processor):
+        assert isinstance(processor, Processor)
+        self.processors.insert(index, processor)
+        processor.parent = self
 
     def __getitem__(self, id):
         if isinstance(id, Processor):

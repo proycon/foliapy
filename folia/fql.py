@@ -1399,7 +1399,7 @@ def getprocessor(q,i):
             elif q.kw(i, "NONE"):
                 assignments['reset'] = True
                 i += 1
-            elif q.kw(i, ('id','name','version', 'document_version', 'command', 'host', 'user', 'folia_version', 'resourcelink')):
+            elif q.kw(i, ('id','name','version', 'document_version', 'command', 'host', 'user', 'folia_version', 'resourcelink', 'src','format')):
                 if q[i+1] == 'NONE':
                     assignments[q[i]] = None
                 else:
