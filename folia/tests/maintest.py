@@ -2224,7 +2224,7 @@ class Test04Edit(unittest.TestCase):
         """Edit Check - Correcting Text (2)"""
         w = self.doc.index['WR-P-E-J-0000000001.p.1.s.8.w.11'] #stippelijn
 
-        w.correct(new=folia.TextContent(self.doc,value='stippellijn',set='undefined',cls='current'), set='corrections',cls='spelling',annotator='testscript', annotatortype=folia.AnnotatorType.AUTO)
+        w.correct(new=folia.TextContent(self.doc,value='stippellijn',cls='current'), set='corrections',cls='spelling',annotator='testscript', annotatortype=folia.AnnotatorType.AUTO)
         self.assertEqual( w.annotation(folia.Correction).original(0).text() ,'stippelijn' )
         self.assertEqual( w.annotation(folia.Correction).new(0).text() ,'stippellijn' )
         self.assertEqual( w.text(), 'stippellijn')

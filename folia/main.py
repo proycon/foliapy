@@ -731,6 +731,11 @@ class AbstractElement(object):
             elif Attrib.CLASS in supported:
                 if doc.FOLIA1:
                     self.set ="undefined" #FoLiA <2.0 allowed a 'default' undefined set, FoLiA 2.0 doesn't
+                    if not doc.keepversion: #convert to the new default sets
+                        if isinstance(self, TextContent):
+                            self.set = DEFAULT_TEXT_SET
+                        if isinstance(self, PhonContent):
+                            self.set = DEFAULT_PHON_SET
                 else:
                     self.set = False
         if Attrib.CLASS in required and not self.set:
@@ -1068,7 +1073,7 @@ class AbstractElement(object):
                             #this only works if there are already other sets declared
                             for atype, aset in self.doc.annotations:
                                 if atype == annotationtype and aset and aset != "undefined":
-                                    raise DeclarationError("Set '" + str(self.set) + "' is used for " + self.__class__.__name__ + " <" + self.__class__.XMLTAG + ">, but there are already defined sets!")
+                                    raise DeclarationError("Set '" + str(self.set) + "' is used for " + self.__class__.__name__ + " <" + self.__class__.XMLTAG + ">, but there are already defined sets, such as " + aset)
                         else:
                             raise DeclarationError("Set '" + str(self.set) + "' is used for " + self.__class__.__name__ + " <" + self.__class__.XMLTAG + ">, but has no declaration!")
                     elif FOLIA2:
@@ -8036,12 +8041,19 @@ class Document(object):
                     #older FoLiA, add implicit declarations:
                     if self.autodeclare is None: self.autodeclare = False
 
-                    #Add implicit declaration for TextContent (FoLiA < 2)
-                    self.annotations.append( (AnnotationType.TEXT,'undefined') )
-                    self.annotationdefaults[AnnotationType.TEXT] = {'undefined': {} }
-                    #Add implicit declaration for PhonContent (FoLiA < 2)
-                    self.annotations.append( (AnnotationType.PHON,'undefined') )
-                    self.annotationdefaults[AnnotationType.PHON] = {'undefined': {} }
+                    if self.keepversion:
+                        #Add implicit declaration for TextContent (FoLiA < 2)
+                        self.annotations.append( (AnnotationType.TEXT,'undefined') )
+                        self.annotationdefaults[AnnotationType.TEXT] = {'undefined': {} }
+                        #Add implicit declaration for PhonContent (FoLiA < 2)
+                        self.annotations.append( (AnnotationType.PHON,'undefined') )
+                        self.annotationdefaults[AnnotationType.PHON] = {'undefined': {} }
+                    else:
+                        #use the new default sets
+                        self.annotations.append( (AnnotationType.TEXT,DEFAULT_TEXT_SET) )
+                        self.annotationdefaults[AnnotationType.TEXT] = {DEFAULT_TEXT_SET: {} }
+                        self.annotations.append( (AnnotationType.PHON,DEFAULT_PHON_SET) )
+                        self.annotationdefaults[AnnotationType.PHON] = {DEFAULT_PHON_SET: {} }
                 else:
                     if self.autodeclare is None: self.autodeclare = True
                 if 'document_version' in node.attrib:
