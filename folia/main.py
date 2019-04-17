@@ -53,7 +53,7 @@ from folia import LIBVERSION
 
 #foliaspec:version:FOLIAVERSION
 #The FoLiA version
-FOLIAVERSION = "2.0.2"
+FOLIAVERSION = "2.0.3"
 
 #foliaspec:namespace:NSFOLIA
 #The FoLiA XML namespace
@@ -8769,7 +8769,7 @@ def validate(filename,schema=None,deep=False):
 #================================= FOLIA SPECIFICATION ==========================================================
 
 #foliaspec:header
-#This file was last updated according to the FoLiA specification for version 2.0.2 on 2019-04-15 13:14:30, using foliaspec.py
+#This file was last updated according to the FoLiA specification for version 2.0.3 on 2019-04-17 14:04:31, using foliaspec.py
 #Code blocks after a foliaspec comment (until the next newline) are automatically generated. **DO NOT EDIT THOSE** and **DO NOT REMOVE ANY FOLIASPEC COMMENTS** !!!
 
 #foliaspec:structurescope:STRUCTURESCOPE
@@ -9010,7 +9010,7 @@ AbstractElement.XMLTAG = None
 #Sets all element properties for all elements
 #------ AbstractAnnotationLayer -------
 AbstractAnnotationLayer.ACCEPTED_DATA = (Comment, Correction, Description, ForeignData,)
-AbstractAnnotationLayer.OPTIONAL_ATTRIBS = (Attrib.ID, Attrib.ANNOTATOR, Attrib.CONFIDENCE, Attrib.DATETIME, Attrib.N, Attrib.TEXTCLASS, Attrib.METADATA,)
+AbstractAnnotationLayer.OPTIONAL_ATTRIBS = None
 AbstractAnnotationLayer.PRINTABLE = False
 AbstractAnnotationLayer.SETONLY = True
 AbstractAnnotationLayer.SPEAKABLE = False
