@@ -184,6 +184,12 @@ Qprovenance_nested_no_id3 = "PROCESSOR name \"test2.pos\" type \"auto\" IN PROCE
 
 Qprovenance_nested_no_id_edit = "PROCESSOR name \"test2.pos\" type \"auto\" IN PROCESSOR name \"test\" EDIT pos OF \"https://raw.githubusercontent.com/proycon/folia/master/setdefinitions/universal-pos.foliaset.ttl\" WITH class \"VERB\" FOR w ID \"example.p.1.s.1.w.2\""
 
+
+Qrespannone_respan= "EDIT su ID \"WR-P-E-J-0000000001.p.1.s.1.su.0\" WITH class \"np\" datetime now RESPAN ID \"WR-P-E-J-0000000001.p.1.s.1.w.4\" & ID \"WR-P-E-J-0000000001.p.1.s.1.w.5\""
+Qrespannone_child_left = "ADD su WITH id \"leftchild\" class \"det\" SPAN ID \"WR-P-E-J-0000000001.p.1.s.1.w.3\" FOR su ID \"WR-P-E-J-0000000001.p.1.s.1.su.0\""
+Qrespannone = "EDIT su ID \"WR-P-E-J-0000000001.p.1.s.1.su.0\" WITH class \"np\" datetime now RESPAN NONE"
+Qrespannone_child_right = "ADD su WITH id \"rightchild\" class \"np2\" SPAN ID \"WR-P-E-J-0000000001.p.1.s.1.w.4\" & ID \"WR-P-E-J-0000000001.p.1.s.1.w.5\" FOR su ID \"WR-P-E-J-0000000001.p.1.s.1.su.0\""
+
 class Test1UnparsedQuery(unittest.TestCase):
 
     def test1_basic(self):
@@ -864,6 +870,25 @@ class Test3Evaluation(unittest.TestCase):
         self.assertEqual(list(results[0].annotation(folia.Headspan).wrefs()), [ results[0].doc['WR-P-E-J-0000000001.p.1.s.1.w.3'], results[0].doc['WR-P-E-J-0000000001.p.1.s.1.w.4'], results[0].doc['WR-P-E-J-0000000001.p.1.s.1.w.5'] ] )
         self.assertEqual(results[0].ancestor(folia.AbstractStructureElement).id,  'WR-P-E-J-0000000001.p.1.s.1')
 
+    def test40_edit_respannone_existing_child(self):
+        """Editing with RESPAN NONE when there is an existing child"""
+        self.assertEqual(self.doc["WR-P-E-J-0000000001.p.1.s.1.su.0"].cls, "np")
+        self.assertEqual(self.doc["WR-P-E-J-0000000001.p.1.s.1.su.0"].text(), "een ander woord")
+        self.assertEqual(self.doc["WR-P-E-J-0000000001.p.1.s.1.su.0"].wrefs(), [ self.doc["WR-P-E-J-0000000001.p.1.s.1.w.3"],self.doc["WR-P-E-J-0000000001.p.1.s.1.w.4"],self.doc["WR-P-E-J-0000000001.p.1.s.1.w.5"]] )
+        q = fql.Query(Qrespannone_respan)
+        results = q(self.doc)
+        self.assertEqual(self.doc["WR-P-E-J-0000000001.p.1.s.1.su.0"].wrefs(), [ self.doc["WR-P-E-J-0000000001.p.1.s.1.w.4"],self.doc["WR-P-E-J-0000000001.p.1.s.1.w.5"]] )
+        q = fql.Query(Qrespannone_child_left)
+        results = q(self.doc)
+        self.assertEqual(self.doc["leftchild"].wrefs(), [ self.doc["WR-P-E-J-0000000001.p.1.s.1.w.3"]])
+        self.assertEqual(self.doc["WR-P-E-J-0000000001.p.1.s.1.su.0"].wrefs(), [ self.doc["WR-P-E-J-0000000001.p.1.s.1.w.3"],self.doc["WR-P-E-J-0000000001.p.1.s.1.w.4"],self.doc["WR-P-E-J-0000000001.p.1.s.1.w.5"]] ) #recurses by default
+        q = fql.Query(Qrespannone)
+        results = q(self.doc)
+        self.assertEqual(self.doc["WR-P-E-J-0000000001.p.1.s.1.su.0"].wrefs(), [ self.doc["WR-P-E-J-0000000001.p.1.s.1.w.3"]] ) #recurses
+        q = fql.Query(Qrespannone_child_right)
+        results = q(self.doc)
+        self.assertEqual(self.doc["rightchild"].wrefs(), [ self.doc["WR-P-E-J-0000000001.p.1.s.1.w.3"], self.doc["WR-P-E-J-0000000001.p.1.s.1.w.4"]])
+        self.assertEqual(self.doc["WR-P-E-J-0000000001.p.1.s.1.su.0"].wrefs(), [ self.doc["WR-P-E-J-0000000001.p.1.s.1.w.3"],self.doc["WR-P-E-J-0000000001.p.1.s.1.w.4"],self.doc["WR-P-E-J-0000000001.p.1.s.1.w.5"]] ) #recurses by default
 
 
 if HAVE_CQL:
