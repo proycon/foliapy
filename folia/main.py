@@ -4735,7 +4735,7 @@ class AbstractSpanAnnotation(AbstractElement, AllowGenerateID, AllowCorrections)
         Arguments:
             *args: Instances of :class:`Word`, :class:`Morpheme` or :class:`Phoneme`
         """
-        self.data = []
+        self.data = [ x for x in self.data if not isinstance(x, wrefables) ]
         for child in args:
             self.append(child)
 

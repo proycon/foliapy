@@ -1660,11 +1660,12 @@ class Action(object): #Action expression
                                         if debug: print("[FQL EVALUATION DEBUG] Action - " + attr +  " = " + value + " on focus ", repr(focus),file=sys.stderr)
                                         focus.cls = value
                                     else:
-                                        if debug: print("[FQL EVALUATION DEBUG] Action - " + attr +  " = " + value + " on focus ", repr(focus),file=sys.stderr)
+                                        if debug: print("[FQL EVALUATION DEBUG] Action - " + attr +  " = " + str(value) + " on focus ", repr(focus),file=sys.stderr)
                                         setattr(focus, attr, value)
                                 if action.span is not None: #respan
                                     if not isinstance(focus, folia.AbstractSpanAnnotation): raise QueryError("Can only perform RESPAN on span annotation elements!")
                                     spanset = next(action.span(query, contextselector, True, debug)) #there can be only one
+                                    if debug: print("[FQL EVALUATION DEBUG] Action - Setting respan",file=sys.stderr)
                                     focus.setspan(*spanset)
 
                                 query._touch(focus)
@@ -1776,6 +1777,7 @@ class Action(object): #Action expression
                         if not isspan: raise QueryError("Can only use SPAN with span annotation elements!")
                         for focus in focusselection:
                             spanset = next(action.span(query, contextselector, True, debug)) #there can be only one
+                            if debug: print("[FQL EVALUATION DEBUG] Action - Setting span",file=sys.stderr)
                             focus.setspan(*spanset)
 
                 if focusselection and action.subactions and not substitution:

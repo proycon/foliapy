@@ -887,7 +887,7 @@ class Test3Evaluation(unittest.TestCase):
         self.assertEqual(self.doc["WR-P-E-J-0000000001.p.1.s.1.su.0"].wrefs(), [ self.doc["WR-P-E-J-0000000001.p.1.s.1.w.3"]] ) #recurses
         q = fql.Query(Qrespannone_child_right)
         results = q(self.doc)
-        self.assertEqual(self.doc["rightchild"].wrefs(), [ self.doc["WR-P-E-J-0000000001.p.1.s.1.w.3"], self.doc["WR-P-E-J-0000000001.p.1.s.1.w.4"]])
+        self.assertEqual(self.doc["rightchild"].wrefs(), [ self.doc["WR-P-E-J-0000000001.p.1.s.1.w.4"], self.doc["WR-P-E-J-0000000001.p.1.s.1.w.5"]])
         self.assertEqual(self.doc["WR-P-E-J-0000000001.p.1.s.1.su.0"].wrefs(), [ self.doc["WR-P-E-J-0000000001.p.1.s.1.w.3"],self.doc["WR-P-E-J-0000000001.p.1.s.1.w.4"],self.doc["WR-P-E-J-0000000001.p.1.s.1.w.5"]] ) #recurses by default
 
 
