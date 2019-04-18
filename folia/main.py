@@ -2518,8 +2518,8 @@ class AbstractElement(object):
                         jsonnode['children'].append(child.json(attribs,recurse,ignorelist))
 
         if attribs:
-            for attrib in attribs:
-                jsonnode[attrib] = attribs
+            for key, value in attribs.items():
+                jsonnode[key] = value
 
         return jsonnode
 
