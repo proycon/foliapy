@@ -296,6 +296,7 @@ class Processor:
         raise ValueError("Invalid node passed" + node.tag)
 
     def xml(self):
+        """Serialises the processor to XML"""
         attribs = {}
         attribs['{http://www.w3.org/XML/1998/namespace}id'] = self.id
         for key in ('name','type', 'version','document_version', 'folia_version','command','host','user','begindatetime','enddatetime', 'src', 'format', 'resourcelink'):
@@ -313,6 +314,7 @@ class Processor:
         return E.processor(*elements, **attribs)
 
     def json(self):
+        """Serialises the processor to a dictionary suitable for JSON output"""
         jsonnode = {}
         jsonnode['id'] = self.id
         for key in ('name','type', 'version','document_version', 'folia_version','command','host','user','begindatetime','enddatetime', 'src','format','resourcelink'):
@@ -2490,6 +2492,10 @@ class AbstractElement(object):
             jsonnode['datetime'] = self.datetime.strftime("%Y-%m-%dT%H:%M:%S")
         if self.OPTIONAL_ATTRIBS and Attrib.SPACE in self.OPTIONAL_ATTRIBS and not self.space:
             jsonnode['space'] = "no"
+
+        if self.XLINK:
+            if self.href:
+                jsonnode['href'] = self.href
 
         if recurse: #pylint: disable=too-many-nested-blocks
             jsonnode['children'] = []
@@ -5254,14 +5260,21 @@ class LinkReference(AbstractElement):
             return E.xref( **attribs)
 
     def json(self, attribs=None, recurse=True, ignorelist=False):
-        return {} #alignment not supported yet, TODO
+        jsonnode = {}
+        jsonnode['type'] = self.XMLTAG
+        jsonnode['idref'] = self.id
+        if self.type:
+            jsonnode['linktype'] = self.type
+        if self.t:
+            jsonnode['t'] = self.t
+        return jsonnode
 
 AlignReference = LinkReference #backward compatibility for FoLiA < 2
 
 
 class Relation(AbstractElement):
     """
-    The Relation element is a form of higher-order annotation taht is used to point to an external resource.
+    The Relation element is a form of higher-order annotation that is used to point to an external resource.
 
     It concerns references as annotation rather than references which are
     explicitly part of the text, such as hyperlinks and :class:`Reference`.
@@ -5291,7 +5304,10 @@ class Relation(AbstractElement):
         return super(Relation,self).xml(attribs,elements, skipchildren)
 
     def json(self, attribs =None, recurse=True, ignorelist=False):
-        return {} #not supported yet, TODO
+        if not attribs: attribs = {}
+        if self.format and self.format != "text/folia+xml":
+            attribs['format'] = self.format
+        return super(Relation,self).json(attribs,recurse, ignorelist)
 
     def resolve(self, documents=None):
         if documents is None: documents = {}
