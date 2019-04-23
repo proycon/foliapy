@@ -269,11 +269,11 @@ class SetDefinition(object):
                 try:
                     f = urlopen(url)
                 except:
-                    raise DeepValidationError("Unable to download " + url)
+                    raise DeepValidationError("Unable to download set definition from " + url)
             try:
                 data = f.read()
             except IOError:
-                raise DeepValidationError("Unable to download " + url)
+                raise DeepValidationError("Unable to download set definition from " + url)
             finally:
                 f.close()
             if data[0] in ('@',b'@',64):
@@ -299,7 +299,7 @@ class SetDefinition(object):
             try:
                 self.graph.parse(location=url, format=format)
             except HTTPError:
-                raise DeepValidationError("Unable to download " + url)
+                raise DeepValidationError("Unable to download set definition from " + url)
             if self.verbose:
                 print("Loaded set " + url + " (" + str(len(self.graph)) + " triples)",file=sys.stderr)
 

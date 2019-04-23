@@ -7521,7 +7521,12 @@ class Document(object):
             self.annotations.append( (annotationtype,set) )
             if set and self.loadsetdefinitions and set not in self.setdefinitions:
                 if set[:7] == "http://" or set[:8] == "https://" or set[:6] == "ftp://":
-                    self.setdefinitions[set] = SetDefinition(set,verbose=self.verbose) #will raise exception on error
+                    try:
+                        self.setdefinitions[set] = SetDefinition(set,verbose=self.verbose) #will raise exception on error
+                    except DeepValidationError as e:
+                        if not self.allowadhocsets:
+                            raise e
+                        print("WARNING: ",str(e),file=sys.stderr)
         if annotationtype not in self.annotationdefaults:
             self.annotationdefaults[annotationtype] = {}
         if annotationtype not in self.annotators:
