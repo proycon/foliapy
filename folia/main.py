@@ -4677,7 +4677,7 @@ class AbstractSpanAnnotation(AbstractElement, AllowGenerateID, AllowCorrections)
         if not attribs: attribs = {}
         e = super(AbstractSpanAnnotation,self).xml(attribs, elements, True)
         for child in self:
-            if isinstance(child, Word) or isinstance(child, Morpheme) or isinstance(child, Phoneme):
+            if isinstance(child, wrefables):
                 #Include REFERENCES to word items instead of word items themselves
                 attribs['id'] = child.id
                 if child.PRINTABLE and child.hastext(self.textclass):
