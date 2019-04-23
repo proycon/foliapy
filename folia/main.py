@@ -6876,6 +6876,7 @@ class Document(object):
             self.setdefinitions = kwargs['setdefinitions'] #to re-use a shared store
         else:
             self.setdefinitions = {} #key: set name, value: SetDefinition instance (only used when deepvalidation=True)
+        self.failedsetdefinitions = set() #will contain list of sets that failed to load (in case allowadhocsets=True)
 
         #The metadata fields FoLiA is directly aware of:
         self._title = self._date = self._publisher = self._license = self._language = None
@@ -7524,9 +7525,10 @@ class Document(object):
                     try:
                         self.setdefinitions[set] = SetDefinition(set,verbose=self.verbose) #will raise exception on error
                     except DeepValidationError as e:
+                        self.failedsetdefinitions.add(set)
+                        print("WARNING: ",str(e),file=sys.stderr)
                         if not self.allowadhocsets:
                             raise e
-                        print("WARNING: ",str(e),file=sys.stderr)
         if annotationtype not in self.annotationdefaults:
             self.annotationdefaults[annotationtype] = {}
         if annotationtype not in self.annotators:
