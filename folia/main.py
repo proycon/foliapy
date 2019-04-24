@@ -6871,6 +6871,7 @@ class Document(object):
         self.autodeclare = None #Automatic declarations in case of undeclared elements, will be set later
                                 # False for FoLiA < 2.0
                                 # True for FoLiA >= 2.0
+        self.filename = ""
 
         if 'setdefinitions' in kwargs:
             self.setdefinitions = kwargs['setdefinitions'] #to re-use a shared store
