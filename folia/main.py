@@ -7647,7 +7647,7 @@ class Document(object):
 
 
     def erase(self, Class, annotationset=False):
-        """Erases all annotations of a particular type and set (unless set is False in which case it applies to all elements regardless of set). Also removed the declarations (i.e. the opposite of declare()) """
+        """Erases all annotations of a particular type and annotation set (unless set is False in which case it applies to all elements regardless of set). Also removed the declarations (i.e. the opposite of declare()) """
         annotationtype = Class.ANNOTATIONTYPE
         count = 0
         #loop over the entire document recursively and collect all matches (fairly time consuming)
