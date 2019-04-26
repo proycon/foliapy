@@ -193,7 +193,7 @@ class Test_Exxx_Invalid_Wref(unittest.TestCase): #xxx -> replace with a number a
             folia.Document(file=os.path.join(FOLIAPATH,"examples/erroneous/invalid-wref.2.0.0.folia.xml"))
         self.assertEqual(cm.exception.cause.__class__, folia.InvalidReference)
 
-class Text_Exxx_KeepVersion(unittest.TestCase):
+class Test_Exxx_KeepVersion(unittest.TestCase):
     """Serialisation of older FoLiA versions"""
 
     def test(self):
@@ -207,6 +207,22 @@ class Text_Exxx_KeepVersion(unittest.TestCase):
         retcode = os.system('xmldiff -c ' + os.path.join(TMPDIR,'foliatest1.5.ref.xml') + ' ' + os.path.join(TMPDIR,'foliatest1.5.xml'))
         #retcode = 1 #disabled (memory hog)
         self.assertEqual( retcode, 0)
+
+class Test_Exxx_BackwardCompatibility(unittest.TestCase):
+    def setUp(self):
+        self.doc = folia.Document(file=os.path.join(FOLIAPATH,"examples/frog-deep-upgraded.2.0.2.folia.xml"))
+
+    def test_annotator(self):
+        """Test whether old-style annotator attribute works"""
+        w = self.doc['example.deep.p.1.s.1.w.1']
+        pos = w.annotation(folia.PosAnnotation)
+        self.assertEqual(pos.annotator, "frog-mbpos-1.0")
+
+    def test_annotatortype(self):
+        """Test whether old-style annotatortype attribute works"""
+        w = self.doc['example.deep.p.1.s.1.w.1']
+        pos = w.annotation(folia.PosAnnotation)
+        self.assertEqual(pos.annotatortype, "auto")
 
 
 class Test_Provenance(unittest.TestCase):
