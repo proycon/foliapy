@@ -531,7 +531,7 @@ def annotationtype2str(annotationtype):
     """Find the 'label' for the declarations dynamically (aka: AnnotationType --> String)"""
     assert annotationtype is not None
     for key, value in vars(AnnotationType).items():
-        if value == annotationtype:
+        if value.upper() == annotationtype.upper():
             return key
     return None
 
