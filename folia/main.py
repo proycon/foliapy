@@ -7639,6 +7639,39 @@ class Document(object):
             self.annotationdefaults[annotationtype][set] = {}
 
 
+    def erase(self, annotationtype, annotationset=False):
+        """Erases all annotations of a particular type and set (unless set is False in which case it applies to all elements regardless of set). Also removed the declarations (i.e. the opposite of declare()) """
+        #loop over the entire document recursively and delete all matches (fairly time consuming)
+        for element in self.select(annotationtype,annotationset,recursive=True, ignore=False):
+            element.parent.remove(element)
+
+        if annotationset is False:
+            #for any set!
+
+            #remove declaration
+            self.annotations = [ (t,s) for t,s in self.annotations if t != annotationtype ]
+            #remove annotator references from declarations (new style)
+            if annotationtype in self.annotators:
+                del self.annotators[annotationtype]
+            #remove old style annotation defaults
+            if annotationtype in self.annotationdefaults:
+                del self.annotationdefaults[annotationtype]
+        else:
+            #for a specific set
+
+            #remove declaration
+            if (annotationtype, annotationset) in self.annotations:
+                self.annotations.remove((annotationtype, annotationset))
+            #remove annotator references from declarations
+            if annotationtype in self.annotators and annotationset in self.annotators[annotationtype]:
+                del self.annotators[annotationtype][annotationset]
+            #remove old style annotation defaults
+            if annotationtype in self.annotationdefaults and annotationset in self.annotationdefaults[annotationtype]:
+                del self.annotationdefaults[annotationtype][annotationset]
+
+
+
+
     def attachexternal(self, type, set, **kwargs):
         if self.debug >= 1:
             print("[FoLiA DEBUG] Loading external document: " + subnode.attrib['external'],file=stderr)
@@ -7728,15 +7761,16 @@ class Document(object):
         if annotationtype is None:
             return False
 
-        #new style, with provenance data
-        if annotationtype in self.annotators:
-            l = len(self.annotators[annotationtype])
+        #new style
+        matches = [ (atype, aset) for atype, aset in self.annotations if atype == annotationtype ]
+        if matches:
+            l = len(matches)
             if l == 1:
-                return list(self.annotators[annotationtype].keys())[0]
+                return matches[0][1]
             elif l > 1:
                 return False
 
-        #old style, witout provenance data
+        #if that failes try old style by considering defaults
         if annotationtype in self.annotationdefaults:
             l = len(self.annotationdefaults[annotationtype])
             if l == 1:
