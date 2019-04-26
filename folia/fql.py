@@ -1726,7 +1726,7 @@ class Action(object): #Action expression
                         else:
                             action.assignments['set'] = action.focus.set = query.doc.defaultset(action.focus.Class)
 
-                    if query.doc.processor and 'processor' not in action.assignments:
+                    if query.doc.processor and 'processor' not in action.assignments and (folia.Attrib.ANNOTATOR in action.focus.Class.REQUIRED_ATTRIBS or folia.Attrib.ANNOTATOR in action.focus.Class.OPTIONAL_ATTIBS):
                         action.assignments['processor'] = query.doc.processor
 
 
