@@ -2315,7 +2315,7 @@ class AbstractElement(object):
 
         if 'annotator' not in attribs and not self.processor: #do not override if caller already set it
             try:
-                if self.annotator and ((not (self.ANNOTATIONTYPE in self.doc.annotationdefaults)) or (not ( 'annotator' in self.doc.annotationdefaults[self.ANNOTATIONTYPE][self.set])) or (self.annotator != self.doc.annotationdefaults[self.ANNOTATIONTYPE][self.set]['annotator'])):
+                if self.annotator and (self.ANNOTATIONTYPE not in self.doc.annotationdefaults or self.self not in self.doc.annotationdefaults[self.ANNOTATIONTYPE] or 'annotator' not in self.doc.annotationdefaults[self.ANNOTATIONTYPE][self.set] or self.annotator != self.doc.annotationdefaults[self.ANNOTATIONTYPE][self.set]['annotator']):
                     attribs['annotator'] = self.annotator
                 if self.annotatortype and ((not (self.ANNOTATIONTYPE in self.doc.annotationdefaults)) or (not ('annotatortype' in self.doc.annotationdefaults[self.ANNOTATIONTYPE][self.set])) or (self.annotatortype != self.doc.annotationdefaults[self.ANNOTATIONTYPE][self.set]['annotatortype'])):
                     if self.annotatortype == AnnotatorType.AUTO:
@@ -2341,7 +2341,7 @@ class AbstractElement(object):
                 pass
 
         if 'datetime' not in attribs: #do not override if caller already set it
-            if self.datetime and ((not (self.ANNOTATIONTYPE in self.doc.annotationdefaults)) or (not ( 'datetime' in self.doc.annotationdefaults[self.ANNOTATIONTYPE][self.set])) or (self.datetime != self.doc.annotationdefaults[self.ANNOTATIONTYPE][self.set]['datetime'])):
+            if self.datetime and (self.ANNOTATIONTYPE not in self.doc.annotationdefaults or self.set not in self.doc.annotationdefaults[self.ANNOTATIONTYPE] or 'datetime' not in self.doc.annotationdefaults[self.ANNOTATIONTYPE][self.set] or self.datetime != self.doc.annotationdefaults[self.ANNOTATIONTYPE][self.set]['datetime']):
                 attribs['datetime'] = self.datetime.strftime("%Y-%m-%dT%H:%M:%S")
 
         if 'src' not in attribs: #do not override if caller already set it
