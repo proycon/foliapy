@@ -535,6 +535,13 @@ def annotationtype2str(annotationtype):
             return key
     return None
 
+def str2annotationtype(s):
+    """Find annotation type by label dynamically (aka: String --> AnnotationType)"""
+    s = s.upper()
+    for key, value in vars(AnnotationType).items():
+        if key.upper() == s:
+            return value
+    raise ValueError
 
 def commonancestors(Class, *args):
     """Generator function to find common ancestors of a particular type for any two or more FoLiA element instances.
@@ -7639,11 +7646,20 @@ class Document(object):
             self.annotationdefaults[annotationtype][set] = {}
 
 
-    def erase(self, annotationtype, annotationset=False):
+    def erase(self, Class, annotationset=False):
         """Erases all annotations of a particular type and set (unless set is False in which case it applies to all elements regardless of set). Also removed the declarations (i.e. the opposite of declare()) """
-        #loop over the entire document recursively and delete all matches (fairly time consuming)
-        for element in self.select(annotationtype,annotationset,recursive=True, ignore=False):
+        annotationtype = Class.ANNOTATIONTYPE
+        count = 0
+        #loop over the entire document recursively and collect all matches (fairly time consuming)
+        matches = []
+        for element in self.select(Class,annotationset,recursive=True, ignore=False):
+            matches.append(element)
+
+
+        #delete all matches
+        for element in matches:
             element.parent.remove(element)
+            count += 1
 
         if annotationset is False:
             #for any set!
@@ -7668,6 +7684,8 @@ class Document(object):
             #remove old style annotation defaults
             if annotationtype in self.annotationdefaults and annotationset in self.annotationdefaults[annotationtype]:
                 del self.annotationdefaults[annotationtype][annotationset]
+
+        return count
 
 
 
