@@ -53,7 +53,7 @@ from folia import LIBVERSION
 
 #foliaspec:version:FOLIAVERSION
 #The FoLiA version
-FOLIAVERSION = "2.0.3"
+FOLIAVERSION = "2.0.4"
 
 #foliaspec:namespace:NSFOLIA
 #The FoLiA XML namespace
@@ -8845,7 +8845,7 @@ def validate(filename,schema=None,deep=False):
 #================================= FOLIA SPECIFICATION ==========================================================
 
 #foliaspec:header
-#This file was last updated according to the FoLiA specification for version 2.0.3 on 2019-04-26 13:03:06, using foliaspec.py
+#This file was last updated according to the FoLiA specification for version 2.0.4 on 2019-05-16 23:47:31, using foliaspec.py
 #Code blocks after a foliaspec comment (until the next newline) are automatically generated. **DO NOT EDIT THOSE** and **DO NOT REMOVE ANY FOLIASPEC COMMENTS** !!!
 
 #foliaspec:structurescope:STRUCTURESCOPE
@@ -9339,7 +9339,6 @@ Gap.XMLTAG = "gap"
 Head.ACCEPTED_DATA = (AbstractAnnotationLayer, AbstractInlineAnnotation, Alternative, AlternativeLayers, Comment, Correction, Description, Event, Feature, ForeignData, Gap, Hiddenword, Linebreak, Metric, Paragraph, Part, PhonContent, Reference, Relation, Sentence, String, TextContent, Whitespace, Word,)
 Head.ANNOTATIONTYPE = AnnotationType.HEAD
 Head.LABEL = "Head"
-Head.OCCURRENCES = 1
 Head.TEXTDELIMITER = "\n\n"
 Head.XMLTAG = "head"
 #------ HeadFeature -------
