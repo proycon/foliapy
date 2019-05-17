@@ -7465,7 +7465,7 @@ class Document(object):
             subelements = []
             attribs = {
                 "{http://www.w3.org/XML/1998/namespace}id": metadata_id,
-                "type": self.submetadatatype[metadata_id] }
+                "type": self.submetadatatype.get(metadata_id,"native") }
             if isinstance(submetadata, NativeMetaData):
                 for key, value in submetadata.items():
                     subelements.append(E.meta(value,id=key) )
