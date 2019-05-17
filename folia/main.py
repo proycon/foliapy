@@ -2246,10 +2246,10 @@ class AbstractElement(object):
                 break
 
     def ancestor(self, *Classes):
-        """Find the most immediate ancestor of the specified type, multiple classes may be specified.
+        """Find the most immediate ancestor of the specified type, multiple classes may be specified. Raise a NoSuchAnnotation exception if not found.
 
         Arguments:
-            *Classes: The possible classes (:class:`AbstractElement` or subclasses) to select from. Not instances!
+            * Classes: The possible classes (:class:`AbstractElement` or subclasses) to select from. Not instances!
 
         Example::
 
