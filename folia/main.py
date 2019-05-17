@@ -3862,6 +3862,73 @@ class TextMarkupReference(AbstractTextMarkup):
     Only consider this element for references in spans of untokenised text. The use of structural element :class:`Reference` is preferred.
     """
 
+    def __init__(self, doc, *args, **kwargs):
+        if 'idref' in kwargs:
+            self.idref = kwargs['idref']
+            del kwargs['idref']
+        else:
+            self.idref = None
+        if 'type' in kwargs:
+            self.type = kwargs['type']
+            del kwargs['type']
+        else:
+            self.type = None
+        if 'format' in kwargs:
+            self.format = kwargs['format']
+            del kwargs['format']
+        else:
+            self.format = "text/folia+xml"
+        super().__init__(doc, *args, **kwargs)
+
+    def xml(self, attribs = None,elements = None, skipchildren = False):
+        if not attribs: attribs = {}
+        if self.idref:
+            attribs['id'] = self.idref
+        if self.type:
+            attribs['type'] = self.type
+        if self.format and self.format != "text/folia+xml":
+            attribs['format'] = self.format
+        return super().xml(attribs,elements, skipchildren)
+
+    def json(self, attribs=None, recurse=True, ignorelist=False):
+        if attribs is None: attribs = {}
+        if self.idref:
+            attribs['idref'] = self.idref
+        if self.type:
+            attribs['type'] = self.type
+        if self.format:
+            attribs['format'] = self.format
+        return super().json(attribs,recurse,ignorelist)
+
+    def resolve(self):
+        if self.idref:
+            return self.doc[self.idref]
+        else:
+            return self
+
+    @classmethod
+    def parsexml(Class, node, doc, **kwargs):#pylint: disable=bad-classmethod-argument
+        if not kwargs: kwargs = {}
+        if 'id' in node.attrib:
+            kwargs['idref'] = node.attrib['id']
+            del node.attrib['id']
+        if 'type' in node.attrib:
+            kwargs['type'] = node.attrib['type']
+            del node.attrib['type']
+        if 'format' in node.attrib:
+            kwargs['format'] = node.attrib['format']
+            del node.attrib['format']
+        return super().parsexml(node, doc, **kwargs)
+
+
+    @classmethod
+    def relaxng(cls, includechildren=True,extraattribs = None, extraelements=None):
+        if not extraattribs: extraattribs = []
+        extraattribs.append( RXE.optional(RXE.attribute(name='id'))) #id reference
+        extraattribs.append( RXE.optional(RXE.attribute(name='type' )))
+        extraattribs.append( RXE.optional(RXE.attribute(name='format' )))
+        return super().relaxng(includechildren, extraattribs, extraelements)
+
 class TextMarkupGap(AbstractTextMarkup):
     """Markup element to mark gaps in text content (:class:`TextContent`)
 
