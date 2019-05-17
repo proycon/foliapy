@@ -3856,6 +3856,12 @@ class AbstractTextMarkup(AbstractElement):
 class TextMarkupString(AbstractTextMarkup):
     """Markup element to mark arbitrary substrings in text content (:class:`TextContent`)"""
 
+class TextMarkupReference(AbstractTextMarkup):
+    """Markup element placing an explicit reference to another structural element, used for instance to refer to footnotes from untokenised text. Used in text content (:class:`TextContent`)
+
+    Only consider this element for references in spans of untokenised text. The use of structural element :class:`Reference` is preferred.
+    """
+
 class TextMarkupGap(AbstractTextMarkup):
     """Markup element to mark gaps in text content (:class:`TextContent`)
 
@@ -8845,7 +8851,7 @@ def validate(filename,schema=None,deep=False):
 #================================= FOLIA SPECIFICATION ==========================================================
 
 #foliaspec:header
-#This file was last updated according to the FoLiA specification for version 2.0.4 on 2019-05-16 23:47:31, using foliaspec.py
+#This file was last updated according to the FoLiA specification for version 2.0.4 on 2019-05-17 18:31:29, using foliaspec.py
 #Code blocks after a foliaspec comment (until the next newline) are automatically generated. **DO NOT EDIT THOSE** and **DO NOT REMOVE ANY FOLIASPEC COMMENTS** !!!
 
 #foliaspec:structurescope:STRUCTURESCOPE
@@ -9002,6 +9008,7 @@ XML2CLASS = {
     "t-correction": TextMarkupCorrection,
     "t-error": TextMarkupError,
     "t-gap": TextMarkupGap,
+    "t-ref": TextMarkupReference,
     "t-str": TextMarkupString,
     "t-style": TextMarkupStyle,
     "timesegment": TimeSegment,
@@ -9678,6 +9685,10 @@ TextMarkupError.XMLTAG = "t-error"
 TextMarkupGap.ANNOTATIONTYPE = AnnotationType.GAP
 TextMarkupGap.PRIMARYELEMENT = False
 TextMarkupGap.XMLTAG = "t-gap"
+#------ TextMarkupReference -------
+TextMarkupReference.ANNOTATIONTYPE = AnnotationType.REFERENCE
+TextMarkupReference.PRIMARYELEMENT = False
+TextMarkupReference.XMLTAG = "t-ref"
 #------ TextMarkupString -------
 TextMarkupString.ANNOTATIONTYPE = AnnotationType.STRING
 TextMarkupString.PRIMARYELEMENT = False
