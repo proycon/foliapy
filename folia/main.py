@@ -3924,7 +3924,6 @@ class TextMarkupReference(AbstractTextMarkup):
     @classmethod
     def relaxng(cls, includechildren=True,extraattribs = None, extraelements=None):
         if not extraattribs: extraattribs = []
-        extraattribs.append( RXE.optional(RXE.attribute(name='id'))) #id reference
         extraattribs.append( RXE.optional(RXE.attribute(name='type' )))
         extraattribs.append( RXE.optional(RXE.attribute(name='format' )))
         return super().relaxng(includechildren, extraattribs, extraelements)
