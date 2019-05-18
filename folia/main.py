@@ -3054,7 +3054,7 @@ class AbstractElement(object):
                         raise #just re-raise deepest parseError
                     except Exception as e:
                         #Python 3 will preserve full original traceback, Python 2 does not, original cause is explicitly passed to ParseError anyway:
-                        raise ParseError("FoLiA exception in handling of <" + subnode.tag[len(NSFOLIA)+2:] + "> @ line " + str(subnode.sourceline) + ": [" + e.__class__.__name__ + "] " + str(e), cause=e)
+                            raise ParseError("FoLiA exception in handling of <" + subnode.tag[len(NSFOLIA)+2:] + "> @ line " + str(subnode.sourceline) + " (in parent <" + node.tag[len(NSFOLIA)+2:]+"> @ parent line " + str(node.sourceline) + ") : [" + e.__class__.__name__ + "] " + str(e), cause=e)
                     if e is not None:
                         args.append(e)
                     if (Class.TEXTCONTAINER or Class.PHONCONTAINER) and subnode.tail:
