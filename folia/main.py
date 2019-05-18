@@ -1225,7 +1225,11 @@ class AbstractElement(object):
                     return True #just assume it's valid then
 
                 strictnormtext = self.text(cls,retaintokenisation=False,strict=True, normalize_spaces=True, hidden=False )
-                deepnormtext = self.text(cls,retaintokenisation=False,strict=False, normalize_spaces=True, hidden=False)
+                try:
+                    deepnormtext = self.text(cls,retaintokenisation=False,strict=False, normalize_spaces=True, hidden=False)
+                except folia.NoSuchText:
+                    deepnormtext = ""
+                    if self.doc and self.doc.debug: print("[FoLiA DEBUG] deepnormtext on " + repr(self) + " is empty! (NoSuchText)",file=stderr)
                 if strictnormtext != deepnormtext:
                     valid = False
                     deviation = 0
