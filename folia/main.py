@@ -4531,12 +4531,7 @@ class Linebreak(AbstractStructureElement, AbstractTextMarkup): #this element has
             kwargs['pagenr'] = node.attrib['pagenr']
         if 'newpage' in node.attrib and node.attrib['newpage'] == 'yes':
             kwargs['newpage'] = True
-        br = Linebreak(doc, **kwargs)
-        if '{http://www.w3.org/1999/xlink}href' in node.attrib:
-            br.href = node.attrib['{http://www.w3.org/1999/xlink}href']
-        if '{http://www.w3.org/1999/xlink}type' in node.attrib:
-            br.xlinktype = node.attrib['{http://www.w3.org/1999/xlink}type']
-        return br
+        return super(Linebreak,Class).parsexml(node, doc, **kwargs)
 
     def xml(self, attribs = None,elements = None, skipchildren = False):
         if attribs is None: attribs = {}
@@ -4589,12 +4584,7 @@ class Hyphbreak(AbstractTextMarkup):
             kwargs['pagenr'] = node.attrib['pagenr']
         if 'newpage' in node.attrib and node.attrib['newpage'] == 'yes':
             kwargs['newpage'] = True
-        br = Linebreak(doc, **kwargs)
-        if '{http://www.w3.org/1999/xlink}href' in node.attrib:
-            br.href = node.attrib['{http://www.w3.org/1999/xlink}href']
-        if '{http://www.w3.org/1999/xlink}type' in node.attrib:
-            br.xlinktype = node.attrib['{http://www.w3.org/1999/xlink}type']
-        return br
+        return super(Hyphbreak,Class).parsexml(node, doc, **kwargs)
 
     def xml(self, attribs = None,elements = None, skipchildren = False):
         if attribs is None: attribs = {}
