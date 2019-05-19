@@ -2759,7 +2759,7 @@ class AbstractElement(object):
                     if e is child:
                         #we found the current item, next item will be the one to return
                         returnnext = True
-                    elif returnnext and e.auth and not isinstance(e,AbstractAnnotationLayer) and (not structural or (structural and (not isinstance(e,(AbstractInlineAnnotation,TextContent)) ) )):
+                    elif returnnext and isinstance(e, AbstractElement) and e.auth and not isinstance(e,AbstractAnnotationLayer) and (not structural or (structural and (not isinstance(e,(AbstractInlineAnnotation,TextContent)) ) )):
                         if structural and isinstance(e,Correction):
                             if not list(e.select(AbstractStructureElement)): #skip-over non-structural correction
                                 continue
