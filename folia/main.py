@@ -1056,8 +1056,12 @@ class AbstractElement(object):
             if not isinstance(self, (Text,Speech)): #Body is an undeclared element
                 #Check if an element is declared (FoLiA v2+ only), this is a much stricter check than older FoLiA versions
                 #for FoLiA <2 we only check if we have a set
-                if self.doc and (annotationtype, self.set) not in self.doc.annotations:
-                    if self.set is False:
+                if annotationtype in self.doc.alias_set and self.set in self.doc.alias_set[annotationtype]:
+                    foliaset = self.doc.alias_set[annotationtype][self.set]
+                else:
+                    foliaset = self.set
+                if self.doc and (annotationtype, foliaset) not in self.doc.annotations:
+                    if foliaset is False:
                         #set may be False in case of annotation layers, where it will be set later after appending children, we ignore that case (things like auto-declare are deferred until an actual span annotation appears)
                         pass
                     elif self.doc.autodeclare:
@@ -1070,21 +1074,21 @@ class AbstractElement(object):
                             if FOLIA2 or (self.doc.FOLIA1 and not self.doc.keepversion):
                                 if self.doc.debug >= 1: print("[FoLiA DEBUG] Auto-declaring Phonetic Annotation",file=stderr)
                                 self.doc.declare(AnnotationType.PHON, DEFAULT_PHON_SET)
-                        elif self.set:
-                            if self.doc.debug >= 1: print("[FoLiA DEBUG] Auto-declaring " + self.__class__.__name__ + " with set " + str(self.set),file=stderr)
-                            self.doc.declare(annotationtype, self.set)
+                        elif foliaset:
+                            if self.doc.debug >= 1: print("[FoLiA DEBUG] Auto-declaring " + self.__class__.__name__ + " with set " + str(foliaset),file=stderr)
+                            self.doc.declare(annotationtype, foliaset)
                         else:
                             if self.doc.debug >= 1: print("[FoLiA DEBUG] Auto-declaring " + self.__class__.__name__ + " (no set)", file=stderr)
                             self.doc.declare(annotationtype)
-                    elif self.set:
-                        if self.doc.FOLIA1 and self.set == "undefined":
+                    elif foliaset:
+                        if self.doc.FOLIA1 and foliaset == "undefined":
                             #undefined sets could have been left undeclared in FoLiA v1
                             #this only works if there are already other sets declared
                             for atype, aset in self.doc.annotations:
                                 if atype == annotationtype and aset and aset != "undefined":
-                                    raise DeclarationError("Set '" + str(self.set) + "' is used for " + self.__class__.__name__ + " <" + self.__class__.XMLTAG + ">, but there are already defined sets, such as " + aset)
+                                    raise DeclarationError("Set '" + str(foliaset) + "' is used for " + self.__class__.__name__ + " <" + self.__class__.XMLTAG + ">, but there are already defined sets, such as " + aset)
                         else:
-                            raise DeclarationError("Set '" + str(self.set) + "' is used for " + self.__class__.__name__ + " <" + self.__class__.XMLTAG + ">, but has no declaration!")
+                            raise DeclarationError("Set '" + str(foliaset) + "' is used for " + self.__class__.__name__ + " <" + self.__class__.XMLTAG + ">, but has no declaration!")
                     elif FOLIA2:
                         raise DeclarationError("Encountered an instance without proper declaration: " + self.__class__.__name__ + " <" + self.__class__.XMLTAG + ">!")
             #check for ambiguity
