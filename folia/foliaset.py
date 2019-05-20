@@ -405,6 +405,12 @@ class SetDefinition(object):
                 return str(row.c)
             raise DeepValidationError("Not a valid class: " + cls)
 
+    def testconstraints(self, cls, features):
+        if not cls:
+            raise DeepValidationError("No class specified")
+        #TODO
+        return True
+
     def testsubclass(self, cls, subset, subclass):
         """Test for the presence of a class in a subset (used with features), returns the full URI or raises an exception"""
         subsetinfo = self.subset(subset)
