@@ -55,14 +55,68 @@ class SetDefinitionError(DeepValidationError):
 class SetType: #legacy only
     CLOSED, OPEN, MIXED, EMPTY = range(4)
 
+class LegacyConstraintDefinition(object):
+    def __init__(self,id, type, constraints = None):
+        self.id = id
+        self.type = type
+        if constraints:
+            self.constraints = constraints
+        else:
+            self.constraints = []
+
+    @classmethod
+    def parsexml(Class, node):
+        if not node.tag == '{' + NSFOLIA + '}constraint':
+            raise Exception("Expected constraint tag for this xml node, got" + node.tag)
+
+        if 'type' in node.attrib:
+            type = node.attrib['type']
+        else:
+            type = "any"
+
+        constraints = []
+        for subnode in node:
+            if isinstance(subnode.tag, str): #pylint: disable=undefined-variable
+                if subnode.tag == '{' + NSFOLIA + '}constrain':
+                    if 'id' in subnode.attrib:
+                        constraints.append( subnode.attrib['id'] )
+                    else:
+                        raise Exception("Missing ID in constrain element")
+                elif subnode.tag[:len(NSFOLIA) +2] == '{' + NSFOLIA + '}':
+                    raise Exception("Invalid tag in Constraint definition: " + subnode.tag)
+        if '{http://www.w3.org/XML/1998/namespace}id' in node.attrib:
+            idkey = '{http://www.w3.org/XML/1998/namespace}id'
+        else:
+            idkey = 'id'
+        return LegacyConstraintDefinition(node.attrib[idkey],type, constraints)
+
+    def __iter__(self):
+        for c in self.constraints:
+            yield c
+
+    def json(self):
+        jsonnode = {'id': self.id, 'type': self.type}
+        jsonnode['constraints'] = self.constraints
+        return jsonnode
+
+    def rdf(self,graph, basens,parentseturi, parentclass=None, seqnr=None):
+        graph.add((rdflib.term.URIRef(basens + '#' + self.id), rdflib.RDF.type, rdflib.term.URIRef(NSFOLIASETDEFINITION + '#Constraint')))
+        graph.add((rdflib.term.URIRef(basens + '#' + self.id), rdflib.term.URIRef(NSFOLIASETDEFINITION + '#constraintType'), rdflib.term.Literal(self.type)))
+        for constraint in self.constraints:
+            graph.add((rdflib.term.URIRef(basens + '#' + self.id), rdflib.term.URIRef(NSFOLIASETDEFINITION + '#constrain'), basens + '#' + constraint))
+
 class LegacyClassDefinition(object):
-    def __init__(self,id, label, subclasses=None):
+    def __init__(self,id, label, subclasses=None, constraints = None):
         self.id = id
         self.label = label
         if subclasses:
             self.subclasses = subclasses
         else:
             self.subclasses = []
+        if constraints:
+            self.constraints = constraints
+        else:
+            self.constraints = []
 
     @classmethod
     def parsexml(Class, node):
@@ -75,17 +129,23 @@ class LegacyClassDefinition(object):
             label = ""
 
         subclasses= []
+        constraints = []
         for subnode in node:
             if isinstance(subnode.tag, str) or (sys.version < '3' and isinstance(subnode.tag, unicode)): #pylint: disable=undefined-variable
                 if subnode.tag == '{' + NSFOLIA + '}class':
                     subclasses.append( LegacyClassDefinition.parsexml(subnode) )
+                elif subnode.tag == '{' + NSFOLIA + '}constrain':
+                    if 'id' in subnode.attrib:
+                        constraints.append( subnode.attrib['id'] )
+                    else:
+                        raise Exception("Missing ID in constrain element")
                 elif subnode.tag[:len(NSFOLIA) +2] == '{' + NSFOLIA + '}':
                     raise Exception("Invalid tag in Class definition: " + subnode.tag)
         if '{http://www.w3.org/XML/1998/namespace}id' in node.attrib:
             idkey = '{http://www.w3.org/XML/1998/namespace}id'
         else:
             idkey = 'id'
-        return LegacyClassDefinition(node.attrib[idkey],label, subclasses)
+        return LegacyClassDefinition(node.attrib[idkey],label, subclasses, constraints)
 
 
     def __iter__(self):
@@ -97,6 +157,7 @@ class LegacyClassDefinition(object):
         jsonnode['subclasses'] = []
         for subclass in self.subclasses:
             jsonnode['subclasses'].append(subclass.json())
+        jsonnode['constraints'] = self.constraints
         return jsonnode
 
     def rdf(self,graph, basens,parentseturi, parentclass=None, seqnr=None):
@@ -112,8 +173,11 @@ class LegacyClassDefinition(object):
         for subclass in self.subclasses:
             subclass.rdf(graph,basens,parentseturi, self.id)
 
+        for constraint in self.constraints:
+            graph.add((rdflib.term.URIRef(basens + '#' + self.id), rdflib.term.URIRef(NSFOLIASETDEFINITION + '#constrain'), basens + '#' + constraint))
+
 class LegacySetDefinition(object):
-    def __init__(self, id, type, classes = None, subsets = None, label =None):
+    def __init__(self, id, type, classes = None, subsets = None, label =None, constraints = None, constraintdefinitions = None):
         self.id = id
         self.type = type
         self.label = label
@@ -125,6 +189,14 @@ class LegacySetDefinition(object):
             self.subsets = subsets
         else:
             self.subsets = []
+        if constraints:
+            self.constraints = constraints
+        else:
+            self.constraints = []
+        if constraintdefinitions:
+            self.constraintdefinition = constraintdefinitions
+        else:
+            self.constraintdefinitions = []
 
     @classmethod
     def parsexml(Class, node):
@@ -152,18 +224,25 @@ class LegacySetDefinition(object):
         else:
             label = None
 
+        constraints = []
+        constraintdefinitions = []
         for subnode in node:
             if isinstance(subnode.tag, str) or (sys.version < '3' and isinstance(subnode.tag, unicode)): #pylint: disable=undefined-variable
                 if subnode.tag == '{' + NSFOLIA + '}class':
                     classes.append( LegacyClassDefinition.parsexml(subnode) )
                 elif not issubset and subnode.tag == '{' + NSFOLIA + '}subset':
                     subsets.append( LegacySetDefinition.parsexml(subnode) )
-                elif subnode.tag == '{' + NSFOLIA + '}constraint':
-                    pass
+                elif not issubset and subnode.tag == '{' + NSFOLIA + '}constraint':
+                    constraintdefinitions.append( LegacyConstraintDefinition.parsexml(subnode) )
+                elif subnode.tag == '{' + NSFOLIA + '}constrain':
+                    if 'id' in subnode.attrib:
+                        constraints.append( subnode.attrib['id'] )
+                    else:
+                        raise Exception("Missing ID in constrain element")
                 elif subnode.tag[:len(NSFOLIA) +2] == '{' + NSFOLIA + '}':
                     raise SetDefinitionError("Invalid tag in Set definition: " + subnode.tag)
 
-        return LegacySetDefinition(node.attrib['{http://www.w3.org/XML/1998/namespace}id'],type,classes, subsets, label)
+        return LegacySetDefinition(node.attrib['{http://www.w3.org/XML/1998/namespace}id'],type,classes, subsets, label, constraints, constraintdefinitions)
 
 
     def json(self):
@@ -181,6 +260,9 @@ class LegacySetDefinition(object):
         jsonnode['subsets'] = {}
         for subset in self.subsets:
             jsonnode['subsets'][subset.id] = subset.json()
+        for constraint in self.constraintdefinitions:
+            jsonnode['constraintdefinitions'][constraint.id] = constraint.json()
+        jsonnode['constraints'] = self.constraints
         jsonnode['classes'] = {}
         jsonnode['classorder'] = []
         for c in sorted(self.classes, key=lambda x: x.label):
@@ -214,6 +296,9 @@ class LegacySetDefinition(object):
 
         for s in self.subsets:
             s.rdf(graph, basens, seturi)
+
+        for constraint in self.constraints:
+            graph.add((rdflib.term.URIRef(basens + '#' + self.id), rdflib.term.URIRef(NSFOLIASETDEFINITION + '#constrain'), basens + '#' + constraint))
 
 
 def xmltreefromstring(s):
