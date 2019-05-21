@@ -99,7 +99,7 @@ class LegacyConstraintDefinition(object):
         jsonnode['constraints'] = self.constraints
         return jsonnode
 
-    def rdf(self,graph, basens,parentseturi, parentclass=None, seqnr=None):
+    def rdf(self,graph, basens):
         graph.add((rdflib.term.URIRef(basens + '#' + self.id), rdflib.RDF.type, rdflib.term.URIRef(NSFOLIASETDEFINITION + '#Constraint')))
         graph.add((rdflib.term.URIRef(basens + '#' + self.id), rdflib.term.URIRef(NSFOLIASETDEFINITION + '#constraintType'), rdflib.term.Literal(self.type)))
         for constraint in self.constraints:
@@ -194,7 +194,7 @@ class LegacySetDefinition(object):
         else:
             self.constraints = []
         if constraintdefinitions:
-            self.constraintdefinition = constraintdefinitions
+            self.constraintdefinitions = constraintdefinitions
         else:
             self.constraintdefinitions = []
 
@@ -298,8 +298,10 @@ class LegacySetDefinition(object):
             s.rdf(graph, basens, seturi)
 
         for constraint in self.constraints:
-            graph.add((rdflib.term.URIRef(basens + '#' + self.id), rdflib.term.URIRef(NSFOLIASETDEFINITION + '#constrain'), rdflib.term.URIRef(basens + '#' + constraint)))
+            graph.add((seturi, rdflib.term.URIRef(NSFOLIASETDEFINITION + '#constrain'), rdflib.term.URIRef(basens + '#' + constraint)))
 
+        for constraint in self.constraintdefinitions:
+            constraint.rdf(graph, basens)
 
 def xmltreefromstring(s):
     """Internal function, deals with different Python versions, unicode strings versus bytes, and with the leak bug in lxml"""
