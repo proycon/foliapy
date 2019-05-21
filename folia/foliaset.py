@@ -65,7 +65,7 @@ class LegacyConstraintDefinition(object):
             self.constraints = []
 
     @classmethod
-    def parsexml(Class, node):
+    def parsexml(Class, node, subsets):
         if not node.tag == '{' + NSFOLIA + '}constraint':
             raise Exception("Expected constraint tag for this xml node, got" + node.tag)
 
@@ -79,7 +79,10 @@ class LegacyConstraintDefinition(object):
             if isinstance(subnode.tag, str): #pylint: disable=undefined-variable
                 if subnode.tag == '{' + NSFOLIA + '}constrain':
                     if 'id' in subnode.attrib:
-                        constraints.append( subnode.attrib['id'] )
+                        if subnode.attrib['id'] in subsets:
+                            constraints.append( "Subset." + subnode.attrib['id'] )
+                        else:
+                            constraints.append( subnode.attrib['id'] )
                     else:
                         raise Exception("Missing ID in constrain element")
                 elif subnode.tag[:len(NSFOLIA) +2] == '{' + NSFOLIA + '}':
@@ -233,7 +236,7 @@ class LegacySetDefinition(object):
                 elif not issubset and subnode.tag == '{' + NSFOLIA + '}subset':
                     subsets.append( LegacySetDefinition.parsexml(subnode) )
                 elif not issubset and subnode.tag == '{' + NSFOLIA + '}constraint':
-                    constraintdefinitions.append( LegacyConstraintDefinition.parsexml(subnode) )
+                    constraintdefinitions.append( LegacyConstraintDefinition.parsexml(subnode, [ s.id for s in subsets ]) )
                 elif subnode.tag == '{' + NSFOLIA + '}constrain':
                     if 'id' in subnode.attrib:
                         constraints.append( subnode.attrib['id'] )
@@ -448,7 +451,8 @@ class SetDefinition(object):
                     })
                 yield {
                    'type': str(row['constrainttype']),
-                   'relations': relations
+                   'relations': relations,
+                   'uri': str(row['constrainturi'])
                 }
 
         if cls:
