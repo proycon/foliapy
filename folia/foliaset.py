@@ -411,10 +411,10 @@ class SetDefinition(object):
         mainsetinfo = self.mainset()
         set_uri = mainsetinfo['uri']
 
-        SPARQL_CONSTRAIN_TO_SUBSET_CLASS = lambda sourceuri: "SELECT ?constrainedclass, ?subsetid WHERE { <"+ str(sourceuri) + "> fsd:constrain ?constrainedclassuri . ?constrainedclassuri rdf:type skos:Concept ; skos:notation ?constrainedclass . ?subseturi skos:member ?constraintedclassuri ; skos:notation ?subsetid }"
-        SPARQL_CONSTRAIN_TO_SUBSET = lambda sourceuri: "SELECT ?subsetid WHERE { <"+ str(sourceuri) + "> fsd:constrain ?subseturi . ?subseturi rdf:type skos:Collection ; skos:notation ?subsetid }"
-        SPARQL_CONSTRAIN_TO_CONSTRAINT = lambda sourceuri: "SELECT ?constrainturi, ?constrainttype WHERE { <" + str(sourceuri) + "> fsd:constrain ?constrainturi . ?constrainturi rdf:type fsd:Constraint . OPTIONAL { ?constrainturi fsd:constraintType ?constrainttype } }"
-        SPARQL_CONSTRAIN_TO_CLASS = lambda sourceuri: "SELECT ?classuri, ?cls WHERE { <"+ str(sourceuri) + "> fsd:constrain ?classuri . <" + str(set_uri) +"> skos:member ?classuri . ?classuri skos:notation ?cls . }"
+        SPARQL_CONSTRAIN_TO_SUBSET_CLASS = lambda sourceuri: "SELECT ?constrainedclass ?subsetid WHERE { <"+ str(sourceuri) + "> fsd:constrain ?constrainedclassuri . ?constrainedclassuri rdf:type skos:Concept ; skos:notation ?constrainedclass . ?subseturi skos:member ?constraintedclassuri ; skos:notation ?subsetid . }"
+        SPARQL_CONSTRAIN_TO_SUBSET = lambda sourceuri: "SELECT ?subsetid WHERE { <"+ str(sourceuri) + "> fsd:constrain ?subseturi . ?subseturi rdf:type skos:Collection ; skos:notation ?subsetid . }"
+        SPARQL_CONSTRAIN_TO_CONSTRAINT = lambda sourceuri: "SELECT ?constrainturi ?constrainttype WHERE { <" + str(sourceuri) + "> fsd:constrain ?constrainturi . ?constrainturi rdf:type fsd:Constraint . OPTIONAL { ?constrainturi fsd:constraintType ?constrainttype . } }"
+        SPARQL_CONSTRAIN_TO_CLASS = lambda sourceuri: "SELECT ?classuri ?cls WHERE { <"+ str(sourceuri) + "> fsd:constrain ?classuri . <" + str(set_uri) +"> skos:member ?classuri . ?classuri skos:notation ?cls . }"
 
         def process_constraints(sourceuri):
            for row in self.graph.query(SPARQL_CONSTRAIN_TO_CONSTRAINT(sourceuri)):
@@ -468,7 +468,8 @@ class SetDefinition(object):
 
         #constraints from subsets
         for subset in features.keys():
-            subseturi = self.subset(subset)
+            subsetinfo = self.subset(subset)
+            subseturi = subsetinfo['uri']
             #to a subset class
             for row2  in self.graph.query(SPARQL_CONSTRAIN_TO_SUBSET_CLASS(subseturi)):
                self.evaluate_constraint(cls,features,{
@@ -533,35 +534,36 @@ class SetDefinition(object):
     def evaluate_constraint(self, cls, features, constraint):
         constrainttype = constraint['type']
         result = constrainttype == 'none'
-        for constrain in constraint['relations']:
-            if 'constraint' in constrain:
-                #nested constraints
-                try:
-                    match = True
-                    self.evaluate_constraint(cls, features, constrain['constraint'])
-                except DeepValidationError:
-                    match = False
-            elif 'subset' in constrain and 'class' in constrain:
-                match = constrain['subset'] in features and features[constraint['subset']] == constrain['class']
-            elif 'class' in constrain:
-                match = cls == constraint['class']
-            elif 'subset' in constrain:
-                match = constrain['subset'] in features
-            else:
-                raise ValueError("Invalid constraint formatting:" + repr(constraint))
-            if match:
-                if constrainttype == 'any':
-                    result = True
-                    break
-                elif constrainttype == 'none':
-                    result = False
-                    break
-            else:
-                if constrainttype == 'all':
-                    result = False
-                    break
-        if not result:
-            raise DeepValidationError("Constraints from the set definition were not met. Constraint: " + repr(constraint) + ", Class: " + cls + ", Features: " + repr(features))
+        if constraint['relations']:
+            for constrain in constraint['relations']:
+                if 'constraint' in constrain:
+                    #nested constraints
+                    try:
+                        match = True
+                        self.evaluate_constraint(cls, features, constrain['constraint'])
+                    except DeepValidationError:
+                        match = False
+                elif 'subset' in constrain and 'class' in constrain:
+                    match = constrain['subset'] in features and features[constraint['subset']] == constrain['class']
+                elif 'class' in constrain:
+                    match = cls == constraint['class']
+                elif 'subset' in constrain:
+                    match = constrain['subset'] in features
+                else:
+                    raise ValueError("Invalid constraint formatting:" + repr(constraint))
+                if match:
+                    if constrainttype == 'any':
+                        result = True
+                        break
+                    elif constrainttype == 'none':
+                        result = False
+                        break
+                else:
+                    if constrainttype == 'all':
+                        result = False
+                        break
+            if not result:
+                raise DeepValidationError("Constraints from the set definition were not met. Constraint: " + repr(constraint) + ", Class: " + cls + ", Features: " + repr(features))
 
 
     def testsubclass(self, cls, subset, subclass):
