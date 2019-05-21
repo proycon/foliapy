@@ -468,7 +468,8 @@ class SetDefinition(object):
             if constrainttype:
                 self.constraintchecker.group[constrainturi] =  constrainttype
         for row in self.graph.query("SELECT ?source ?target WHERE { ?source fsd:constrain ?target }"):
-            self.constraintchecker.constraints =
+            #self.constraintchecker.constraints =
+            pass
 
             self.mainsetcache = {'uri': str(row.seturi), 'id': str(row.setid), 'label': str(row.setlabel) if row.setlabel else "", 'open': bool(row.setopen), 'empty': bool(row.setempty) }
             return self.mainsetcache
