@@ -24,7 +24,7 @@ def test_generator(filename, deepvalidation=False, erroneous=False,debug=False):
     def test(self):
         if debug: print("Testing " + filename,file=sys.stderr)
         if erroneous:
-            self.assertRaises(Exception, folia.Document, file=filename,deepvalidation=deepvalidation)
+            self.assertRaises(Exception, folia.Document, file=filename,autodeclare=False,deepvalidation=deepvalidation)
         else:
             folia.Document(file=filename, deepvalidation=deepvalidation)
     return test
