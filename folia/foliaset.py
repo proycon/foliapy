@@ -406,17 +406,161 @@ class SetDefinition(object):
             raise DeepValidationError("Not a valid class: " + cls)
 
     def testconstraints(self, cls, features):
-        if cls:
-            #TODO: implement
-            pass
-           #get constrains from class
-           #constrain_constraints =  []
-           #for row in self.graph.query("SELECT ?constrainturi, ?constrainttype WHERE { ?classuri rdf:type skos.Concept ; skos:notation \"" + cls + "\". <" + str(set_uri) + "> skos:member ?classuri . ?classuri fsd:constrain ?constrainturi . ?constrainturi rdf:type fsd:Constraint . OPTIONAL { ?constrainturi fsd:constraintType ?constrainttype } }"):
-              #constrain_constraints[row['constrainturi']] = row['constrainttype']
+        mainsetinfo = self.mainset()
+        set_uri = mainsetinfo['uri']
 
-           #for row in self.graph.query("SELECT ?constrainedclassuri, ?constrainedclass, ?subseturi, ?subsetid WHERE { ?classuri rdf:type skos.Concept ; skos:notation \"" + cls + "\". <" + str(set_uri) + "> skos:member ?subseturi . ?classuri fsd:constrain ?constrainedclassuri . ?constrainedclassuri rdf:type skos:Concept ; skos:notation ?constrainedclass . ?subseturi skos:member ?classuri . ?subseturi skos:notation ?subsetid }"):
-            #constrain_features( row['subsetid'], row['constraineduri'] )
-        return True
+        SPARQL_CONSTRAIN_TO_SUBSET_CLASS = lambda sourceuri: "SELECT ?constrainedclass, ?subsetid WHERE { <"+ str(sourceuri) + "> fsd:constrain ?constrainedclassuri . ?constrainedclassuri rdf:type skos:Concept ; skos:notation ?constrainedclass . ?subseturi skos:member ?constraintedclassuri ; skos:notation ?subsetid }"
+        SPARQL_CONSTRAIN_TO_SUBSET = lambda sourceuri: "SELECT ?subsetid WHERE { <"+ str(sourceuri) + "> fsd:constrain ?subseturi . ?subseturi rdf:type skos:Collection ; skos:notation ?subsetid }"
+        SPARQL_CONSTRAIN_TO_CONSTRAINT = lambda sourceuri: "SELECT ?constrainturi, ?constrainttype WHERE { <" + str(sourceuri) + "> fsd:constrain ?constrainturi . ?constrainturi rdf:type fsd:Constraint . OPTIONAL { ?constrainturi fsd:constraintType ?constrainttype } }"
+        SPARQL_CONSTRAIN_TO_CLASS = lambda sourceuri: "SELECT ?classuri, ?cls WHERE { <"+ str(sourceuri) + "> fsd:constrain ?classuri . <" + str(set_uri) +"> skos:member ?classuri . ?classuri skos:notation ?cls . }"
+
+        def process_constraints(sourceuri):
+           for row in self.graph.query(SPARQL_CONSTRAIN_TO_CONSTRAINT(sourceuri)):
+               relations = []
+               #to a subset class
+               for row2  in self.graph.query(SPARQL_CONSTRAIN_TO_SUBSET_CLASS(row['constrainturi'])):
+                   relations.append({
+                       'subset': row2['subsetid'],
+                       'class': row2['constrainedclass']
+                   })
+               #to a subset
+               for row2 in self.graph.query(SPARQL_CONSTRAIN_TO_SUBSET(row['constrainturi'])):
+                   relations.append({
+                       'subset': row2['subsetid'],
+                   })
+               #recursion step for nested constraints
+               for constraint in process_constraints(row['constrainturi']):
+                   relations.append({
+                       'constraint': constraint
+                   })
+               yield {
+                  'type': 'row' if 'constrainttype' in row else "all",
+                  'relations': relations
+               }
+
+        if cls:
+           #constraints from main class
+           classuri = self.testclass(cls)
+           #simple constraint from main class to a subset class
+           for row in self.graph.query(SPARQL_CONSTRAIN_TO_SUBSET_CLASS(classuri)):
+               self.evaluate_constraint(cls, features, {
+                   'type': 'all',
+                   'relations': [{
+                       'subset': row['subsetid'],
+                       'class': row['constrainedclass']
+                   }],
+               })
+
+           #simple constraint from main class to a subset (just requires presence/absence of said subset)
+           for row in self.graph.query(SPARQL_CONSTRAIN_TO_SUBSET(classuri)):
+               self.evaluate_constraint(cls, features, {
+                   'type': 'all',
+                   'relations': [{
+                       'subset': row['subsetid'],
+                   }]
+               })
+
+           #constraint from main class through a constraint construct
+           for constraint in process_constraints(classuri):
+               self.evaluate_constraint(cls, features, constraint)
+
+        #constraints from subsets
+        for subset in features.keys():
+            subseturi = self.subset(subset)
+            #to a subset class
+            for row2  in self.graph.query(SPARQL_CONSTRAIN_TO_SUBSET_CLASS(subseturi)):
+               self.evaluate_constraint(cls,features,{
+                   'type': 'all',
+                   'relations': {
+                       'subset': row2['subsetid'],
+                       'class': row2['constrainedclass']
+                   }
+               })
+            #to a subset
+            for row2  in self.graph.query(SPARQL_CONSTRAIN_TO_SUBSET(subseturi)):
+               self.evaluate_constraint(cls,features,{
+                   'type': 'all',
+                   'relations': {
+                       'subset': row2['subsetid'],
+                   }
+               })
+            #to a main class
+            for row2  in self.graph.query(SPARQL_CONSTRAIN_TO_CLASS(subseturi)):
+               self.evaluate_constraint(cls,features,{
+                   'type': 'all',
+                   'relations': {
+                       'class': row2['cls'],
+                   }
+               })
+            #to a constraint construct
+            for constraint in process_constraints(subseturi):
+               self.evaluate_constraint(cls, features, constraint)
+
+        #constrains from classes in subsets
+        for subset, subclass in features.items():
+            classuri = self.testsubclass(cls, subset, subclass)
+            #to a subset class
+            for row2  in self.graph.query(SPARQL_CONSTRAIN_TO_SUBSET_CLASS(classuri)):
+               self.evaluate_constraint(cls,features,{
+                   'type': 'all',
+                   'relations': {
+                       'subset': row2['subsetid'],
+                       'class': row2['constrainedclass']
+                   }
+               })
+            #to a subset
+            for row2  in self.graph.query(SPARQL_CONSTRAIN_TO_SUBSET(classuri)):
+               self.evaluate_constraint(cls,features,{
+                   'type': 'all',
+                   'relations': {
+                       'subset': row2['subsetid'],
+                   }
+               })
+            #to a main class
+            for row2  in self.graph.query(SPARQL_CONSTRAIN_TO_CLASS(classuri)):
+               self.evaluate_constraint(cls,features,{
+                   'type': 'all',
+                   'relations': {
+                       'class': row2['cls'],
+                   }
+               })
+            #to a constraint construct
+            for constraint in process_constraints(classuri):
+               self.evaluate_constraint(cls, features, constraint)
+
+    def evaluate_constraint(self, cls, features, constraint):
+        constrainttype = constraint['type']
+        result = constrainttype == 'none'
+        for constrain in constraint['relations']:
+            if 'constraint' in constrain:
+                #nested constraints
+                try:
+                    match = True
+                    self.evaluate_constraint(cls, features, constrain['constraint'])
+                except DeepValidationError:
+                    match = False
+            elif 'subset' in constrain and 'class' in constrain:
+                match = constrain['subset'] in features and features[constraint['subset']] == constrain['class']
+            elif 'class' in constrain:
+                match = cls == constraint['class']
+            elif 'subset' in constrain:
+                match = constrain['subset'] in features
+            else:
+                raise ValueError("Invalid constraint formatting:" + repr(constraint))
+            if match:
+                if constrainttype == 'any':
+                    result = True
+                    break
+                elif constrainttype == 'none':
+                    result = False
+                    break
+            else:
+                if constrainttype == 'all':
+                    result = False
+                    break
+        if not result:
+            raise DeepValidationError("Constraints from the set definition were not met. Constraint: " + repr(constraint) + ", Class: " + cls + ", Features: " + repr(features))
+
 
     def testsubclass(self, cls, subset, subclass):
         """Test for the presence of a class in a subset (used with features), returns the full URI or raises an exception"""
