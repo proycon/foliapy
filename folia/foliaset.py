@@ -103,7 +103,7 @@ class LegacyConstraintDefinition(object):
         graph.add((rdflib.term.URIRef(basens + '#' + self.id), rdflib.RDF.type, rdflib.term.URIRef(NSFOLIASETDEFINITION + '#Constraint')))
         graph.add((rdflib.term.URIRef(basens + '#' + self.id), rdflib.term.URIRef(NSFOLIASETDEFINITION + '#constraintType'), rdflib.term.Literal(self.type)))
         for constraint in self.constraints:
-            graph.add((rdflib.term.URIRef(basens + '#' + self.id), rdflib.term.URIRef(NSFOLIASETDEFINITION + '#constrain'), basens + '#' + constraint))
+            graph.add((rdflib.term.URIRef(basens + '#' + self.id), rdflib.term.URIRef(NSFOLIASETDEFINITION + '#constrain'), rdflib.term.URIRef(basens + '#' + constraint)))
 
 class LegacyClassDefinition(object):
     def __init__(self,id, label, subclasses=None, constraints = None):
@@ -174,7 +174,7 @@ class LegacyClassDefinition(object):
             subclass.rdf(graph,basens,parentseturi, self.id)
 
         for constraint in self.constraints:
-            graph.add((rdflib.term.URIRef(basens + '#' + self.id), rdflib.term.URIRef(NSFOLIASETDEFINITION + '#constrain'), basens + '#' + constraint))
+            graph.add((rdflib.term.URIRef(basens + '#' + self.id), rdflib.term.URIRef(NSFOLIASETDEFINITION + '#constrain'), rdflib.term.URIRef(basens + '#' + constraint)))
 
 class LegacySetDefinition(object):
     def __init__(self, id, type, classes = None, subsets = None, label =None, constraints = None, constraintdefinitions = None):
@@ -298,7 +298,7 @@ class LegacySetDefinition(object):
             s.rdf(graph, basens, seturi)
 
         for constraint in self.constraints:
-            graph.add((rdflib.term.URIRef(basens + '#' + self.id), rdflib.term.URIRef(NSFOLIASETDEFINITION + '#constrain'), basens + '#' + constraint))
+            graph.add((rdflib.term.URIRef(basens + '#' + self.id), rdflib.term.URIRef(NSFOLIASETDEFINITION + '#constrain'), rdflib.term.URIRef(basens + '#' + constraint)))
 
 
 def xmltreefromstring(s):
@@ -406,9 +406,16 @@ class SetDefinition(object):
             raise DeepValidationError("Not a valid class: " + cls)
 
     def testconstraints(self, cls, features):
-        if not cls:
-            raise DeepValidationError("No class specified")
-        #TODO
+        if cls:
+            #TODO: implement
+            pass
+           #get constrains from class
+           #constrain_constraints =  []
+           #for row in self.graph.query("SELECT ?constrainturi, ?constrainttype WHERE { ?classuri rdf:type skos.Concept ; skos:notation \"" + cls + "\". <" + str(set_uri) + "> skos:member ?classuri . ?classuri fsd:constrain ?constrainturi . ?constrainturi rdf:type fsd:Constraint . OPTIONAL { ?constrainturi fsd:constraintType ?constrainttype } }"):
+              #constrain_constraints[row['constrainturi']] = row['constrainttype']
+
+           #for row in self.graph.query("SELECT ?constrainedclassuri, ?constrainedclass, ?subseturi, ?subsetid WHERE { ?classuri rdf:type skos.Concept ; skos:notation \"" + cls + "\". <" + str(set_uri) + "> skos:member ?subseturi . ?classuri fsd:constrain ?constrainedclassuri . ?constrainedclassuri rdf:type skos:Concept ; skos:notation ?constrainedclass . ?subseturi skos:member ?classuri . ?subseturi skos:notation ?subsetid }"):
+            #constrain_features( row['subsetid'], row['constraineduri'] )
         return True
 
     def testsubclass(self, cls, subset, subclass):
@@ -446,6 +453,23 @@ class SetDefinition(object):
             return self.mainsetcache
         set_uri = self.get_set_uri()
         for row in self.graph.query("SELECT ?seturi ?setid ?setlabel ?setopen ?setempty WHERE { ?seturi rdf:type skos:Collection . OPTIONAL { ?seturi skos:notation ?setid } OPTIONAL { ?seturi skos:prefLabel ?setlabel } OPTIONAL { ?seturi fsd:open ?setopen } OPTIONAL { ?seturi fsd:empty ?setempty } FILTER NOT EXISTS { ?y skos:member ?seturi . ?y rdf:type skos:Collection } }"):
+            self.mainsetcache = {'uri': str(row.seturi), 'id': str(row.setid), 'label': str(row.setlabel) if row.setlabel else "", 'open': bool(row.setopen), 'empty': bool(row.setempty) }
+            return self.mainsetcache
+        raise DeepValidationError("Unable to find main set (set_uri=" + str(set_uri)+"), this should not happen")
+
+    def constraints(self):
+        if self.constraintchecker:
+            return self.constraintchecker
+        else:
+            self.constraintchecker = ConstraintChecker()
+
+        set_uri = self.get_set_uri()
+        for row in self.graph.query("SELECT ?constrainturi ?constrainttype WHERE { ?constrainturi rdf:type fsd:Constraint . OPTIONAL { ?constrainturi fsd:constraintType ?constrainttype }"):
+            if constrainttype:
+                self.constraintchecker.group[constrainturi] =  constrainttype
+        for row in self.graph.query("SELECT ?source ?target WHERE { ?source fsd:constrain ?target }"):
+            self.constraintchecker.constraints =
+
             self.mainsetcache = {'uri': str(row.seturi), 'id': str(row.setid), 'label': str(row.setlabel) if row.setlabel else "", 'open': bool(row.setopen), 'empty': bool(row.setempty) }
             return self.mainsetcache
         raise DeepValidationError("Unable to find main set (set_uri=" + str(set_uri)+"), this should not happen")
