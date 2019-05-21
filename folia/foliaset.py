@@ -645,24 +645,6 @@ class SetDefinition(object):
             return self.mainsetcache
         raise DeepValidationError("Unable to find main set (set_uri=" + str(set_uri)+"), this should not happen")
 
-    def constraints(self):
-        if self.constraintchecker:
-            return self.constraintchecker
-        else:
-            self.constraintchecker = ConstraintChecker()
-
-        set_uri = self.get_set_uri()
-        for row in self.graph.query("SELECT ?constrainturi ?constrainttype WHERE { ?constrainturi rdf:type fsd:Constraint . OPTIONAL { ?constrainturi fsd:constraintType ?constrainttype }"):
-            if constrainttype:
-                self.constraintchecker.group[constrainturi] =  constrainttype
-        for row in self.graph.query("SELECT ?source ?target WHERE { ?source fsd:constrain ?target }"):
-            #self.constraintchecker.constraints =
-            pass
-
-            self.mainsetcache = {'uri': str(row.seturi), 'id': str(row.setid), 'label': str(row.setlabel) if row.setlabel else "", 'open': bool(row.setopen), 'empty': bool(row.setempty) }
-            return self.mainsetcache
-        raise DeepValidationError("Unable to find main set (set_uri=" + str(set_uri)+"), this should not happen")
-
     def subset(self, subset_id):
         """Returns information regarding the set"""
         if subset_id in self.subsetcache:
