@@ -1890,7 +1890,7 @@ class AbstractElement(object):
                 self.doc.setdefinitions[self.set].testconstraints(self.cls, { f.subset: f.cls for f in self.select(Feature,recursive=False) }, self.doc.debug)
             except KeyError:
                 if self.cls and not self.doc.allowadhocsets:
-                    raise DeepValidationError("Set definition " + self.set + " for " + self.XMLTAG + " not loaded!")
+                    raise DeepValidationError("Set definition " + self.set + " for " + self.XMLTAG + " not loaded (document " + self.doc.id+ ", " + str(self.doc.filename) + ")")
             except DeepValidationError as e:
                 errormsg =  str(e) + " (in set " + self.set+" for " + self.XMLTAG
                 if self.id:
