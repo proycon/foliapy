@@ -20,7 +20,7 @@ class ExamplesTest(unittest.TestCase):
 
 for filename in glob.glob(os.path.join(FOLIAPATH,"examples","*.xml")):
     examplename = os.path.basename(filename)[:-10].replace('-','_')
-    setattr(ExamplesTest, "test_" + examplename, (lambda self: folia.Document(file=filename)))
+    setattr(ExamplesTest, "test_" + examplename, (lambda self: folia.Document(file=filename, deepvalidation=examplename.find('deep') != -1)))
 
 for filename in glob.glob(os.path.join(FOLIAPATH,"examples","erroneous","*.xml")):
     examplename = os.path.basename(filename)[:-10].replace('-','_')
