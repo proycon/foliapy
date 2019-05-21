@@ -407,39 +407,47 @@ class SetDefinition(object):
                 return str(row.c)
             raise DeepValidationError("Not a valid class: " + cls)
 
-    def testconstraints(self, cls, features):
+    def testconstraints(self, cls, features, debug=True):
         mainsetinfo = self.mainset()
         set_uri = mainsetinfo['uri']
+        if debug: print("Constraint checker Set " + set_uri + " for Class " + cls + " with features " + repr(features),file=sys.stderr)
 
         SPARQL_CONSTRAIN_TO_SUBSET_CLASS = lambda sourceuri: "SELECT ?constrainedclass ?subsetid WHERE { <"+ str(sourceuri) + "> fsd:constrain ?constrainedclassuri . ?constrainedclassuri rdf:type skos:Concept ; skos:notation ?constrainedclass . ?subseturi skos:member ?constrainedclassuri ; skos:notation ?subsetid . <" + str(set_uri) + "> skos:member ?subseturi . }"
         SPARQL_CONSTRAIN_TO_SUBSET = lambda sourceuri: "SELECT ?subsetid WHERE { <"+ str(sourceuri) + "> fsd:constrain ?subseturi . ?subseturi rdf:type skos:Collection ; skos:notation ?subsetid . <" + str(set_uri) + "> skos:member ?subseturi . }"
-        SPARQL_CONSTRAIN_TO_CONSTRAINT = lambda sourceuri: "SELECT ?constrainturi ?constrainttype WHERE { <" + str(sourceuri) + "> fsd:constrain ?constrainturi . ?constrainturi rdf:type fsd:Constraint . OPTIONAL { ?constrainturi fsd:constraintType ?constrainttype . } }"
+        SPARQL_CONSTRAIN_TO_CONSTRAINT = lambda sourceuri: "SELECT ?constrainturi ?constrainttype WHERE { <" + str(sourceuri) + "> fsd:constrain ?constrainturi . ?constrainturi rdf:type fsd:Constraint ; fsd:constraintType ?constrainttype . }"
         SPARQL_CONSTRAIN_TO_CLASS = lambda sourceuri: "SELECT ?classuri ?cls WHERE { <"+ str(sourceuri) + "> fsd:constrain ?classuri . <" + str(set_uri) +"> skos:member ?classuri . ?classuri skos:notation ?cls . }"
 
         def process_constraints(sourceuri):
            for row in self.graph.query(SPARQL_CONSTRAIN_TO_CONSTRAINT(sourceuri)):
                 relations = []
+                constrainturi = str(row['constrainturi'])
                 #to a subset class
-                for row2  in self.graph.query(SPARQL_CONSTRAIN_TO_SUBSET_CLASS(row['constrainturi'])):
+                for row2  in self.graph.query(SPARQL_CONSTRAIN_TO_SUBSET_CLASS(constrainturi)):
                     relations.append({
                         'subset': str(row2['subsetid']),
                         'class': str(row2['constrainedclass']),
                         'debug': 'X-c:' + str(row['constrainturi'])
                     })
                 #to a subset
-                for row2 in self.graph.query(SPARQL_CONSTRAIN_TO_SUBSET(row['constrainturi'])):
+                for row2 in self.graph.query(SPARQL_CONSTRAIN_TO_SUBSET(constrainturi)):
                     relations.append({
                         'subset': str(row2['subsetid']),
                         'debug': 'X-S'
                     })
+                #to a main class
+                for row2 in self.graph.query(SPARQL_CONSTRAIN_TO_CLASS(constrainturi)):
+                    relations.append({
+                        'class': str(row2['cls']),
+                        'debug': 'X-S'
+                    })
                 #recursion step for nested constraints
-                for constraint in process_constraints(row['constrainturi']):
+                for constraint in process_constraints(constrainturi):
                     relations.append({
                         'constraint': constraint,
                         'debug': 'X-X'
                     })
                 yield {
-                   'type': 'row' if 'constrainttype' in row else "all",
+                   'type': str(row['constrainttype']),
                    'relations': relations
                 }
 
@@ -448,6 +456,7 @@ class SetDefinition(object):
            classuri = self.testclass(cls)
            #simple constraint from main class to a subset class
            for row in self.graph.query(SPARQL_CONSTRAIN_TO_SUBSET_CLASS(classuri)):
+               if debug: print("--- Evaluating constraint from main class (" + str(cls) + ") to subset " + str(row['subsetid']) + " class " + str(row['constrainedclass']), file=sys.stderr)
                self.evaluate_constraint(cls, features, {
                    'type': 'all',
                    'relations': [{
@@ -459,6 +468,7 @@ class SetDefinition(object):
 
            #simple constraint from main class to a subset (just requires presence/absence of said subset)
            for row in self.graph.query(SPARQL_CONSTRAIN_TO_SUBSET(classuri)):
+               if debug: print("--- Evaluating constraint from main class (" + str(cls) + ") to subset " + str(row['subsetid']), file=sys.stderr)
                self.evaluate_constraint(cls, features, {
                    'type': 'all',
                    'relations': [{
@@ -469,6 +479,7 @@ class SetDefinition(object):
 
            #constraint from main class through a constraint construct
            for constraint in process_constraints(classuri):
+               if debug: print("--- Evaluating constraint from main class (" + str(cls) + ") to constraint: ", repr(constraint), file=sys.stderr)
                self.evaluate_constraint(cls, features, constraint)
 
         #constraints from subsets
@@ -476,76 +487,85 @@ class SetDefinition(object):
             subsetinfo = self.subset(subset)
             subseturi = subsetinfo['uri']
             #to a subset class
-            for row2  in self.graph.query(SPARQL_CONSTRAIN_TO_SUBSET_CLASS(subseturi)):
+            for row  in self.graph.query(SPARQL_CONSTRAIN_TO_SUBSET_CLASS(subseturi)):
+               if debug: print("--- Evaluating constraint from subset (" + str(subseturi) + ") to subset " + str(row['subsetid']) + " class " + str(row['constrainedclass']), file=sys.stderr)
                self.evaluate_constraint(cls,features,{
                    'type': 'all',
                    'relations': [{
-                       'subset': str(row2['subsetid']),
-                       'class': str(row2['constrainedclass']),
+                       'subset': str(row['subsetid']),
+                       'class': str(row['constrainedclass']),
                        'debug': "S-C",
                    }]
                })
             #to a subset
-            for row2  in self.graph.query(SPARQL_CONSTRAIN_TO_SUBSET(subseturi)):
+            for row  in self.graph.query(SPARQL_CONSTRAIN_TO_SUBSET(subseturi)):
+               if debug: print("--- Evaluating constraint from subset (" + str(subseturi) + ") to subset " + str(row['subsetid']), file=sys.stderr)
                self.evaluate_constraint(cls,features,{
                    'type': 'all',
                    'relations': [{
-                       'subset': str(row2['subsetid']),
+                       'subset': str(row['subsetid']),
                        'debug': "S-S",
                    }]
                })
             #to a main class
-            for row2  in self.graph.query(SPARQL_CONSTRAIN_TO_CLASS(subseturi)):
+            for row  in self.graph.query(SPARQL_CONSTRAIN_TO_CLASS(subseturi)):
+               if debug: print("--- Evaluating constraint from subset (" + str(subseturi) + ") to main class " + str(row['cls']), file=sys.stderr)
                self.evaluate_constraint(cls,features,{
                    'type': 'all',
                    'relations': [{
-                       'class': str(row2['cls']),
+                       'class': str(row['cls']),
                        'debug': "S-C",
                    }]
                })
             #to a constraint construct
             for constraint in process_constraints(subseturi):
+               if debug: print("--- Evaluating constraint from subset (" + str(subseturi) + ") to constraint: ", repr(constraint) ,file=sys.stderr)
                self.evaluate_constraint(cls, features, constraint)
 
         #constrains from classes in subsets
         for subset, subclass in features.items():
+            subsetinfo = self.subset(subset)
+            subseturi = subsetinfo['uri']
             classuri = self.testsubclass(cls, subset, subclass)
             #to a subset class
-            for row2  in self.graph.query(SPARQL_CONSTRAIN_TO_SUBSET_CLASS(classuri)):
+            for row  in self.graph.query(SPARQL_CONSTRAIN_TO_SUBSET_CLASS(classuri)):
+               if debug: print("--- Evaluating constraint from subset " + str(subseturi) + " class " + subclass + " to subset " + str(row['subsetid']) + " class " + str(row['constrainedclass']), file=sys.stderr)
                self.evaluate_constraint(cls,features,{
                    'type': 'all',
                    'relations': [{
-                       'subset': str(row2['subsetid']),
-                       'class': str(row2['constrainedclass']),
+                       'subset': str(row['subsetid']),
+                       'class': str(row['constrainedclass']),
                        'debug': "c-c",
                    }]
                })
             #to a subset
-            for row2  in self.graph.query(SPARQL_CONSTRAIN_TO_SUBSET(classuri)):
+            for row  in self.graph.query(SPARQL_CONSTRAIN_TO_SUBSET(classuri)):
+               if debug: print("--- Evaluating constraint from subset " + str(subseturi) + " class " + subclass + " to subset " + str(row['subsetid']), file=sys.stderr)
                self.evaluate_constraint(cls,features,{
                    'type': 'all',
                    'relations': [{
-                       'subset': str(row2['subsetid']),
+                       'subset': str(row['subsetid']),
                        'debug': "c-S",
                    }]
                })
             #to a main class
-            for row2  in self.graph.query(SPARQL_CONSTRAIN_TO_CLASS(classuri)):
+            for row  in self.graph.query(SPARQL_CONSTRAIN_TO_CLASS(classuri)):
+               if debug: print("--- Evaluating constraint from subset " + str(subseturi) + " class " + subclass + " to main class " + str(row['class']), file=sys.stderr)
                self.evaluate_constraint(cls,features,{
                    'type': 'all',
                    'relations': [{
-                       'class': str(row2['cls']),
+                       'class': str(row['cls']),
                        'debug': "c-C",
                    }]
                })
             #to a constraint construct
             for constraint in process_constraints(classuri):
+               if debug: print("--- Evaluating constraint from subset " + str(subseturi) + " class " + subclass + " to constraint:", repr(constraint), file=sys.stderr)
                self.evaluate_constraint(cls, features, constraint)
 
-    def evaluate_constraint(self, cls, features, constraint):
+    def evaluate_constraint(self, cls, features, constraint, debug=True):
         constrainttype = constraint['type']
         result = constrainttype in ('none','all')
-        msg = ""
         if constraint['relations']:
             if not isinstance(constraint['relations'], (list, tuple)):
                 raise ValueError("Expected list or tuple, got :" + repr(constraint['relations']))
@@ -577,6 +597,7 @@ class SetDefinition(object):
                     if constrainttype == 'all':
                         result = False
                         break
+            if debug: print(" <- Constraint " + repr(result) + ": " + repr(constraint) + ", Class: " + cls + ", Features: " + repr(features),file=sys.stderr)
             if not result:
                 raise DeepValidationError("Constraints from the set definition were not met. Constraint: " + repr(constraint) + ", Class: " + cls + ", Features: " + repr(features))
 
