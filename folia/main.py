@@ -7506,6 +7506,11 @@ class Document(object):
                 else:
                     set = None
 
+                if type is AnnotationType.TEXT and set is None and (checkversion(self.version, "2.0.0") >= 0 or not self.keepversion) :
+                    set = DEFAULT_TEXT_SET
+                elif type is AnnotationType.PHON and set is None and (checkversion(self.version, "2.0.0") >= 0 or not self.keepversion) :
+                    set = DEFAULT_PHON_SET
+
                 if type not in self.annotators:
                     self.annotators[type] = OrderedDict()
                 if set not in self.annotators[type]:
