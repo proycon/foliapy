@@ -122,7 +122,7 @@ class LegacyClassDefinition(object):
             self.constraints = []
 
     @classmethod
-    def parsexml(Class, node):
+    def parsexml(Class, node, subsets):
         if not node.tag == '{' + NSFOLIA + '}class':
             raise Exception("Expected class tag for this xml node, got" + node.tag)
 
@@ -139,7 +139,10 @@ class LegacyClassDefinition(object):
                     subclasses.append( LegacyClassDefinition.parsexml(subnode) )
                 elif subnode.tag == '{' + NSFOLIA + '}constrain':
                     if 'id' in subnode.attrib:
-                        constraints.append( subnode.attrib['id'] )
+                        if subnode.attrib['id'] in subsets:
+                            constraints.append( "Subset." + subnode.attrib['id'] )
+                        else:
+                            constraints.append( subnode.attrib['id'] )
                     else:
                         raise Exception("Missing ID in constrain element")
                 elif subnode.tag[:len(NSFOLIA) +2] == '{' + NSFOLIA + '}':
@@ -202,10 +205,16 @@ class LegacySetDefinition(object):
             self.constraintdefinitions = []
 
     @classmethod
-    def parsexml(Class, node):
+    def parsexml(Class, node, context_subsets=None):
         issubset = node.tag == '{' + NSFOLIA + '}subset'
         if not issubset:
             assert node.tag == '{' + NSFOLIA + '}set'
+            context_subsets = []
+            for subnode in node:
+                if subnode.tag == '{' + NSFOLIA + '}subset':
+                    context_subsets.append(subnode.attrib['id'])
+
+
         classes = []
         subsets= []
         if 'type' in node.attrib:
@@ -232,14 +241,17 @@ class LegacySetDefinition(object):
         for subnode in node:
             if isinstance(subnode.tag, str) or (sys.version < '3' and isinstance(subnode.tag, unicode)): #pylint: disable=undefined-variable
                 if subnode.tag == '{' + NSFOLIA + '}class':
-                    classes.append( LegacyClassDefinition.parsexml(subnode) )
+                    classes.append( LegacyClassDefinition.parsexml(subnode, context_subsets) )
                 elif not issubset and subnode.tag == '{' + NSFOLIA + '}subset':
-                    subsets.append( LegacySetDefinition.parsexml(subnode) )
+                    subsets.append( LegacySetDefinition.parsexml(subnode, context_subsets) )
                 elif not issubset and subnode.tag == '{' + NSFOLIA + '}constraint':
-                    constraintdefinitions.append( LegacyConstraintDefinition.parsexml(subnode, [ s.id for s in subsets ]) )
+                    constraintdefinitions.append( LegacyConstraintDefinition.parsexml(subnode, context_subsets) )
                 elif subnode.tag == '{' + NSFOLIA + '}constrain':
                     if 'id' in subnode.attrib:
-                        constraints.append( subnode.attrib['id'] )
+                        if subnode.attrib['id'] in context_subsets:
+                            constraints.append( "Subset." + subnode.attrib['id'] )
+                        else:
+                            constraints.append( subnode.attrib['id'] )
                     else:
                         raise Exception("Missing ID in constrain element")
                 elif subnode.tag[:len(NSFOLIA) +2] == '{' + NSFOLIA + '}':
