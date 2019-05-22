@@ -136,7 +136,7 @@ class LegacyClassDefinition(object):
         for subnode in node:
             if isinstance(subnode.tag, str) or (sys.version < '3' and isinstance(subnode.tag, unicode)): #pylint: disable=undefined-variable
                 if subnode.tag == '{' + NSFOLIA + '}class':
-                    subclasses.append( LegacyClassDefinition.parsexml(subnode) )
+                    subclasses.append( LegacyClassDefinition.parsexml(subnode, subsets) )
                 elif subnode.tag == '{' + NSFOLIA + '}constrain':
                     if 'id' in subnode.attrib:
                         if subnode.attrib['id'] in subsets:
