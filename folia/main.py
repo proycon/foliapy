@@ -202,7 +202,7 @@ class Processor:
     def __init__(self, name, type=ProcessorType.AUTO, id=None, version=None, document_version=None, folia_version=None, command=None, host=None, user=None, begindatetime=None, enddatetime=None, src=None, format=None,resourcelink=None, parent=None, metadata=None):
         self.name = name
         if id is None:
-            self.id = "proc." + self.name.replace(":",".").replace(" ","_").lower() + "."  + ("%08x" % random.getrandbits(32)) #assign ID with random elements if none provided
+            self.id = "proc." + makencname(self.name.lower()) + "."  + ("%08x" % random.getrandbits(32)) #assign ID with random elements if none provided
         else:
             self.id = id
         if type not in (ProcessorType.MANUAL, ProcessorType.AUTO, ProcessorType.GENERATOR, ProcessorType.DATASOURCE): #superset of AnnotatorType
@@ -8880,6 +8880,20 @@ def isncname(name):
             if not c.isalnum() and not (c in ['-','_','.']):
                 raise ValueError('Invalid XML NCName identifier: ' + name + ' (at position ' + str(i+1)+')')
     return True
+
+def makencname(name):
+    ncname = ""
+    for i, c in enumerate(name):
+        if i == 0:
+            if not c.isalpha() and c != '_':
+                ncname += "I"
+        if c.isalnum() or c in ('-','_','.'):
+            ncname += c
+    if not ncname:
+        raise ValueError("Unable to convert '" + str(name) + "' to a valid XML NCName")
+    return ncname
+
+
 
 def annotationtypeisspan(annotationtype):
     return issubclass(XML2CLASS[ANNOTATIONTYPE2XML[annotationtype]], AbstractSpanAnnotation)
