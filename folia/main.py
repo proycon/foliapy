@@ -1257,7 +1257,7 @@ class AbstractElement(object):
         return valid
 
     def resolveoffsets(self, begin, end, retaintokenisation=True, strictend=True, cls='current'):
-        """Resolves supplied character offset information and returns tokens (non-token structures like linebreaks etc are ignored!)"""
+        """Resolves supplied character offset information and returns tokens (non-token structures like linebreaks etc are ignored!). Note: offsets are zero-indexed and the end is non-inclusive!"""
         offset = 0
         words = []
         for word in self.select(Word):
@@ -1275,7 +1275,7 @@ class AbstractElement(object):
                         return [word]
                 else:
                     words.append(word)
-            if words:
+            elif words:
                 if offset+len(text) == end:
                     #good, we're at the end
                     return words + [word]
@@ -1290,7 +1290,7 @@ class AbstractElement(object):
             offset += len(text) + len(delimiter)
         if words and not strictend:
             return words
-        raise InconsistentText("Supplied offset range (" + str(begin) + "," + str(end) + ") is not consistent with the tokens in " + repr(self) + ": " + self.text(cls,retaintokenisation=retaintokenisation))
+        raise InconsistentText("Supplied offset range (" + str(begin) + "," + str(end) + ") is not consistent with the tokens in " + repr(self) + ": \"" + self.text(cls,retaintokenisation=retaintokenisation) + "\"; buffer: " + repr(words) + "; offset: " + str(offset))
 
     def toktext(self,cls='current'):
         """Alias for :meth:`text` with ``retaintokenisation=True``"""
