@@ -5067,7 +5067,10 @@ class AbstractAnnotationLayer(AbstractElement, AllowGenerateID, AllowCorrections
         if 'set' in kwargs:
             self.set = kwargs['set']
         elif doc:
-            defaultset = doc.defaultset(self.ANNOTATIONTYPE)
+            try:
+                defaultset = doc.defaultset(self.ANNOTATIONTYPE)
+            except NoSuchAnnotation:
+                defaultset = False
             if defaultset is not False:
                 self.set = defaultset
         super(AbstractAnnotationLayer,self).__init__(doc, *args, **kwargs)
@@ -7881,7 +7884,7 @@ class Document(object):
             the set (str or None), or False if there is no default set. Take care to explicitly distinguish between False and None!
 
         Raises:
-            :class:`NoDefaultError` if the annotation type does not exist or if there is ambiguity (multiple sets for the same type). Or returns False instead if raiseexception = False
+            :class:`NoSuchAnnotation` if the annotation type does not exist or if there is ambiguity (multiple sets for the same type). Or returns False instead if raiseexception = False
         """
 
         if inspect.isclass(annotationtype):
