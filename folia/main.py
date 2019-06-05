@@ -1256,6 +1256,42 @@ class AbstractElement(object):
                     self.doc.offsetvalidationbuffer.append( (self, cls) )
         return valid
 
+    def resolveoffsets(self, begin, end, retaintokenisation=True, strictend=True, cls='current'):
+        """Resolves supplied character offset information and returns tokens (non-token structures like linebreaks etc are ignored!)"""
+        offset = 0
+        words = []
+        for word in self.select(Word):
+            text = word.text(cls)
+            delimiter = word.gettextdelimiter(retaintokenisation)
+            if offset == begin:
+                if offset+len(text) == end:
+                    #exact match
+                    return [word]
+                elif offset+len(text) > end:
+                    #overshot
+                    if strictend:
+                        return []
+                    else:
+                        return [word]
+                else:
+                    words.append(word)
+            if words:
+                if offset+len(text) == end:
+                    #good, we're at the end
+                    return words + [word]
+                elif offset+len(text) > end:
+                    #overshot
+                    if strictend:
+                        return words
+                    else:
+                        return words + [word]
+                else:
+                    words.append(word)
+            offset += len(text) + len(delimiter)
+        if words and not strictend:
+            return words
+        raise InconsistentText("Supplied offset range (" + str(begin) + "," + str(end) + ") is not consistent with the tokens in " + repr(self) + ": " + self.text(cls,retaintokenisation=retaintokenisation))
+
     def toktext(self,cls='current'):
         """Alias for :meth:`text` with ``retaintokenisation=True``"""
         return self.text(cls,retaintokenisation=True)

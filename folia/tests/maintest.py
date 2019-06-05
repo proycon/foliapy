@@ -137,6 +137,15 @@ class Test_E001_Tokens_Structure(unittest.TestCase):
         self.assertTrue( self.doc.declared(folia.Sentence) )
         self.assertTrue( self.doc.declared(folia.Paragraph) )
 
+    def test_resolveoffsets(self):
+        """Simple Token & Structure Test - Resolve character offsets"""
+        #grab something using the index
+        s = self.doc['example.p.1.s.2']
+        words = s.resolveoffsets(9,19) #"an example"
+        self.assertEqual( words, [self.doc['example.p.1.s.2.w.3'] , self.doc['example.p.1.s.2.w.4'] ] )
+        self.assertEqual( words[0].text() , "an" )
+        self.assertEqual( words[1].text() , "example" )
+
 class Test_Exxx_Hidden_Tokens(unittest.TestCase): #xxx -> replace with a number at some point when there are more new tests
     """Hidden token tests"""
 
