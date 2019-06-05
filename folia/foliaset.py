@@ -212,7 +212,10 @@ class LegacySetDefinition(object):
             context_subsets = []
             for subnode in node:
                 if subnode.tag == '{' + NSFOLIA + '}subset':
-                    context_subsets.append(subnode.attrib['id'])
+                    if '{http://www.w3.org/XML/1998/namespace}id' in subnode:
+                        context_subsets.append(subnode.attrib['{http://www.w3.org/XML/1998/namespace}id'])
+                    elif 'id' in subnode:
+                        context_subsets.append(subnode.attrib['id'])
 
 
         classes = []
