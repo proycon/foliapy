@@ -7641,9 +7641,11 @@ class Document(object):
             datetime (datetime.datetime): Sets the default datetime
 
         Example 1 (with provenance)::
+
             doc.declare(folia.PosAnnotation, 'http://some/path/brown-tag-set', Processor(name="mytagger") )
 
         Example 2 (with provenance; nested processors)::
+
             main_processor = Processor(name="myNLPtool", version="2.2")
             doc.declare(folia.PosAnnotation, 'http://some/path/brown-tag-set', main_processor, Processor(name="mytagger"))
             doc.declare(folia.LemmaAnnotation, 'http://some/set', main_processor, Processor(name="mylemmatiser"))
@@ -7655,12 +7657,14 @@ class Document(object):
             doc.declare(folia.LemmaAnnotation, 'http://some/set', Processor(name="mylemmatiser"))
 
         Example 3 (with provenance; nested processors)::
+
             main_processor = Processor(name="myEditor", version="1.2")
             doc.declare(folia.PosAnnotation, 'http://some/path/brown-tag-set', main_processor, Processor(name="alice", type=AnnotatorType.MANUAL))
             doc.declare(folia.PosAnnotation, 'http://some/path/brown-tag-set', main_processor, Processor(name="bob", type=AnnotatorType.MANUAL))
             doc.declare(folia.PosAnnotation, 'http://some/path/brown-tag-set', main_processor, Processor(name="john", type=AnnotatorType.MANUAL))
 
         Example 4 (without provenance, for backward compatibility, the use of proper provenance is always preferred!)::
+
             doc.declare(folia.PosAnnotation, 'http://some/path/brown-tag-set', annotator="mytagger", annotatortype=folia.AnnotatorType.AUTO)
 
         Returns::
