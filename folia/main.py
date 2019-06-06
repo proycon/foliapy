@@ -400,7 +400,7 @@ class Provenance:
                     return processor[id]
                 except KeyError:
                     pass
-        raise KeyError("No such processor: " + str(id))
+        raise KeyError("No such processor in provenance chain: " + str(id))
 
 
     def __contains__(self, id):
@@ -853,6 +853,11 @@ class AbstractElement(object):
                 raise ValueError("Annotatortype is required for " + self.__class__.__name__)
         else:
             if 'annotator' in kwargs:
+                if kwargs['annotator'] != self.processor.name:
+                    if doc and doc.autodeclare:
+                        self.annotator2processor(kwargs['annotator'], kwargs.get('annotatortype', AnnotatorType.AUTO))
+                    else:
+                        raise DeclarationError("Autodeclarations are disabled but an annotator (" + str(kwargs['annotator']) + ") was specified that differs from the one in the declared processor for this annoation type: " + repr(self))
                 del kwargs['annotator']
             if 'annotatortype' in kwargs:
                 del kwargs['annotatortype']
@@ -880,7 +885,7 @@ class AbstractElement(object):
         elif Attrib.N in required:
             raise ValueError("N is required for " + self.__class__.__name__)
 
-        if 'datetime' in kwargs:
+        if kwargs.get('datetime'):
             if not Attrib.DATETIME in supported:
                 raise ValueError("Datetime is not supported")
             if isinstance(kwargs['datetime'], datetime):
@@ -892,7 +897,7 @@ class AbstractElement(object):
                 #except:
                 #    raise ValueError("Unable to parse datetime: " + str(repr(kwargs['datetime'])))
             del kwargs['datetime']
-        elif doc and annotationtype in doc.annotationdefaults and self.set in doc.annotationdefaults[annotationtype] and 'datetime' in doc.annotationdefaults[annotationtype][self.set]:
+        elif Attrib.DATETIME in supported and doc and annotationtype in doc.annotationdefaults and self.set in doc.annotationdefaults[annotationtype] and 'datetime' in doc.annotationdefaults[annotationtype][self.set]:
             self.datetime = doc.annotationdefaults[annotationtype][self.set]['datetime']
         elif Attrib.DATETIME in required:
             raise ValueError("Datetime is required for " + self.__class__.__name__)
@@ -1042,11 +1047,58 @@ class AbstractElement(object):
         if self.ANNOTATIONTYPE is None:
             raise ValueError("Unable to set processor on " + self.__class__.__name__ + ". AnnotationType is None!")
         self.processor = processor
-        if not any( annotator() == processor for annotator in self.doc.getannotators(self.ANNOTATIONTYPE, self.set)):
+        if not any( annotator.processor_id == processor.id for annotator in self.doc.getannotators(self.ANNOTATIONTYPE, self.set)):
             if self.doc.autodeclare:
                 self.doc.annotators[self.ANNOTATIONTYPE][self.set].append(Annotator(processor, self.doc))
             else:
                 raise DeclarationError("Processor " + processor.id + " is used for annotationtype " + annotationtype2str(self.ANNOTATIONTYPE) + ", set " + str(self.set) + ", but has no corresponding <annotator> referring to it from the annotations declaration block!")
+
+
+    def annotator2processor(self, annotator=None, annotatortype=None, parentprocessor=None):
+        """Converts annotator information to processor information (FoLiA v2). Can be called with arguments to override defaults."""
+        #get current values if not overriden
+        if annotator is None: annotator = self.annotator
+        if annotatortype is None: annotatortype = self.annotatortype if self.annotatortype else AnnotatorType.AUTO
+        if not parentprocessor:
+            if self.doc.processor:
+                parentprocessor = self.doc.processor
+            else:
+                #no parent processor, we will append directly to the provenance chain then
+                parentprocessor = self.doc.provenance
+
+        annkey = (annotator, annotatortype)
+        if annkey in self.doc.annotator2processor_map:
+            #we're in our cache, easy:
+            self.setprocessor(self.doc.annotator2processor_map[annkey])
+        else:
+            foundprocessor = None
+            #do any processors already exist with the same name?
+            for processor in self.doc.getprocessors(self.ANNOTATIONTYPE, self.set):
+                if annotator == processor.name and annotatortype == processor.type:
+                    foundprocessor = processor
+            if foundprocessor:
+                #one of the processors has the same name so we will reuse that one
+                self.setprocessor(foundprocessor)
+            else:
+                #we need to create a new processor
+                newprocessor = Processor(annotator, type=annotatortype)
+                self.setprocessor(newprocessor)
+                #add the new processor to the provenance chain (assuming parentprocessor is already added!)
+                parentprocessor.append(newprocessor)
+                foundprocessor = newprocessor
+            #add to cache so we can be quicker next time
+            self.doc.annotator2processor_map[annkey] = foundprocessor
+
+        #delete the old attributes (setting them to None isn't good enough, we really need to get
+        # rid of them so the library automatically looks up the processor attribute when they are accessed next time)
+        try:
+            del self.annotator
+        except AttributeError: #already gone, ok
+            pass
+        try:
+            del self.annotatortype
+        except AttributeError:
+            pass
 
     def checkdeclaration(self):
         """Internal method (usually no need to call this) that checks whether the element's annotation type is properly declared, raises an exception if not so, or auto-declares the annotation type if need be."""
@@ -6959,6 +7011,7 @@ class Document(object):
         self.annotators = {} #AnnotationType => set => Annotator    (leaf value resolves to Processor when called)
         self.groupannotations = {} #AnnotationType -> set -> bool  (used to store whether inline annotations are allowed in certain span annotations)
         self.setdefinitionformat = {} #AnnotationType -> set -> str (mime type)  (used to store the format of the set definitions)
+        self.annotator2processor_map = {} #maps (annotator, annotatortype) to a Processor instance, used in automatic upgrades
 
 
         self.index = {} #all IDs go here

@@ -221,17 +221,33 @@ class Test_Exxx_BackwardCompatibility(unittest.TestCase):
     def setUp(self):
         self.doc = folia.Document(file=os.path.join(FOLIAPATH,"examples/frog-deep-upgraded.2.0.2.folia.xml"))
 
-    def test_annotator(self):
+    def test_read_annotator(self):
         """Test whether old-style annotator attribute works"""
         w = self.doc['example.deep.p.1.s.1.w.1']
         pos = w.annotation(folia.PosAnnotation)
         self.assertEqual(pos.annotator, "frog-mbpos-1.0")
 
-    def test_annotatortype(self):
+    def test_read_annotatortype(self):
         """Test whether old-style annotatortype attribute works"""
         w = self.doc['example.deep.p.1.s.1.w.1']
         pos = w.annotation(folia.PosAnnotation)
         self.assertEqual(pos.annotatortype, "auto")
+
+    def test_write_annotator(self):
+        """Test whether old-style annotator attribute works"""
+        w = self.doc['example.deep.p.1.s.1.w.1']
+        #remove the old one
+        pos = w.annotation(folia.PosAnnotation)
+        w.remove(pos)
+        #add a new one with old style information
+        w.append(folia.PosAnnotation, annotator="testsuite", cls="LID(bep,stan,rest)", annotatortype=folia.AnnotatorType.AUTO)
+        #get it
+        pos = w.annotation(folia.PosAnnotation)
+        self.assertEqual(pos.annotator, "testsuite")
+        self.assertEqual(pos.annotatortype, "auto")
+        #we should have a processor now
+        self.assertEqual(pos.processor.name, "testsuite")
+
 
 
 class Test_Provenance(unittest.TestCase):
