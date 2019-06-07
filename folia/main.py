@@ -245,7 +245,11 @@ class Processor:
 
     @staticmethod
     def create(*args, **kwargs):
-        """Creates (instantiates) a new processor and tries to detect as much as possible automatically"""
+        """Creates (instantiates) a new processor and tries to detect as much as possible automatically. Example in combination with the instantiation of a new document::
+
+            doc = folia.Document(id="example", processor=Processor.create("my-tool", version="0.1"))
+
+        """
         try:
             executable = os.path.basename(sys.argv[0])
             kwargs['command'] = " ".join([executable] + sys.argv[1:])
@@ -6972,14 +6976,14 @@ class Document(object):
 
             doc = folia.Document(string='<FoLiA>....</FoLiA>')
 
-        4) Load a document by passing a parse xml tree (lxml.etree):
+        4) Load a document by passing a parse xml tree (lxml.etree)::
 
             doc = folia.Document(tree=xmltree)
 
-        Additionally, there are three modes that can be set with the ``mode=`` keyword argument:
+        You will often want to associate a :class:`Processor` when you instantiate a document, the processor records information regarding the tool that is processing a document (i.e. your script), and adds this to the document's provenance chain. Any new annotations you add to this document will be automatically related to the processor::
 
-             * folia.Mode.MEMORY - The entire FoLiA Document will be loaded into memory. This is the default mode and the only mode in which documents can be manipulated and saved again.
-             * folia.Mode.XPATH - The full XML tree will still be loaded into memory, but conversion to FoLiA classes occurs only when queried. This mode can be used when the full power of XPath is required.
+            doc = folia.Document(id="example", processor=Processor.create("my-tool", version="0.1"))
+
 
         Keyword Arguments:
 
@@ -6992,9 +6996,11 @@ class Document(object):
             keepversion (bool): attempt to keep the FoLiA version (use with caution)
             version (str): force a particular FoLiA version when creating a new document (use with caution)
             declare (list): Declare the specifies annotation types. Consists of a list or tuple of annotationtypes or (annotation,set) tuples or (annotationtype,set,processor) tuples
-            processor (Processor): Register the current processor in the provenance data and use this processor in all subsequent declarations
-            reprocessor (Processor): As above, but will take pro-active ownership of any declarations already present but not tied to a processor yet
+            processor (Processor): Register the current processor in the provenance data and use this processor in all subsequent declarations.
+            reprocessor (Processor): As above, but will take pro-active ownership of any declarations already present but not tied to a processor yet.
             debug (bool): Boolean to enable/disable debug
+            autodeclare (bool): Automatically declare annotation types and annotators whenever possible (enabled by default for FoLiA v2)
+            mode: The mode for loading a document, is either ``folia.Mode.MEMORY``,  in which the entire FoLiA Document will be loaded into memory. This is the default mode and the only mode in which documents can be manipulated and saved againor ``folia.Mode.XPATH``, in which the full XML tree will still be loaded into memory, but conversion to FoLiA classes occurs only when queried. This mode can be used when the full power of XPath is required.
         """
 
 
