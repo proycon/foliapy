@@ -711,6 +711,26 @@ the processor has not been declared yet, the library will do that for you automa
 You can iterate over the entire provenance chain of a document ``doc`` by iterating over ``doc.provenance``
 (:class:`Provenance`). To get a a specific processor by ID: ``doc.provenance[id]``.
 
+Instead of explicitly assigning a processor with invididual annotations, you can do so implicitly by associating a
+processor with the :class:`Document`, it will then be automatically be used for any subsequent annotations you add. You
+can associate a processor immediately upon document instantation::
+
+   doc = folia.Document(file="/tmp/example.folia.xml", processor=Processor(name="myscript", version="0.1"))
+
+Instead of using ``Processor()``, you instantiate one using ``Processor.create()`` which will autodetect a lot of
+information regarding your processor for you, such as the system you're running on, command that was executed, date & time, etc...::
+
+   doc = folia.Document(file="/tmp/example.folia.xml", processor=Processor.create(name="myscript", version="0.1"))
+
+You can also associate a processor after instantiation (useful in case you want to use different processors at
+differents points in your script), but in that case you need to make sure to append it to the
+provenance chain yourself::
+
+   doc.processor = Processor.create(name="myscript", version="0.1")
+   doc.provenance.append(doc.processor)
+
+Unsetting a main processor is done using a simple ``doc.processor = None``.
+
 
 Adding span annotation
 ---------------------------

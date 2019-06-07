@@ -247,7 +247,7 @@ class Processor:
     def create(*args, **kwargs):
         """Creates (instantiates) a new processor and tries to detect as much as possible automatically. Example in combination with the instantiation of a new document::
 
-            doc = folia.Document(id="example", processor=Processor.create("my-tool", version="0.1"))
+            doc = folia.Document(id="example", processor=Processor.create(name="my-tool", version="0.1"))
 
         """
         try:
@@ -6980,9 +6980,9 @@ class Document(object):
 
             doc = folia.Document(tree=xmltree)
 
-        You will often want to associate a :class:`Processor` when you instantiate a document, the processor records information regarding the tool that is processing a document (i.e. your script), and adds this to the document's provenance chain. Any new annotations you add to this document will be automatically related to the processor::
+        You will often want to associate a :class:`Processor` when you instantiate a document, the processor encapsulates information regarding the tool that is processing a document (i.e. your script), and adds this to the document's provenance chain. Any new annotations you add to this document will be automatically related to the processor::
 
-            doc = folia.Document(id="example", processor=Processor.create("my-tool", version="0.1"))
+            doc = folia.Document(id="example", processor=Processor.create(name="my-tool", version="0.1"))
 
 
         Keyword Arguments:
