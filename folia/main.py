@@ -36,7 +36,6 @@ import random
 from socket import getfqdn
 
 
-
 from lxml import etree as ElementTree
 from lxml.builder import ElementMaker
 
@@ -576,7 +575,7 @@ def commonancestors(Class, *args):
         for commonancestor in commonancestors:
             yield commonancestor
 
-class AbstractElement(object):
+class AbstractElement:
     """Abstract base class from which all FoLiA elements are derived.
 
     This class implements many generic methods that are available on all FoLiA elements.
