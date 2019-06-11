@@ -823,7 +823,11 @@ class AbstractElement(object):
             try:
                 self.processor = doc.getdefaultprocessor(annotationtype,self.set)
             except NoDefaultError as e:
-                raise e
+                if doc.fixunassignedprocessor:
+                    for processor in doc.getprocessors(annotationtype, self.set): #iterate over all
+                        self.processor = processor #assign the last one
+                else:
+                    raise e
         #elif doc and annotationtype in doc.annotationdefaults and self.set in self.doc.annotationdefaults[annotationtype] and 'processor' in self.doc.annotationdefults[annotationtype][self.set]:
         #    self.processor = self.doc.annotationdefaults[annotationtype][self.set]['processor']
 
@@ -7001,6 +7005,7 @@ class Document(object):
             debug (bool): Boolean to enable/disable debug
             autodeclare (bool): Automatically declare annotation types and annotators whenever possible (enabled by default for FoLiA v2)
             mode: The mode for loading a document, is either ``folia.Mode.MEMORY``,  in which the entire FoLiA Document will be loaded into memory. This is the default mode and the only mode in which documents can be manipulated and saved againor ``folia.Mode.XPATH``, in which the full XML tree will still be loaded into memory, but conversion to FoLiA classes occurs only when queried. This mode can be used when the full power of XPath is required.
+            fixunassignedprocessor (bool): If set, fixes invalid FoLiA that does not explicitly assign a processor to an annotation when multiple processors are possible (and there is therefore no default). The last processor will be used in this case.
         """
 
 
@@ -7044,6 +7049,7 @@ class Document(object):
         self.autodeclare = None #Automatic declarations in case of undeclared elements, will be set later
                                 # False for FoLiA < 2.0
                                 # True for FoLiA >= 2.0
+        self.fixunassignedprocessor = kwargs.get('fixunassignedprocessor',False) #Fixes invalid FoLiA that does not explicitly assign a processor and when multiple options are possible (so not defaults)
         self.filename = ""
 
         if 'setdefinitions' in kwargs:
