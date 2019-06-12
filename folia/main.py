@@ -827,12 +827,9 @@ class AbstractElement:
                         self.processor = processor #assign the last one
                 else:
                     raise e
-        #elif doc and annotationtype in doc.annotationdefaults and self.set in self.doc.annotationdefaults[annotationtype] and 'processor' in self.doc.annotationdefults[annotationtype][self.set]:
-        #    self.processor = self.doc.annotationdefaults[annotationtype][self.set]['processor']
-
 
         if self.processor is None:
-            #old behavour without provenance (FoLiA <= 1.5)
+            #old behavour without provenance (FoLiA <= 1.5), still valid in FoLiA v2 as well
             if 'annotator' in kwargs:
                 if Attrib.ANNOTATOR not in supported:
                     raise ValueError("Annotator is not supported for " + self.__class__.__name__)
