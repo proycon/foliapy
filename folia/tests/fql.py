@@ -190,6 +190,8 @@ Qrespannone_child_left = "ADD su WITH id \"leftchild\" class \"det\" SPAN ID \"W
 Qrespannone = "EDIT su ID \"WR-P-E-J-0000000001.p.1.s.1.su.0\" WITH class \"np\" datetime now RESPAN NONE"
 Qrespannone_child_right = "ADD su WITH id \"rightchild\" class \"np2\" SPAN ID \"WR-P-E-J-0000000001.p.1.s.1.w.4\" & ID \"WR-P-E-J-0000000001.p.1.s.1.w.5\" FOR su ID \"WR-P-E-J-0000000001.p.1.s.1.su.0\""
 
+Qeditalt = "EDIT domain WHERE class = \"geology\" WITH class \"water\" FOR alt ID \"example.p.1.s.1.w.5.alt.2\""
+
 class Test1UnparsedQuery(unittest.TestCase):
 
     def test1_basic(self):
@@ -1154,6 +1156,20 @@ class Test5Provenance(unittest.TestCase):
         self.assertEqual(processor.type, folia.ProcessorType.AUTO)
         self.assertTrue(processor.parent in doc.provenance)
 
+class Test6Alternatives(unittest.TestCase):
+    """Alterntives"""
+    def setUp(self):
+        self.doc = folia.Document(string=FOLIAALTEXAMPLE)
+
+    def test1_edit(self):
+        """Alternatives - Edit by ID"""
+        q = fql.Query(Qeditalt)
+        results = q(self.doc)
+        self.assertEqual(len(results), 1)
+        self.assertIsInstance(results[0], folia.DomainAnnotation)
+        self.assertEqual(results[0].cls, "water")
+        self.assertIsInstance(results[0].parent, folia.Alternative)
+
 if os.path.exists("folia-repo"):
     FOLIAPATH = "folia-repo"
 elif os.path.exists("../folia-repo"):
@@ -1169,6 +1185,10 @@ f.close()
 
 f = io.open(os.path.join(FOLIAPATH, 'examples','corrections.0.12.folia.xml'), 'r',encoding='utf-8')
 FOLIACORRECTIONEXAMPLE = f.read()
+f.close()
+
+f = io.open(os.path.join(FOLIAPATH, 'examples','alternatives.2.0.0.folia.xml'), 'r',encoding='utf-8')
+FOLIAALTEXAMPLE = f.read()
 f.close()
 
 if __name__ == '__main__':
