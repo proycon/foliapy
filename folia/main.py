@@ -3646,12 +3646,14 @@ class AbstractWord: #interface grouping elements that act like words
         except NoSuchAnnotation:
             raise
 
-    def findspans(self, type,set=False):
+    def findspans(self, type,set=False, alternatives=False, returnlayers=False):
         """Yields span annotation elements of the specified type that include this word.
 
         Arguments:
             type: The annotation type, can be passed as using any of the :class:`AnnotationType` member, or by passing the relevant :class:`AbstractSpanAnnotation` or :class:`AbstractAnnotationLayer` class.
             set (str/None/False): Constrain by set. Set to False to return regardless of set.
+            alternatives: Find alternatives only (i.e. if set, this returns only alternatives and not the authoritative annotations, if unset, it does the oppose and returns only the authoritative annotations and no alternatives)
+            returnlayers: Return the layers in additions to the actual span annotation elements
 
         Example::
 
@@ -3663,31 +3665,60 @@ class AbstractWord: #interface grouping elements that act like words
 
         Yields:
             Matching span annotation instances (derived from :class:`AbstractSpanAnnotation`)
+            If returnlayers is set, it returns a tuple (:class:`AbstractSpanAnnotation`, :class:`AbstractAnnotationLayer`)
         """
 
         if issubclass(type, AbstractAnnotationLayer):
             layerclass = type
         else:
             layerclass = ANNOTATIONTYPE2LAYERCLASS[type.ANNOTATIONTYPE]
+
+        if alternatives:
+            extraselector = lambda x: x.select(AlternativeLayers, set, False, ignore=False)
+        else:
+            extraselector = lambda x: [x]
         e = self
         while True:
             if not e.parent: break
             e = e.parent
-            for layer in e.select(layerclass,set,False):
-                if type is layerclass:
-                    for e2 in layer.select(AbstractSpanAnnotation,set,recursive=True, ignore=ignore_wrefables):
-                        if not isinstance(e2, AbstractSpanRole) and self in e2.wrefs():
-                            yield e2
-                else:
-                    for e2 in layer.select(type,set,recursive=True, ignore=ignore_wrefables):
-                        if not isinstance(e2, AbstractSpanRole) and self in e2.wrefs():
-                            yield e2
+            for extra in extraselector(e): #simply returns only e unless alternatives are enabled
+                for layer in extra.select(layerclass,set,False):
+                    if type is layerclass:
+                        for e2 in layer.select(AbstractSpanAnnotation,set,recursive=True, ignore=ignore_wrefables):
+                            if not isinstance(e2, AbstractSpanRole) and self in e2.wrefs():
+                                if returnlayers:
+                                    yield e2, layer
+                                else:
+                                    yield e2
+                    else:
+                        for e2 in layer.select(type,set,recursive=True, ignore=ignore_wrefables):
+                            if not isinstance(e2, AbstractSpanRole) and self in e2.wrefs():
+                                if returnlayers:
+                                    yield e2, layer
+                                else:
+                                    yield e2
 
                 #for e2 in layer:
                 #    if (type is layerclass and isinstance(e2, AbstractSpanAnnotation)) or (type is not layerclass and isinstance(e2, type)):
                 #        if self in e2.wrefs():
                 #            yield e2
 
+    def alternativelayers(self, type, set=False):
+        """Generator over alternative layers, either all or only of a specific annotation type, and possibly restrained also by folia set.
+
+        Arguments:
+            type: The annotation type, can be passed as using any of the :class:`AnnotationType` member, or by passing the relevant :class:`AbstractSpanAnnotation` or :class:`AbstractAnnotationLayer` class.
+            set (str): The set you want to retrieve (defaults to ``None``, which selects irregardless of set)
+
+        Yields:
+            :class:`AlternativeLayers` elements
+        """
+        found = {}
+        for _, layer in self.findspans(type,foliaset, alternatives=True, returnlayers=True):
+            assert isinstance(layer.parent, AlternativeLayers)
+            if layer.parent not in found:
+                found[layer.parent] = True
+                yield layer.parent
 
 
 class AllowGenerateID(object):
