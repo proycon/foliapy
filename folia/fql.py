@@ -898,6 +898,9 @@ class Alternative(object):  #AS ALTERNATIVE ... expression
 
         if q.kw(i,'ALTERNATIVE'):
             i += 1
+            if q.kw(i,"ID") and q[i+1]:
+                id = q[i+1]
+                i += 2
             if not q.kw(i,'WITH'):
                 i = getassignments(q, i, subassignments)
             if q.kw(i,'WITH'):
