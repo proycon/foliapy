@@ -930,7 +930,8 @@ class Alternative(object):  #AS ALTERNATIVE ... expression
                     if not self.filter or (self.filter and self.filter.match(query, alternativelayer, debug)):
                         yield alternativelayer
             else:
-                for alternative in focus.alternatives(action.focus.Class, focus.set):
+                focus_ancestor = focus.ancestor(folia.AbstractStructureElement)
+                for alternative in focus_ancestor.alternatives(action.focus.Class, focus.set):
                     if not self.filter or (self.filter and self.filter.match(query, alternative, debug)):
                         yield alternative
         elif action.action == "EDIT" or action.action == "ADD":
