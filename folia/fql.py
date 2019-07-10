@@ -881,7 +881,8 @@ class Target(object): #FOR/IN... expression
 
 
 class Alternative(object):  #AS ALTERNATIVE ... expression
-    def __init__(self, subassignments={},assignments={},filter=None, nextalternative=None):
+    def __init__(self, id=None,subassignments={},assignments={},filter=None, nextalternative=None):
+        self.id = id
         self.subassignments = subassignments
         self.assignments = assignments
         self.filter = filter
@@ -895,6 +896,7 @@ class Alternative(object):  #AS ALTERNATIVE ... expression
         subassignments = {}
         assignments = {}
         filter = None
+        id = None
 
         if q.kw(i,'ALTERNATIVE'):
             i += 1
@@ -916,10 +918,10 @@ class Alternative(object):  #AS ALTERNATIVE ... expression
         else:
             nextalternative = None
 
-        return Alternative(subassignments, assignments, filter, nextalternative), i
+        return Alternative(id, subassignments, assignments, filter, nextalternative), i
 
     def __call__(self, query, action, focus, target,debug=False):
-        """Action delegates to this function"""
+        """Action delegates to this function to handle alternatives"""
         isspan = isinstance(action.focus.Class, folia.AbstractSpanAnnotation)
 
         subassignments = {} #make a copy
@@ -930,20 +932,30 @@ class Alternative(object):  #AS ALTERNATIVE ... expression
 
         if action.action == "SELECT":
             if not focus: raise QueryError("SELECT requires a focus element")
-            if not isspan:
+            if isspan:
+                for alternativelayer in focus.alternativelayers(action.focus.Class, focus.set):
+                    if not self.filter or (self.filter and self.filter.match(query, alternativelayer, debug)):
+                        yield alternativelayer
+            else:
                 for alternative in focus.alternatives(action.focus.Class, focus.set):
                     if not self.filter or (self.filter and self.filter.match(query, alternative, debug)):
                         yield alternative
-            else:
-                raise NotImplementedError("Selecting alternative span not implemented yet")
         elif action.action == "EDIT" or action.action == "ADD":
+            if self.id: self.assignments['id'] = self.id
             if not isspan:
-                if focus:
+                if self.id and self.id in query.doc:
+                    #add to existing alternative
+                    alternative = query.doc[self.id]
+                    alternative.append( action.Focus.Class, **subassignments)
+                    yield alternative
+                elif focus:
+                    #alternative in focus
                     parent = focus.ancestor(folia.AbstractStructureElement)
                     alternative = folia.Alternative( query.doc, action.focus.Class( query.doc , **subassignments), **self.assignments)
                     parent.append(alternative)
                     yield alternative
                 else:
+                    #alternative in target
                     alternative = folia.Alternative( query.doc, action.focus.Class( query.doc , **subassignments), **self.assignments)
                     target.append(alternative)
                     yield alternative
