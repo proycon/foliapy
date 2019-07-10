@@ -1165,12 +1165,12 @@ class Test6Alternatives(unittest.TestCase):
 
     def test1_select(self):
         """Alternatives - Select"""
-        q = fql.Query(Qeditalt)
+        q = fql.Query(Qselectalt)
         results = q(self.doc)
         self.assertEqual(len(results), 1)
-        self.assertIsInstance(results[0], folia.Alternative)
-        self.assertEqual(results[0][0].cls, "geology")
-        self.assertIsInstance(results[0][0], folia.DomainAnnotation)
+        self.assertIsInstance(results[0], folia.DomainAnnotation)
+        self.assertEqual(results[0].cls, "geology")
+        self.assertIsInstance(results[0].parent, folia.Alternative)
 
     def test2_directedit(self):
         """Alternatives - Direct edit by ID (i.e. the dumb explicit way)"""
