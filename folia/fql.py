@@ -881,12 +881,11 @@ class Target(object): #FOR/IN... expression
 
 
 class Alternative(object):  #AS ALTERNATIVE ... expression
-    def __init__(self, id=None,subassignments={},assignments={},filter=None, nextalternative=None):
+    def __init__(self, id=None,subassignments={},assignments={},filter=None):
         self.id = id
         self.subassignments = subassignments
         self.assignments = assignments
         self.filter = filter
-        self.nextalternative = nextalternative
 
     @staticmethod
     def parse(q,i=0):
@@ -912,13 +911,7 @@ class Alternative(object):  #AS ALTERNATIVE ... expression
         else:
             raise SyntaxError("Expected ALTERNATIVE, got " + str(q[i]) + " in: " + str(q))
 
-        if q.kw(i,'ALTERNATIVE'):
-            #we have another!
-            nextalternative,i  = Alternative.parse(q,i)
-        else:
-            nextalternative = None
-
-        return Alternative(id, subassignments, assignments, filter, nextalternative), i
+        return Alternative(id, subassignments, assignments, filter), i
 
     def __call__(self, query, action, focus, target,debug=False):
         """Action delegates to this function to handle alternatives"""
@@ -946,7 +939,7 @@ class Alternative(object):  #AS ALTERNATIVE ... expression
                 if self.id and self.id in query.doc:
                     #add to existing alternative
                     alternative = query.doc[self.id]
-                    alternative.append( action.Focus.Class, **subassignments)
+                    alternative.append( action.focus.Class, **subassignments)
                     yield alternative
                 elif focus:
                     #alternative in focus

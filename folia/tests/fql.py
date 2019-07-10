@@ -190,6 +190,7 @@ Qrespannone_child_left = "ADD su WITH id \"leftchild\" class \"det\" SPAN ID \"W
 Qrespannone = "EDIT su ID \"WR-P-E-J-0000000001.p.1.s.1.su.0\" WITH class \"np\" datetime now RESPAN NONE"
 Qrespannone_child_right = "ADD su WITH id \"rightchild\" class \"np2\" SPAN ID \"WR-P-E-J-0000000001.p.1.s.1.w.4\" & ID \"WR-P-E-J-0000000001.p.1.s.1.w.5\" FOR su ID \"WR-P-E-J-0000000001.p.1.s.1.su.0\""
 
+Qselectalt = "SELECT domain (AS ALTERNATIVE) FOR ID \"example.p.1.s.1.w.5\""
 Qdirecteditalt = "EDIT domain WHERE class = \"geology\" WITH class \"water\" FOR alt ID \"example.p.1.s.1.w.5.alt.2\"" #the explicit way
 Qeditalt = "EDIT domain WHERE class = \"geology\" WITH class \"water\" (AS ALTERNATIVE ID \"example.p.1.s.1.w.5.alt.2\")" #the implicit way
 
@@ -1162,7 +1163,16 @@ class Test6Alternatives(unittest.TestCase):
     def setUp(self):
         self.doc = folia.Document(string=FOLIAALTEXAMPLE)
 
-    def test1_directedit(self):
+    def test1_select(self):
+        """Alternatives - Select"""
+        q = fql.Query(Qeditalt)
+        results = q(self.doc)
+        self.assertEqual(len(results), 1)
+        self.assertIsInstance(results[0], folia.Alternative)
+        self.assertEqual(results[0][0].cls, "geology")
+        self.assertIsInstance(results[0][0], folia.DomainAnnotation)
+
+    def test2_directedit(self):
         """Alternatives - Direct edit by ID (i.e. the dumb explicit way)"""
         q = fql.Query(Qdirecteditalt)
         results = q(self.doc)
@@ -1171,14 +1181,14 @@ class Test6Alternatives(unittest.TestCase):
         self.assertEqual(results[0].cls, "water")
         self.assertIsInstance(results[0].parent, folia.Alternative)
 
-    def test2_edit(self):
+    def test3_edit(self):
         """Alternatives - Edit by ID (implicitly)"""
         q = fql.Query(Qeditalt)
         results = q(self.doc)
         self.assertEqual(len(results), 1)
-        self.assertIsInstance(results[0], folia.DomainAnnotation)
-        self.assertEqual(results[0].cls, "water")
-        self.assertIsInstance(results[0].parent, folia.Alternative)
+        self.assertIsInstance(results[0], folia.Alternative)
+        self.assertEqual(results[0][0].cls, "water")
+        self.assertIsInstance(results[0][0], folia.DomainAnnotation)
 
 if os.path.exists("folia-repo"):
     FOLIAPATH = "folia-repo"
