@@ -552,7 +552,7 @@ def commonancestors(Class, *args):
     The function produces all common ancestors of the type specified, starting from the closest one up to the most distant one.
 
     Parameters:
-        Class: The type of ancestor to find, should be the :class:`AbstractElement` class or any subclass thereof (not an instance!)
+        Class: The type of ancestor to find, should be the :class:`AbstractElement` class or any subclass thereof (not an instance!). May also be a tuple of classes.
         *args: The elements to find the common ancestors of, elements are instances derived from :class:`AbstractElement`
 
     Yields:
@@ -2328,7 +2328,7 @@ class AbstractElement:
         """Generator yielding all ancestors of this element, effectively back-tracing its path to the root element. A tuple of multiple classes may be specified.
 
         Arguments:
-            *Class: The class or classes (:class:`AbstractElement` or subclasses). Not instances!
+            *Class: The class or (tuple of) classes (:class:`AbstractElement` or subclasses). Not instances!
 
         Yields:
             elements (instances derived from :class:`AbstractElement`)
@@ -3707,22 +3707,26 @@ class AbstractWord: #interface grouping elements that act like words
                 #        if self in e2.wrefs():
                 #            yield e2
 
-    def alternativelayers(self, type, set=False):
+    def alternativelayers(self, type, set=False, returnelements=False):
         """Generator over alternative layers, either all or only of a specific annotation type, and possibly restrained also by folia set.
 
         Arguments:
             type: The annotation type, can be passed as using any of the :class:`AnnotationType` member, or by passing the relevant :class:`AbstractSpanAnnotation` or :class:`AbstractAnnotationLayer` class.
             set (str): The set you want to retrieve (defaults to ``None``, which selects irregardless of set)
+            returnelements: Return the actual matches within the alternatives, will return two-tuples
 
         Yields:
             :class:`AlternativeLayers` elements
         """
         found = {}
-        for _, layer in self.findspans(type,foliaset, alternatives=True, returnlayers=True):
+        for element, layer in self.findspans(type,foliaset, alternatives=True, returnlayers=True):
             assert isinstance(layer.parent, AlternativeLayers)
-            if layer.parent not in found:
+            if returnelements or layer.parent not in found:
                 found[layer.parent] = True
-                yield layer.parent
+                if returnelements:
+                    yield element, layer.parent
+                else:
+                    yield layer.parent
 
 
 class AllowGenerateID(object):

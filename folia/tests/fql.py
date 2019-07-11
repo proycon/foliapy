@@ -191,7 +191,8 @@ Qrespannone = "EDIT su ID \"WR-P-E-J-0000000001.p.1.s.1.su.0\" WITH class \"np\"
 Qrespannone_child_right = "ADD su WITH id \"rightchild\" class \"np2\" SPAN ID \"WR-P-E-J-0000000001.p.1.s.1.w.4\" & ID \"WR-P-E-J-0000000001.p.1.s.1.w.5\" FOR su ID \"WR-P-E-J-0000000001.p.1.s.1.su.0\""
 
 Qselectalt = "SELECT domain (AS ALTERNATIVE) FOR ID \"example.p.1.s.1.w.5\""
-Qselectalt2 = "SELECT domain WHERE class = \"geology\" (AS ALTERNATIVE) FOR ID \"example.p.1.s.1.w.5\""
+Qselectalt2 = "SELECT domain (AS ALTERNATIVE) FOR ID \"example.p.1.s.1.w.5\" RETURN alternative"
+Qselectalt3 = "SELECT domain WHERE class = \"geology\" (AS ALTERNATIVE) FOR ID \"example.p.1.s.1.w.5\""
 Qdirecteditalt = "EDIT domain WHERE class = \"geology\" WITH class \"water\" FOR alt ID \"example.p.1.s.1.w.5.alt.2\"" #the explicit way
 Qeditalt = "EDIT domain WHERE class = \"geology\" WITH class \"water\" (AS ALTERNATIVE ID \"example.p.1.s.1.w.5.alt.2\")" #the implicit way
 
@@ -1169,18 +1170,27 @@ class Test6Alternatives(unittest.TestCase):
         q = fql.Query(Qselectalt)
         results = q(self.doc)
         self.assertEqual(len(results), 2) #returns two alternatives
-        self.assertIsInstance(results[0], folia.Alternative)
-        self.assertEqual(results[0][0].cls, "furniture")
-        self.assertIsInstance(results[0][0], folia.DomainAnnotation)
+        self.assertIsInstance(results[0], folia.DomainAnnotation)
+        self.assertEqual(results[0].cls, "furniture")
+        self.assertIsInstance(results[0].parent, folia.Alternative)
 
     def test1b_select(self):
         """Alternatives - Select"""
         q = fql.Query(Qselectalt2)
         results = q(self.doc)
-        self.assertEqual(len(results), 1)
+        self.assertEqual(len(results), 2) #returns two alternatives
         self.assertIsInstance(results[0], folia.Alternative)
-        self.assertEqual(results[0][0].cls, "geology")
+        self.assertEqual(results[0][0].cls, "furniture")
         self.assertIsInstance(results[0][0], folia.DomainAnnotation)
+
+    def test1c_select(self):
+        """Alternatives - Select"""
+        q = fql.Query(Qselectalt3)
+        results = q(self.doc)
+        self.assertEqual(len(results), 1)
+        self.assertIsInstance(results[0], folia.DomainAnnotation)
+        self.assertEqual(results[0].cls, "geology")
+        self.assertIsInstance(results[0].parent, folia.Alternative)
 
     def test2_directedit(self):
         """Alternatives - Direct edit by ID (i.e. the dumb explicit way)"""

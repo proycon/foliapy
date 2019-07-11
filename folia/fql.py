@@ -288,7 +288,7 @@ class Filter(object): #WHERE ....
                 #we have a subfilter, i.e. a HAS statement on a subelement
                 match = False
                 if modifier == "CHILD":
-                    for subelement,_ in selector(query, [element], True, debug): #if there are multiple subelements, they are always treated disjunctly
+                    for subelement,_ in selector(query, [element], True, False, debug): #if there are multiple subelements, they are always treated disjunctly
                         if not subfilter:
                             match = True
                         else:
@@ -443,7 +443,7 @@ class Selector(object):
 
         return Selector(Class,set,id,filter, None, expansion), i
 
-    def __call__(self, query, contextselector, recurse=True, debug=False): #generator, lazy evaluation!
+    def __call__(self, query, contextselector, recurse=True, alternatives=False,debug=False): #generator, lazy evaluation!
         if isinstance(contextselector,tuple) and len(contextselector) == 2:
             selection = contextselector[0](*contextselector[1])
         else:
@@ -478,13 +478,13 @@ class Selector(object):
                     isspan = issubclass(selector.Class, folia.AbstractSpanAnnotation)
                     if isinstance(e, tuple): e = e[0]
                     if isspan and (isinstance(e, folia.Word) or isinstance(e, folia.Morpheme)):
-                        for candidate in e.findspans(selector.Class, selector.set):
+                        for candidate in e.findspans(selector.Class, selector.set, alternatives=alternatives):
                             if not selector.filter or  selector.filter(query,candidate, debug):
                                 if debug: print("[FQL EVALUATION DEBUG] Select - Yielding span, single reference: ", repr(candidate),file=sys.stderr)
                                 yield candidate, e
                     elif isspan and isinstance(e, SpanSet):
                         #we take the first item of the span to find the candidates
-                        for candidate in e[0].findspans(selector.Class, selector.set):
+                        for candidate in e[0].findspans(selector.Class, selector.set, alternatives=alternatives):
                             if not selector.filter or  selector.filter(query,candidate, debug):
                                 #test if all the other elements in the span are in this candidate
                                 matched = True
@@ -500,16 +500,21 @@ class Selector(object):
                         yield e, e
                     else:
                         #print("DEBUG: doing select " + selector.Class.__name__ + " (recurse=" + str(recurse)+") on " + repr(e))
-                        for candidate  in e.select(selector.Class, selector.set, recurse):
-                            try:
-                                if candidate.changedbyquery is query:
-                                    #this candidate has been added/modified by the query, don't select it again
-                                    continue
-                            except AttributeError:
-                                pass
-                            if not selector.filter or  selector.filter(query,candidate, debug):
-                                if debug: print("[FQL EVALUATION DEBUG] Select - Yielding ", repr(candidate), " in ", repr(e),file=sys.stderr)
-                                yield candidate, e
+                        if alternatives:
+                            extraselector = e.select(folia.Alternative, False, recurse, ignore=False)
+                        else:
+                            extraselector = [e]
+                        for extra in extraselector:
+                            for candidate in extra.select(selector.Class, selector.set, recurse):
+                                try:
+                                    if candidate.changedbyquery is query:
+                                        #this candidate has been added/modified by the query, don't select it again
+                                        continue
+                                except AttributeError:
+                                    pass
+                                if not selector.filter or  selector.filter(query,candidate, debug):
+                                    if debug: print("[FQL EVALUATION DEBUG] Select - Yielding ", repr(candidate), " in ", repr(e),file=sys.stderr)
+                                    yield candidate, e
 
                 if selector.nextselector is None:
                     if debug: print("[FQL EVALUATION DEBUG] Select - End of chain",file=sys.stderr)
@@ -605,7 +610,7 @@ class Span(object):
 
 
             #get first target
-            for element, target in self.targets[pivotindex](query, contextselector, recurse,debug):
+            for element, target in self.targets[pivotindex](query, contextselector, recurse,debug=debug):
                 if debug: print("[FQL EVALUATION DEBUG] Span  - First item of span found  (pivotindex=" + str(pivotindex) + ",l=" + str(l) + "," + str(repr(element)) + ")",file=sys.stderr)
                 spanset = SpanSet() #elemnent is added later
 
@@ -841,7 +846,7 @@ class Target(object): #FOR/IN... expression
                 for span in self.targets:
                     if not isinstance(span, Span): raise QueryError("SPAN statement may not be mixed with non-span statements in a single selection")
                     if debug: print("[FQL EVALUATION DEBUG] Target - Evaluation span ",file=sys.stderr)
-                    for spanset in span(query, contextselector, recurse, debug):
+                    for spanset in span(query, contextselector, recurse, debug=debug):
                         if debug: print("[FQL EVALUATION DEBUG] Target - Yielding spanset ",file=sys.stderr)
                         yield spanset
             else:
@@ -851,7 +856,7 @@ class Target(object): #FOR/IN... expression
                 started = (self.start is None)
                 dobreak = False
 
-                for e,_ in selector(query, contextselector, recurse, debug):
+                for e,_ in selector(query, contextselector, recurse, alternatives=False, debug=debug):
                     if not started:
                         if self.start.match(query, e):
                             if debug: print("[FQL EVALUATION DEBUG] Target - Matched start! Starting from here...",e, file=sys.stderr)
@@ -925,15 +930,18 @@ class Alternative(object):  #AS ALTERNATIVE ... expression
 
         if action.action == "SELECT":
             if not focus: raise QueryError("SELECT requires a focus element")
-            if isspan:
-                for alternativelayer in focus.alternativelayers(action.focus.Class, focus.set):
-                    if not self.filter or (self.filter and self.filter.match(query, alternativelayer, debug)):
-                        yield alternativelayer
-            else:
-                focus_ancestor = focus.ancestor(folia.AbstractStructureElement)
-                for alternative in focus_ancestor.alternatives(action.focus.Class, focus.set):
-                    if not self.filter or (self.filter and self.filter.match(query, alternative, debug)):
-                        yield alternative
+            yield focus #nothing to do, alternatives already handled by the Selector that produced focus
+            #if isspan:
+            #    for alternativelayer, element in focus.alternativelayers(action.focus.Class, focus.set, returnelements=True):
+            #        if not self.filter or (self.filter and self.filter.match(query, alternativelayer, debug)):
+            #            yield element #if "RETURN alternative" is set this will be resolved back at a later stage
+            #else:
+            #    focus_ancestor = focus.ancestor(folia.AbstractStructureElement)
+            #    for alternative, element in focus_ancestor.alternatives(action.focus.Class, focus.set, returnelements=True):
+            #        if not self.filter or (self.filter and self.filter.match(query, alternative, debug)):
+            #    focusselector = action.focus(query,contextselector, not strict, debug)
+            #            if action.focus(
+            #                yield element
         elif action.action == "EDIT" or action.action == "ADD":
             if self.id: self.assignments['id'] = self.id
             if not isspan:
@@ -1098,7 +1106,7 @@ class Correction(object): #AS CORRECTION/SUGGESTION expression...
                     inheritchildren = [ c  for c in inheritchildren if not isinstance(c, folia.WordReference) ]
                     if not isinstance(focus, folia.AbstractSpanAnnotation): raise QueryError("Can only perform RESPAN on span annotation elements!")
                     contextselector = target if target else query.doc
-                    spanset = next(action.span(query, contextselector, True, debug)) #there can be only one
+                    spanset = next(action.span(query, contextselector, True, debug=debug)) #there can be only one
                     for w in spanset:
                         inheritchildren.append(w)
 
@@ -1286,7 +1294,7 @@ class Correction(object): #AS CORRECTION/SUGGESTION expression...
             for subaction in subactions:
                 subaction.focus.autodeclare(query.doc)
                 if debug: print("[FQL EVALUATION DEBUG] Correction.assemblesuggestions - Invoking subaction", subaction.action,file=sys.stderr)
-                subaction(query, [e], debug ) #note: results of subactions will be silently discarded
+                subaction(query, [e], debug=debug ) #note: results of subactions will be silently discarded
 
         for subassignments, suggestionassignments in self.suggestions:
             suggestionchildren = []
@@ -1613,7 +1621,7 @@ class Action(object): #Action expression
                         focusselector = ( (x,x) for x in query.doc )  #Patch to make root-level SELECT ALL work as intended
                     else:
                         strict = query.targets and query.targets.strict
-                        focusselector = action.focus(query,contextselector, not strict, debug)
+                        focusselector = action.focus(query,contextselector, not strict, alternatives=isinstance(action.form,Alternative), debug=debug)
                     if debug: print("[FQL EVALUATION DEBUG] Action - Obtaining focus...",file=sys.stderr)
                     for focus, target in focusselector:
                         if target and action.action != "SUBSTITUTE":
@@ -1673,7 +1681,7 @@ class Action(object): #Action expression
                                         setattr(focus, attr, value)
                                 if action.span is not None: #respan
                                     if not isinstance(focus, folia.AbstractSpanAnnotation): raise QueryError("Can only perform RESPAN on span annotation elements!")
-                                    spanset = next(action.span(query, contextselector, True, debug)) #there can be only one
+                                    spanset = next(action.span(query, contextselector, True, debug=debug)) #there can be only one
                                     if debug: print("[FQL EVALUATION DEBUG] Action - Setting respan",file=sys.stderr)
                                     focus.setspan(*spanset)
 
@@ -1793,7 +1801,7 @@ class Action(object): #Action expression
                     if focusselection and action.span: #process SPAN keyword (ADD .. SPAN .. FOR .. rather than ADD ... FOR SPAN ..)
                         if not isspan: raise QueryError("Can only use SPAN with span annotation elements!")
                         for focus in focusselection:
-                            spanset = next(action.span(query, contextselector, True, debug)) #there can be only one
+                            spanset = next(action.span(query, contextselector, True, debug=debug)) #there can be only one
                             if debug: print("[FQL EVALUATION DEBUG] Action - Setting span",file=sys.stderr)
                             focus.setspan(*spanset)
 
@@ -2110,6 +2118,13 @@ class Query(object):
                     responseselection.append( next(folia.commonancestors(folia.AbstractStructureElement,*elems)) )
                 except StopIteration:
                     raise QueryError("No ancestors found for targets: " + str(repr(targetselection)))
+            elif self.returntype == "alternative" or self.returntype == "alternative-focus":
+                responseselection = []
+                try:
+                    for e in focusselection:
+                        responseselection.append( next(e.ancestors((folia.Alternative, folia.AlternativeLayers))))
+                except StopIteration:
+                    raise QueryError("No ancestors found for focus: " + str(repr(focusselection)))
             else:
                 raise QueryError("Invalid return type: " + self.returntype)
 
