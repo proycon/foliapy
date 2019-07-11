@@ -3542,12 +3542,13 @@ class AllowInlineAnnotation(AllowCorrections):
             return e
         raise NoSuchAnnotation()
 
-    def alternatives(self, Class=None, set=False):
+    def alternatives(self, Class=None, set=False, returnelements=False):
         """Generator over alternatives, either all or only of a specific annotation type, and possibly restrained also by set.
 
         Arguments:
             Class (class): The python Class you want to retrieve (e.g. PosAnnotation). Or set to ``None`` to select all alternatives regardless of what type they are.
             set (str): The set you want to retrieve (defaults to ``None``, which selects irregardless of set)
+            returnelements: Return the actual matches within the alternatives, will return two-tuples
 
         Yields:
             :class:`Alternative` elements
@@ -3562,7 +3563,10 @@ class AllowInlineAnnotation(AllowCorrections):
                         if isinstance(e2, Class):
                             try:
                                 if set is False or e2.set == set:
-                                    yield e #not e2
+                                    if returnelements:
+                                        yield e, e2
+                                    else:
+                                        yield e
                                     break #yield an alternative only once (in case there are multiple matches)
                             except AttributeError:
                                 continue
@@ -5231,33 +5235,6 @@ class AbstractAnnotationLayer(AbstractElement, AllowGenerateID, AllowCorrections
         for e in self.select(type,set,True,default_ignore_annotations):
             return e
         raise NoSuchAnnotation()
-
-    def alternatives(self, Class=None, set=False):
-        """Generator over alternatives, either all or only of a specific annotation type, and possibly restrained also by set.
-
-        Arguments:
-            * ``Class`` - The Class you want to retrieve (e.g. PosAnnotation). Or set to None to select all alternatives regardless of what type they are.
-            * ``set``   - The set you want to retrieve (defaults to None, which selects irregardless of set)
-
-        Returns:
-            Generator over Alternative elements
-        """
-
-        for e in self.select(AlternativeLayers,False, True, ['Original','Suggestion']): #pylint: disable=too-many-nested-blocks
-            if Class is None:
-                yield e
-            elif len(e) >= 1: #child elements?
-                for e2 in e:
-                    try:
-                        if isinstance(e2, Class):
-                            try:
-                                if set is False or e2.set == set:
-                                    yield e #not e2
-                                    break #yield an alternative only once (in case there are multiple matches)
-                            except AttributeError:
-                                continue
-                    except AttributeError:
-                        continue
 
     def findspan(self, *words):
         """Returns the span element which spans over the specified words or morphemes.
