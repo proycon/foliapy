@@ -919,7 +919,7 @@ class Alternative(object):  #AS ALTERNATIVE ... expression
         return Alternative(id, subassignments, assignments, filter), i
 
     def __call__(self, query, action, focus, target,debug=False):
-        """Action delegates to this function to handle alternatives"""
+        """Action delegates to this function (for additions only!) to handle alternatives"""
         isspan = isinstance(action.focus.Class, folia.AbstractSpanAnnotation)
 
         subassignments = {} #make a copy
@@ -928,21 +928,7 @@ class Alternative(object):  #AS ALTERNATIVE ... expression
         for key, value in self.subassignments.items():
             subassignments[key] = value
 
-        if action.action == "SELECT":
-            if not focus: raise QueryError("SELECT requires a focus element")
-            yield focus #nothing to do, alternatives already handled by the Selector that produced focus
-            #if isspan:
-            #    for alternativelayer, element in focus.alternativelayers(action.focus.Class, focus.set, returnelements=True):
-            #        if not self.filter or (self.filter and self.filter.match(query, alternativelayer, debug)):
-            #            yield element #if "RETURN alternative" is set this will be resolved back at a later stage
-            #else:
-            #    focus_ancestor = focus.ancestor(folia.AbstractStructureElement)
-            #    for alternative, element in focus_ancestor.alternatives(action.focus.Class, focus.set, returnelements=True):
-            #        if not self.filter or (self.filter and self.filter.match(query, alternative, debug)):
-            #    focusselector = action.focus(query,contextselector, not strict, debug)
-            #            if action.focus(
-            #                yield element
-        elif action.action == "EDIT" or action.action == "ADD":
+        if action.action == "ADD" or (action.action == "EDIT" and not focus):
             if self.id: self.assignments['id'] = self.id
             if not isspan:
                 if self.id and self.id in query.doc:
@@ -1634,8 +1620,8 @@ class Action(object): #Action expression
                                 constrainedtargetselection.append(target)
 
 
-                        if action.form and action.action != "SUBSTITUTE":
-                            #Delegate action to form (= correction or alternative)
+                        if action.form and not isinstance(action.form, Alternative) and action.action != "SUBSTITUTE":
+                            #Delegate action to form (= correction), not needed for Alternative, those can be handled directly
                             if not any(x is focus for x in  processed_form):
                                 if debug: print("[FQL EVALUATION DEBUG] Action - Got focus result, processing using form ", repr(focus),file=sys.stderr)
                                 processed_form.append(focus)

@@ -1206,9 +1206,9 @@ class Test6Alternatives(unittest.TestCase):
         q = fql.Query(Qeditalt)
         results = q(self.doc)
         self.assertEqual(len(results), 1)
-        self.assertIsInstance(results[0], folia.Alternative)
-        self.assertEqual(results[0][0].cls, "water")
-        self.assertIsInstance(results[0][0], folia.DomainAnnotation)
+        self.assertIsInstance(results[0], folia.DomainAnnotation)
+        self.assertEqual(results[0].cls, "water")
+        self.assertIsInstance(results[0].parent, folia.Alternative)
 
 if os.path.exists("folia-repo"):
     FOLIAPATH = "folia-repo"
