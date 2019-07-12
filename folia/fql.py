@@ -36,7 +36,7 @@ MASK_EXPRESSION = 2
 MAXEXPANSION = 99
 
 FOLIAVERSION = folia.FOLIAVERSION
-FQLVERSION = '0.5.0'
+FQLVERSION = '0.6.0'
 
 class SyntaxError(Exception):
     pass
