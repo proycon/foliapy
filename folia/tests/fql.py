@@ -1241,6 +1241,11 @@ class Test6Alternatives(unittest.TestCase):
         self.assertIsInstance(results[0][0], folia.DomainAnnotation)
         self.assertEqual(results[0][0].cls, "general")
 
+class Test7AlternativeSpan(unittest.TestCase):
+    """Alternatives"""
+    def setUp(self):
+        self.doc = folia.Document(string=FOLIAALTSPANEXAMPLE)
+
 if os.path.exists("folia-repo"):
     FOLIAPATH = "folia-repo"
 elif os.path.exists("../folia-repo"):
@@ -1260,6 +1265,10 @@ f.close()
 
 f = io.open(os.path.join(FOLIAPATH, 'examples','alternatives.2.0.0.folia.xml'), 'r',encoding='utf-8')
 FOLIAALTEXAMPLE = f.read()
+f.close()
+
+f = io.open(os.path.join(FOLIAPATH, 'examples','alternatives-span.2.0.0.folia.xml'), 'r',encoding='utf-8')
+FOLIAALTSPANEXAMPLE = f.read()
 f.close()
 
 if __name__ == '__main__':
