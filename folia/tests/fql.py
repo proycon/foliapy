@@ -199,6 +199,9 @@ Qaddalt = "ADD domain WITH class \"general\" (AS ALTERNATIVE) FOR ID \"example.p
 Qaddalt_exp = "ADD domain WITH class \"general\" (AS ALTERNATIVE ID \"example.p.1.s.1.w.4.alt.1\") FOR ID \"example.p.1.s.1.w.4\""
 Qaddalt2 = "ADD domain WITH class \"general\" (AS ALTERNATIVE) FOR ID \"example.p.1.s.1.w.4\" RETURN alternative"
 
+Qselectaltspan = "SELECT chunk (AS ALTERNATIVE) FOR SPAN ID \"example.p.1.s.1.w.1\" & ID \"example.p.1.s.1.w.2\""
+Qselectaltspan2 = "SELECT chunk (AS ALTERNATIVE) FOR SPAN ID \"example.p.1.s.1.w.1\" & ID \"example.p.1.s.1.w.2\" RETURN alternative"
+
 class Test1UnparsedQuery(unittest.TestCase):
 
     def test1_basic(self):
@@ -1245,6 +1248,24 @@ class Test7AlternativeSpan(unittest.TestCase):
     """Alternatives"""
     def setUp(self):
         self.doc = folia.Document(string=FOLIAALTSPANEXAMPLE)
+
+    def test1a_select(self):
+        """Alternative Span - Select"""
+        q = fql.Query(Qselectaltspan)
+        results = q(self.doc)
+        self.assertEqual(len(results), 1)
+        self.assertIsInstance(results[0], folia.Chunk)
+        self.assertEqual(results[0].text(), "The Dalai")
+        self.assertIsInstance(results[0].parent, folia.ChunkingLayer)
+        self.assertIsInstance(results[0].parent.parent, folia.AlternativeLayers)
+
+    def test1b_select(self):
+        """Alternative Span - Select"""
+        q = fql.Query(Qselectaltspan2)
+        results = q(self.doc)
+        self.assertEqual(len(results), 1)
+        self.assertIsInstance(results[0], folia.AlternativeLayers)
+        self.assertEqual(results[0][0][0].text(), "The Dalai")
 
 if os.path.exists("folia-repo"):
     FOLIAPATH = "folia-repo"
