@@ -934,19 +934,18 @@ class Alternative(object):  #AS ALTERNATIVE ... expression
                 if self.id and self.id in query.doc:
                     #add to existing alternative
                     alternative = query.doc[self.id]
-                    alternative.append( action.focus.Class, **subassignments)
-                    yield alternative
+                    yield alternative.append( action.focus.Class, **subassignments)
                 elif focus:
                     #alternative in focus
                     parent = focus.ancestor(folia.AbstractStructureElement)
                     alternative = folia.Alternative( query.doc, action.focus.Class( query.doc , **subassignments), **self.assignments)
                     parent.append(alternative)
-                    yield alternative
+                    yield alternative[0]
                 else:
                     #alternative in target
                     alternative = folia.Alternative( query.doc, action.focus.Class( query.doc , **subassignments), **self.assignments)
                     target.append(alternative)
-                    yield alternative
+                    yield alternative[0]
             else:
                 raise NotImplementedError("Editing alternative span not implemented yet")
         else:

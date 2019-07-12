@@ -195,6 +195,9 @@ Qselectalt2 = "SELECT domain (AS ALTERNATIVE) FOR ID \"example.p.1.s.1.w.5\" RET
 Qselectalt3 = "SELECT domain WHERE class = \"geology\" (AS ALTERNATIVE) FOR ID \"example.p.1.s.1.w.5\""
 Qdirecteditalt = "EDIT domain WHERE class = \"geology\" WITH class \"water\" FOR alt ID \"example.p.1.s.1.w.5.alt.2\"" #the explicit way
 Qeditalt = "EDIT domain WHERE class = \"geology\" WITH class \"water\" (AS ALTERNATIVE ID \"example.p.1.s.1.w.5.alt.2\")" #the implicit way
+Qaddalt = "ADD domain WITH class \"general\" (AS ALTERNATIVE) FOR ID \"example.p.1.s.1.w.4\""
+Qaddalt_exp = "ADD domain WITH class \"general\" (AS ALTERNATIVE ID \"example.p.1.s.1.w.4.alt.1\") FOR ID \"example.p.1.s.1.w.4\""
+Qaddalt2 = "ADD domain WITH class \"general\" (AS ALTERNATIVE) FOR ID \"example.p.1.s.1.w.4\" RETURN alternative"
 
 class Test1UnparsedQuery(unittest.TestCase):
 
@@ -546,9 +549,9 @@ class Test3Evaluation(unittest.TestCase):
         """Add alternative token annotation"""
         q = fql.Query(Qalt)
         results = q(self.doc)
-        self.assertIsInstance(results[0], folia.Alternative)
-        self.assertIsInstance(results[0][0], folia.LemmaAnnotation)
-        self.assertEqual(results[0][0].cls, "terwijl")
+        self.assertIsInstance(results[0], folia.LemmaAnnotation)
+        self.assertEqual(results[0].cls, "terwijl")
+        self.assertIsInstance(results[0].parent, folia.Alternative)
 
     def test22_declare(self):
         """Explicit declaration"""
@@ -1209,6 +1212,34 @@ class Test6Alternatives(unittest.TestCase):
         self.assertIsInstance(results[0], folia.DomainAnnotation)
         self.assertEqual(results[0].cls, "water")
         self.assertIsInstance(results[0].parent, folia.Alternative)
+
+    def test4a_add(self):
+        """Alternatives - Add as alternative"""
+        q = fql.Query(Qaddalt)
+        results = q(self.doc)
+        self.assertEqual(len(results), 1)
+        self.assertIsInstance(results[0], folia.DomainAnnotation)
+        self.assertEqual(results[0].cls, "general")
+        self.assertIsInstance(results[0].parent, folia.Alternative)
+
+    def test4b_add(self):
+        """Alternatives - Add as alternative (with explicit ID)"""
+        q = fql.Query(Qaddalt_exp)
+        results = q(self.doc)
+        self.assertEqual(len(results), 1)
+        self.assertIsInstance(results[0], folia.DomainAnnotation)
+        self.assertEqual(results[0].cls, "general")
+        self.assertIsInstance(results[0].parent, folia.Alternative)
+        self.assertEqual(results[0].parent.id, "example.p.1.s.1.w.4.alt.1" )
+
+    def test4c_add(self):
+        """Alternatives - Add as alternative (and return alternative)"""
+        q = fql.Query(Qaddalt2)
+        results = q(self.doc)
+        self.assertEqual(len(results), 1)
+        self.assertIsInstance(results[0], folia.Alternative)
+        self.assertIsInstance(results[0][0], folia.DomainAnnotation)
+        self.assertEqual(results[0][0].cls, "general")
 
 if os.path.exists("folia-repo"):
     FOLIAPATH = "folia-repo"
