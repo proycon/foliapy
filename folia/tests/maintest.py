@@ -249,6 +249,19 @@ class Test_Exxx_BackwardCompatibility(unittest.TestCase):
         self.assertEqual(pos.processor.name, "testsuite")
 
 
+class Test_Exxx_SetAndSetLess(unittest.TestCase): #Issue #74
+    def setUp(self):
+        self.doc = folia.Document(file=os.path.join(FOLIAPATH,"examples/tests/set_and_setless.2.0.0.folia.xml"))
+
+    def test_sets_setless(self):
+        """Testing sanity with set-holding and setless annotation types similtaneously"""
+        c1 = self.doc['example.p.1.s.1.chunk.1']
+        self.assertEqual(c1.set, None)
+
+    def test_sets_setholding(self):
+        """Testing sanity with set-holding and setless annotation types similtaneously"""
+        c1 = self.doc['example.p.1.s.1.chunkset.1']
+        self.assertEqual(c1.set, "chunkset")
 
 class Test_Provenance(unittest.TestCase):
     def test001_metadatasanity(self):
