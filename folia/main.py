@@ -749,7 +749,7 @@ class AbstractElement:
                         if isinstance(self, PhonContent):
                             self.set = DEFAULT_PHON_SET
                 else:
-                    self.set = False
+                    self.set = None
         if Attrib.CLASS in required and not self.set:
             raise ValueError("Set is required for " + self.__class__.__name__)
 
@@ -1147,9 +1147,6 @@ class AbstractElement:
                             raise DeclarationError("Set '" + str(foliaset) + "' is used for " + self.__class__.__name__ + " <" + self.__class__.XMLTAG + ">, but has no declaration!")
                     elif FOLIA2:
                         raise DeclarationError("Encountered an instance without proper declaration: " + self.__class__.__name__ + " <" + self.__class__.XMLTAG + ">!")
-            #check for ambiguity
-            if self.set is None and self.__class__.PRIMARYELEMENT and self.doc.declared(annotationtype,self.set) and self.doc.defaultset(annotationtype) is False:
-                raise DeclarationError("No set assigned for " + self.__class__.__name__ + " <" + self.__class__.XMLTAG + "> but no default available either due to multiple possible declarations!")# + ", ".join([str(s) for s in self.doc.annotationdefaults[annotationtype].keys()]))
 
 
     def description(self):
