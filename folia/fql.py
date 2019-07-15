@@ -1358,7 +1358,7 @@ def getassignments(q, i, assignments,  focus=None):
                 raise SyntaxError("Invalid value for annotatortype: " + str(q[i+1]))
             i+=2
         elif q.kw(i,('text','value','phon')):
-            if not focus is None and focus.Class in (folia.TextContent, folia.Description, folia.Comment):
+            if not focus is None and focus.Class in (folia.TextContent, folia.Description, folia.Comment, folia.Metric):
                 key = 'value'
             elif not focus is None and focus.Class is folia.PhonContent:
                 key = 'phon'

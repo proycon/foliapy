@@ -202,6 +202,8 @@ Qaddalt2 = "ADD domain WITH class \"general\" (AS ALTERNATIVE) FOR ID \"example.
 Qselectaltspan = "SELECT chunk (AS ALTERNATIVE) FOR SPAN ID \"example.p.1.s.1.w.1\" & ID \"example.p.1.s.1.w.2\""
 Qselectaltspan2 = "SELECT chunk (AS ALTERNATIVE) FOR SPAN ID \"example.p.1.s.1.w.1\" & ID \"example.p.1.s.1.w.2\" RETURN alternative"
 
+Qmetric = "ADD metric OF \"adhoc\" WITH class \"length\" value \"5\" FOR ID \"WR-P-E-J-0000000001.sandbox.2.s.1.w.3\""
+
 class Test1UnparsedQuery(unittest.TestCase):
 
     def test1_basic(self):
@@ -901,6 +903,14 @@ class Test3Evaluation(unittest.TestCase):
         results = q(self.doc)
         self.assertEqual(self.doc["rightchild"].wrefs(), [ self.doc["WR-P-E-J-0000000001.p.1.s.1.w.4"], self.doc["WR-P-E-J-0000000001.p.1.s.1.w.5"]])
         self.assertEqual(self.doc["WR-P-E-J-0000000001.p.1.s.1.su.0"].wrefs(), [ self.doc["WR-P-E-J-0000000001.p.1.s.1.w.3"],self.doc["WR-P-E-J-0000000001.p.1.s.1.w.4"],self.doc["WR-P-E-J-0000000001.p.1.s.1.w.5"]] ) #recurses by default
+
+    def test41_metric(self):
+        q = fql.Query(Qmetric)
+        results = q(self.doc)
+        self.assertIsInstance(results[0], folia.Metric)
+        self.assertEqual(results[0].cls, "length")
+        self.assertEqual(results[0].set, "adhoc")
+        self.assertEqual(results[0].feat("value"), "5")
 
 
 if HAVE_CQL:
