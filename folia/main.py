@@ -52,7 +52,7 @@ from folia import LIBVERSION
 
 #foliaspec:version:FOLIAVERSION
 #The FoLiA version
-FOLIAVERSION = "2.1.0"
+FOLIAVERSION = "2.2.0"
 
 #foliaspec:namespace:NSFOLIA
 #The FoLiA XML namespace
@@ -9045,7 +9045,7 @@ def validate(filename,schema=None,deep=False):
 #================================= FOLIA SPECIFICATION ==========================================================
 
 #foliaspec:header
-#This file was last updated according to the FoLiA specification for version 2.1.0 on 2019-05-19 14:13:17, using foliaspec.py
+#This file was last updated according to the FoLiA specification for version 2.2.0 on 2019-07-18 13:15:55, using foliaspec.py
 #Code blocks after a foliaspec comment (until the next newline) are automatically generated. **DO NOT EDIT THOSE** and **DO NOT REMOVE ANY FOLIASPEC COMMENTS** !!!
 
 #foliaspec:structurescope:STRUCTURESCOPE
@@ -9659,7 +9659,7 @@ Paragraph.XMLTAG = "p"
 Part.ACCEPTED_DATA = (AbstractAnnotationLayer, AbstractInlineAnnotation, AbstractStructureElement, Alternative, AlternativeLayers, Comment, Correction, Description, Feature, ForeignData, Metric, Part, PhonContent, Relation, TextContent,)
 Part.ANNOTATIONTYPE = AnnotationType.PART
 Part.LABEL = "Part"
-Part.TEXTDELIMITER = None
+Part.TEXTDELIMITER = " "
 Part.XMLTAG = "part"
 #------ PhonContent -------
 PhonContent.ACCEPTED_DATA = (Comment, Description,)
@@ -9703,7 +9703,7 @@ Quote.XMLTAG = "quote"
 Reference.ACCEPTED_DATA = (AbstractAnnotationLayer, Alternative, AlternativeLayers, Comment, Correction, Description, Feature, ForeignData, Hiddenword, Linebreak, Metric, Paragraph, Part, PhonContent, Quote, Relation, Sentence, String, TextContent, Utterance, Whitespace, Word,)
 Reference.ANNOTATIONTYPE = AnnotationType.REFERENCE
 Reference.LABEL = "Reference"
-Reference.TEXTDELIMITER = None
+Reference.TEXTDELIMITER = " "
 Reference.XLINK = True
 Reference.XMLTAG = "ref"
 #------ Relation -------
