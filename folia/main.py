@@ -7802,8 +7802,12 @@ class Document(object):
 
             if processor_new:
                 if 'generator' not in kwargs or not kwargs['generator']:
-                    #Add a subprocessor with generator information about this FoLiA library
-                    processor.append(Processor(id=processor.id+'.generator', name="foliapy", type=ProcessorType.GENERATOR, version=LIBVERSION, folia_version=FOLIAVERSION))
+                    try:
+                        #ensure the subprocessor doesn't already exist
+                        processor[processor.id+'.generator']
+                    except KeyError: #good, this is what we want:
+                        #Add a subprocessor with generator information about this FoLiA library
+                        processor.append(Processor(id=processor.id+'.generator', name="foliapy", type=ProcessorType.GENERATOR, version=LIBVERSION, folia_version=FOLIAVERSION))
                 if context:
                     #add processor to existing context in provenance chain
                     if self.debug >= 1:
