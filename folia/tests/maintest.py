@@ -150,7 +150,7 @@ class Test_Exxx_Hidden_Tokens(unittest.TestCase): #xxx -> replace with a number 
     """Hidden token tests"""
 
     def setUp(self):
-        self.doc = folia.Document(file=os.path.join(FOLIAPATH,"examples/syntactic-movement.2.0.0.folia.xml"))
+        self.doc = folia.Document(file=os.path.join(FOLIAPATH,"examples/hiddentokens.2.0.0.folia.xml"))
         self.maxDiff = None
 
     def test_wordcount(self):
