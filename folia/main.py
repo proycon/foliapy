@@ -271,7 +271,12 @@ class Processor:
 
         if 'generator' not in kwargs or not kwargs['generator']:
             #Add a subprocessor with generator information about this FoLiA library
-            processor.append(Processor(id=processor.id+'.generator', name="foliapy", type=ProcessorType.GENERATOR, version=LIBVERSION, folia_version=FOLIAVERSION, src="https://github.com/proycon/foliapy"))
+            try:
+                #ensure the subprocessor doesn't already exist
+                processor[processor.id+'.generator']
+            except KeyError: #good, this is what we want:
+                if processor.id+'.generator' not in processor:
+                    processor.append(Processor(id=processor.id+'.generator', name="foliapy", type=ProcessorType.GENERATOR, version=LIBVERSION, folia_version=FOLIAVERSION, src="https://github.com/proycon/foliapy"))
         return processor
 
 
