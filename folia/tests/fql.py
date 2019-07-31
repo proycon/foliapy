@@ -204,6 +204,8 @@ Qselectaltspan2 = "SELECT chunk (AS ALTERNATIVE) FOR SPAN ID \"example.p.1.s.1.w
 
 Qmetric = "ADD metric OF \"adhoc\" WITH class \"length\" value \"5\" FOR ID \"WR-P-E-J-0000000001.sandbox.2.s.1.w.3\""
 
+Qrelation = "ADD relation OF \"adhoc\" WITH class \"punc-to-wh\" (TO su ID \"s1.WNP-1\") FOR su ID \"s1.PUNC\""
+
 class Test1UnparsedQuery(unittest.TestCase):
 
     def test1_basic(self):
@@ -1277,6 +1279,16 @@ class Test7AlternativeSpan(unittest.TestCase):
         self.assertIsInstance(results[0], folia.AlternativeLayers)
         self.assertEqual(results[0][0][0].text(), "The Dalai")
 
+class Test7InternalRelations(unittest.TestCase):
+    """Alternatives"""
+    def setUp(self):
+        self.doc = folia.Document(string=FOLIARELATIONEXAMPLE)
+
+    def test1a_add(self):
+        """Internal Relations - Add a relation with link references"""
+        q = fql.Query(Qrelation)
+        #results = q(self.doc)
+
 if os.path.exists("folia-repo"):
     FOLIAPATH = "folia-repo"
 elif os.path.exists("../folia-repo"):
@@ -1300,6 +1312,10 @@ f.close()
 
 f = io.open(os.path.join(FOLIAPATH, 'examples','alternatives-span.2.0.0.folia.xml'), 'r',encoding='utf-8')
 FOLIAALTSPANEXAMPLE = f.read()
+f.close()
+
+f = io.open(os.path.join(FOLIAPATH, 'examples','syntactic-movement.2.0.0.folia.xml'), 'r',encoding='utf-8')
+FOLIARELATIONEXAMPLE = f.read()
 f.close()
 
 if __name__ == '__main__':

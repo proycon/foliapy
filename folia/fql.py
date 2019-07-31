@@ -1498,10 +1498,14 @@ class Action(object): #Action expression
         while not done:
             if isinstance(q[i], UnparsedQuery):
                 #we have a sub expression
-                if q[i].kw(0, ('EDIT','DELETE','ADD')):
+                if q[i].kw(0, ('EDIT','DELETE','ADD','TO')):
                     #It's a sub-action!
                     if action.action in ("DELETE"):
                         raise SyntaxError("Subactions are not allowed for action " + action.action + ", in: " + str(q))
+                    if q[i][0] == "TO":
+                        if action.focus.Class is not folia.Relation:
+                            raise SyntaxError("Subaction TO is only allowed when the focus is a relation but focus is " + action.focus.Class.__name__ + " in: " + str(q))
+                        q[i][0] = "SELECT" #TO is just a select query
                     subaction, _ = Action.parse(q[i])
                     action.subactions.append( subaction )
                 elif q[i].kw(0, 'AS'):
