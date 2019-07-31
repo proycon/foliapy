@@ -5496,8 +5496,14 @@ class Relation(AbstractElement):
     def resolve(self, documents=None):
         if documents is None: documents = {}
         #documents is a dictionary of urls to document instances, to aid in resolving cross-document alignments
+        targets = []
         for x in self.select(LinkReference,False,True,False):
-            yield x.resolve(self, documents)
+            targets.append( x.resolve(self, documents))
+        return targets
+
+    def targets(self, documents=None): #alias
+        """Returns the targets to which this relation refers, as a list"""
+        return self.resolve(documents)
 
     @classmethod
     def relaxng(cls, includechildren=True,extraattribs = None, extraelements=None):
