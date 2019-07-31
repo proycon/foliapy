@@ -5494,16 +5494,16 @@ class Relation(AbstractElement):
         return super(Relation,self).json(attribs,recurse, ignorelist)
 
     def resolve(self, documents=None):
+        """Resolves the targets to which this relation refers, returns a generator"""
         if documents is None: documents = {}
         #documents is a dictionary of urls to document instances, to aid in resolving cross-document alignments
         targets = []
         for x in self.select(LinkReference,False,True,False):
-            targets.append( x.resolve(self, documents))
-        return targets
+            yield x.resolve(self, documents)
 
     def targets(self, documents=None): #alias
         """Returns the targets to which this relation refers, as a list"""
-        return self.resolve(documents)
+        return list(self.resolve(documents))
 
     @classmethod
     def relaxng(cls, includechildren=True,extraattribs = None, extraelements=None):
