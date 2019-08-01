@@ -1800,7 +1800,26 @@ class Action(object): #Action expression
                         if debug: print("[FQL EVALUATION DEBUG] Action - Auto-declaring ",action.focus.Class.__name__, " of ", str(action.focus.set),file=sys.stderr)
                         subaction.focus.autodeclare(query.doc)
                         if debug: print("[FQL EVALUATION DEBUG] Action - Invoking subaction ", subaction.action,file=sys.stderr)
-                        subaction(query, focusselection, debug ) #note: results of subactions will be silently discarded, they can never select anything
+                        subactionresults, _ = subaction(query, focusselection, debug ) #note: results of subactions will be silently discarded (they hardly ever select anything), except for the following case:
+                        if action.focus.Class is folia.Relation:
+                            #the subaction results are the links for the relation:
+                            for focus in focusselection:
+                                if debug: print("[FQL EVALUATION DEBUG] Action - Adding link to selection for subaction",file=sys.stderr)
+                                for linktarget in subactionresults:
+                                    print(repr(linktarget),file=sys.stderr)
+                                    if not linktarget.id:
+                                        #link target has no ID, we can't link to elements
+                                        #without an ID, so we create one here:
+                                        if linktarget.parent and linktarget.parent.id:
+                                            linktarget.id = linktarget.parent.id + ".xref." + ("%08x" % random.getrandbits(64))
+                                        else:
+                                            linktarget.id = "xref." + ("%08x" % random.getrandbits(64))
+                                    if debug: print("[FQL EVALUATION DEBUG] Action - Adding link to selection for subaction",file=sys.stderr)
+                                    focus.append(folia.LinkReference, id=linktarget.id)
+
+
+
+
 
                 if len(actions) > 1:
                     #consolidate results:

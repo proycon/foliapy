@@ -1287,7 +1287,12 @@ class Test7InternalRelations(unittest.TestCase):
     def test1a_add(self):
         """Internal Relations - Add a relation with link references"""
         q = fql.Query(Qrelation)
-        #results = q(self.doc)
+        results = q(self.doc)
+        self.assertEqual(len(results), 1)
+        self.assertIsInstance(results[0], folia.Relation)
+        targets = results[0].targets()
+        self.assertIsInstance(targets[0], folia.SyntacticUnit)
+        self.assertEqual(targets[0].id, "s1.WNP-1")
 
 if os.path.exists("folia-repo"):
     FOLIAPATH = "folia-repo"
