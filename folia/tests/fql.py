@@ -205,6 +205,7 @@ Qselectaltspan2 = "SELECT chunk (AS ALTERNATIVE) FOR SPAN ID \"example.p.1.s.1.w
 Qmetric = "ADD metric OF \"adhoc\" WITH class \"length\" value \"5\" FOR ID \"WR-P-E-J-0000000001.sandbox.2.s.1.w.3\""
 
 Qrelation = "ADD relation OF \"adhoc\" WITH class \"punc-to-wh\" (TO su ID \"s1.WNP-1\") FOR su ID \"s1.PUNC\""
+Qrelation_chained = "ADD relation OF \"adhoc\" WITH class \"punc-to-wh\" (TO su ID \"s1.WNP-1\") (TO su ID \"s1.NP-PRD\") FOR su ID \"s1.PUNC\""
 
 class Test1UnparsedQuery(unittest.TestCase):
 
@@ -1284,7 +1285,7 @@ class Test7InternalRelations(unittest.TestCase):
     def setUp(self):
         self.doc = folia.Document(string=FOLIARELATIONEXAMPLE)
 
-    def test1a_add(self):
+    def test1_add(self):
         """Internal Relations - Add a relation with link references"""
         q = fql.Query(Qrelation)
         results = q(self.doc)
@@ -1293,6 +1294,18 @@ class Test7InternalRelations(unittest.TestCase):
         targets = results[0].targets()
         self.assertIsInstance(targets[0], folia.SyntacticUnit)
         self.assertEqual(targets[0].id, "s1.WNP-1")
+
+    def test2_add_chained(self):
+        """Internal Relations - Add a relation with multiple link references"""
+        q = fql.Query(Qrelation_chained)
+        results = q(self.doc)
+        self.assertEqual(len(results), 1)
+        self.assertIsInstance(results[0], folia.Relation)
+        targets = results[0].targets()
+        self.assertIsInstance(targets[0], folia.SyntacticUnit)
+        self.assertEqual(targets[0].id, "s1.WNP-1")
+        self.assertIsInstance(targets[1], folia.SyntacticUnit)
+        self.assertEqual(targets[1].id, "s1.NP-PRD")
 
 if os.path.exists("folia-repo"):
     FOLIAPATH = "folia-repo"
