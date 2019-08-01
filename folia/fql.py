@@ -1806,7 +1806,6 @@ class Action(object): #Action expression
                             for focus in focusselection:
                                 if debug: print("[FQL EVALUATION DEBUG] Action - Adding link to selection for subaction",file=sys.stderr)
                                 for linktarget in subactionresults:
-                                    print(repr(linktarget),file=sys.stderr)
                                     if not linktarget.id:
                                         #link target has no ID, we can't link to elements
                                         #without an ID, so we create one here:
