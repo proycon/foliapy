@@ -206,6 +206,7 @@ Qmetric = "ADD metric OF \"adhoc\" WITH class \"length\" value \"5\" FOR ID \"WR
 
 Qrelation = "ADD relation OF \"adhoc\" WITH class \"punc-to-wh\" (TO su ID \"s1.WNP-1\") FOR su ID \"s1.PUNC\""
 Qrelation_chained = "ADD relation OF \"adhoc\" WITH class \"punc-to-wh\" (TO su ID \"s1.WNP-1\") (TO su ID \"s1.NP-PRD\") FOR su ID \"s1.PUNC\""
+Qrelation_external = "ADD relation OF \"adhoc\" WITH class \"dbpedia\" href \"http://dbpedia.org/page/India\" format \"text/html\" FOR entity ID \"example.p.1.s.1.entity.3\""
 
 class Test1UnparsedQuery(unittest.TestCase):
 
@@ -1307,6 +1308,20 @@ class Test7InternalRelations(unittest.TestCase):
         self.assertIsInstance(targets[1], folia.SyntacticUnit)
         self.assertEqual(targets[1].id, "s1.NP-PRD")
 
+class Test8ExternalRelations(unittest.TestCase):
+    """Alternatives"""
+    def setUp(self):
+        self.doc = folia.Document(string=FOLIAEXRELATIONEXAMPLE)
+
+    def test1_add(self):
+        """External Relations - Add a relation referencing a URL and format"""
+        q = fql.Query(Qrelation_external)
+        results = q(self.doc)
+        self.assertEqual(len(results), 1)
+        self.assertIsInstance(results[0], folia.Relation)
+        self.assertEqual(results[0].href, "http://dbpedia.org/page/India")
+        self.assertEqual(results[0].format, "text/html")
+
 if os.path.exists("folia-repo"):
     FOLIAPATH = "folia-repo"
 elif os.path.exists("../folia-repo"):
@@ -1334,6 +1349,10 @@ f.close()
 
 f = io.open(os.path.join(FOLIAPATH, 'examples','syntactic-movement.2.0.0.folia.xml'), 'r',encoding='utf-8')
 FOLIARELATIONEXAMPLE = f.read()
+f.close()
+
+f = io.open(os.path.join(FOLIAPATH, 'examples','entities-relations.2.0.0.folia.xml'), 'r',encoding='utf-8')
+FOLIAEXRELATIONEXAMPLE = f.read()
 f.close()
 
 if __name__ == '__main__':

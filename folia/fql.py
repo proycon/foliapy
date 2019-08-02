@@ -1332,7 +1332,7 @@ class Correction(object): #AS CORRECTION/SUGGESTION expression...
 def getassignments(q, i, assignments,  focus=None):
     l = len(q)
     while i < l:
-        if q.kw(i, ('id','set','subset','annotator','processor','class','n')):
+        if q.kw(i, ('id','set','subset','annotator','processor','class','n','href','format')):
             if q[i+1] == 'NONE':
                 assignments[q[i]] = None
             else:
