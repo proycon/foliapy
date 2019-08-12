@@ -5401,14 +5401,10 @@ class LinkReference(AbstractElement):
         #special handling for word references
         if not kwargs: kwargs = {}
         kwargs['id'] = node.attrib['id']
-        if not 'type' in node.attrib:
-            raise ValueError("No type in link reference")
         if 't' in node.attrib:
             kwargs['t'] = node.attrib['t']
-        try:
+        if 'type' in node.attrib:
             kwargs['type'] = node.attrib['type']
-        except KeyError:
-            raise ValueError("No such type: " + node.attrib['type'])
         return LinkReference(doc,**kwargs)
 
     @classmethod
