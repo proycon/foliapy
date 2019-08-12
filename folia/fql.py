@@ -1795,6 +1795,11 @@ class Action(object): #Action expression
                             focus.setspan(*spanset)
 
                 if focusselection and action.subactions and not substitution:
+                    if action.focus.Class is folia.Relation:
+                        for focus in focusselection:
+                            #delete existing link references first
+                            focus.data = [ x for x in focus.data if not isinstance(x, folia.LinkReference) ]
+
                     for subaction in action.subactions:
                         #check if set is declared, if not, auto-declare
                         if debug: print("[FQL EVALUATION DEBUG] Action - Auto-declaring ",action.focus.Class.__name__, " of ", str(action.focus.set),file=sys.stderr)
@@ -1802,6 +1807,7 @@ class Action(object): #Action expression
                         if debug: print("[FQL EVALUATION DEBUG] Action - Invoking subaction ", subaction.action,file=sys.stderr)
                         subactionresults, _ = subaction(query, focusselection, debug ) #note: results of subactions will be silently discarded (they hardly ever select anything), except for the following case:
                         if action.focus.Class is folia.Relation:
+
                             #the subaction results are the links for the relation:
                             for focus in focusselection:
                                 if debug: print("[FQL EVALUATION DEBUG] Action - Adding link to selection for subaction",file=sys.stderr)

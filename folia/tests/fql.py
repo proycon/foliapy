@@ -1304,6 +1304,7 @@ class Test7InternalRelations(unittest.TestCase):
         self.assertEqual(len(results), 1)
         self.assertIsInstance(results[0], folia.Relation)
         targets = results[0].targets()
+        self.assertEqual(len(targets), 2)
         self.assertIsInstance(targets[0], folia.SyntacticUnit)
         self.assertEqual(targets[0].id, "s1.WNP-1")
         self.assertIsInstance(targets[1], folia.SyntacticUnit)
