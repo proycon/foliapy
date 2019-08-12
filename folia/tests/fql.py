@@ -207,6 +207,7 @@ Qmetric = "ADD metric OF \"adhoc\" WITH class \"length\" value \"5\" FOR ID \"WR
 Qrelation = "ADD relation OF \"adhoc\" WITH class \"punc-to-wh\" (TO su ID \"s1.WNP-1\") FOR su ID \"s1.PUNC\""
 Qrelation_chained = "ADD relation OF \"adhoc\" WITH class \"punc-to-wh\" (TO su ID \"s1.WNP-1\") (TO su ID \"s1.NP-PRD\") FOR su ID \"s1.PUNC\""
 Qrelation_external = "ADD relation OF \"adhoc\" WITH class \"dbpedia\" href \"http://dbpedia.org/page/India\" format \"text/html\" FOR entity ID \"example.p.1.s.1.entity.3\""
+Qrelation_edit_xrefs = "EDIT relation OF \"adhoc\" WITH class \"punc-to-wh\" (TO su ID \"s1.BEP-2\") FOR su ID \"s1.PUNC\""
 
 class Test1UnparsedQuery(unittest.TestCase):
 
@@ -1307,6 +1308,16 @@ class Test7InternalRelations(unittest.TestCase):
         self.assertEqual(targets[0].id, "s1.WNP-1")
         self.assertIsInstance(targets[1], folia.SyntacticUnit)
         self.assertEqual(targets[1].id, "s1.NP-PRD")
+
+    def test3_edit_xrefs(self):
+        """Internal relations - Edit link references"""
+        q = fql.Query(Qrelation_edit_xrefs)
+        results = q(self.doc)
+        self.assertEqual(len(results), 1)
+        self.assertIsInstance(results[0], folia.Relation)
+        targets = results[0].targets()
+        self.assertIsInstance(targets[0], folia.SyntacticUnit)
+        self.assertEqual(targets[0].id, "s1.BEP-2")
 
 class Test8ExternalRelations(unittest.TestCase):
     """Alternatives"""
