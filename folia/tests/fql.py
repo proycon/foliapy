@@ -1312,6 +1312,7 @@ class Test7InternalRelations(unittest.TestCase):
     def test3_edit_xrefs(self):
         """Internal relations - Edit link references"""
         q = fql.Query(Qrelation) #first do the add
+        results = q(self.doc)
         q = fql.Query(Qrelation_edit_xrefs) #then do the edit
         results = q(self.doc)
         self.assertEqual(len(results), 1)
