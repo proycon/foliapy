@@ -7389,6 +7389,9 @@ class Document(object):
             if annotationtype in self.setdefinitionformat and set in self.setdefinitionformat[annotationtype]:
                 attribs['format'] = self.setdefinitionformat[annotationtype][set]
 
+            if annotationtype in self.set_alias and set in self.set_alias[annotationtype]:
+                attribs['alias'] = self.set_alias[annotationtype][set]
+
             if not self.hasprocessors(annotationtype, set) and self.hasdefaults(annotationtype, set):
                 #there are no new-style processors associated with this declaration, but there are old-style defaults, fall back to those:
                 for key, value in self.annotationdefaults[annotationtype][set].items():
