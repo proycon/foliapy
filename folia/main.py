@@ -3550,7 +3550,7 @@ class AllowInlineAnnotation(AllowCorrections):
         Arguments:
             Class (class): The python Class you want to retrieve (e.g. PosAnnotation). Or set to ``None`` to select all alternatives regardless of what type they are.
             set (str): The set you want to retrieve (defaults to ``None``, which selects irregardless of set)
-            returnelements: Return the actual matches within the alternatives, will return two-tuples
+            returnelements: Return the actual matches within the alternatives, will return two-tuples where the first is an instance of Alternative and the second an instance of Class.
 
         Yields:
             :class:`Alternative` elements
