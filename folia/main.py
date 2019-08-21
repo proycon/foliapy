@@ -52,7 +52,7 @@ from folia import LIBVERSION
 
 #foliaspec:version:FOLIAVERSION
 #The FoLiA version
-FOLIAVERSION = "2.2.0"
+FOLIAVERSION = "2.2.1"
 
 #foliaspec:namespace:NSFOLIA
 #The FoLiA XML namespace
@@ -7389,6 +7389,9 @@ class Document(object):
             if annotationtype in self.setdefinitionformat and set in self.setdefinitionformat[annotationtype]:
                 attribs['format'] = self.setdefinitionformat[annotationtype][set]
 
+            if annotationtype in self.set_alias and set in self.set_alias[annotationtype]:
+                attribs['alias'] = self.set_alias[annotationtype][set]
+
             if not self.hasprocessors(annotationtype, set) and self.hasdefaults(annotationtype, set):
                 #there are no new-style processors associated with this declaration, but there are old-style defaults, fall back to those:
                 for key, value in self.annotationdefaults[annotationtype][set].items():
@@ -9056,7 +9059,7 @@ def validate(filename,schema=None,deep=False):
 #================================= FOLIA SPECIFICATION ==========================================================
 
 #foliaspec:header
-#This file was last updated according to the FoLiA specification for version 2.2.0 on 2019-07-18 13:15:55, using foliaspec.py
+#This file was last updated according to the FoLiA specification for version 2.2.1 on 2019-08-20 15:03:31, using foliaspec.py
 #Code blocks after a foliaspec comment (until the next newline) are automatically generated. **DO NOT EDIT THOSE** and **DO NOT REMOVE ANY FOLIASPEC COMMENTS** !!!
 
 #foliaspec:structurescope:STRUCTURESCOPE
@@ -9706,7 +9709,7 @@ Predicate.ANNOTATIONTYPE = AnnotationType.PREDICATE
 Predicate.LABEL = "Predicate"
 Predicate.XMLTAG = "predicate"
 #------ Quote -------
-Quote.ACCEPTED_DATA = (AbstractAnnotationLayer, Alternative, AlternativeLayers, Comment, Correction, Description, Division, Feature, ForeignData, Gap, Hiddenword, Linebreak, Metric, Paragraph, Part, Quote, Reference, Relation, Sentence, String, TextContent, Utterance, Whitespace, Word,)
+Quote.ACCEPTED_DATA = (AbstractAnnotationLayer, AbstractInlineAnnotation, Alternative, AlternativeLayers, Comment, Correction, Description, Division, Feature, ForeignData, Gap, Hiddenword, Linebreak, Metric, Paragraph, Part, Quote, Reference, Relation, Sentence, String, TextContent, Utterance, Whitespace, Word,)
 Quote.ANNOTATIONTYPE = AnnotationType.QUOTE
 Quote.LABEL = "Quote"
 Quote.XMLTAG = "quote"
