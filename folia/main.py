@@ -7187,7 +7187,7 @@ class Document(object):
         elif 'tree' in kwargs:
             self.parsexml(kwargs['tree'])
         else:
-            raise Exception("No ID, filename or tree specified")
+            raise Exception("No ID, filename or tree specified. Or the argument name is wrong.")
 
         self.doneparsing = True #indicates that the document is done parsing
 
