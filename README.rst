@@ -15,8 +15,8 @@ This Python module provides an extensive library for parsing, creating and other
 for Linguistic Annotation <https://proycon.github.io/folia>`_, aka `FoLiA <https://proycon.github.io/folia>`_. It has
 been in active development since 2010 and used by numerous Natural Language Processing (NLP) tools.
 
-This library used to be part of `PyNLPL <https://github.com/proycon/pynlpl>`_ (``pynlpl.formats.folia``), but is now
-in the process of migration to its own (i.e. this) project.
+This library used to be part of `PyNLPL <https://github.com/proycon/pynlpl>`_ (``pynlpl.formats.folia``), but has been
+migrated to this standalone library in spring 2019.
 
 Acknowledgement
 ----------------------------
