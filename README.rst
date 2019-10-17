@@ -15,6 +15,10 @@ FoLiA Library for Python
    :alt: Project Status: Active – The project has reached a stable, usable state and is being actively developed.
    :target: https://www.repostatus.org/#active
 
+.. image:: https://img.shields.io/pypi/v/FoLiA-Linguistic-Annotation-Tool?color=green
+   :alt: Latest release in the Python Package Index
+   :target: https://pypi.org/project/FoLiA-Linguistic-Annotation-Tool/
+
 This Python module provides an extensive library for parsing, creating and otherwise processing documents in the `Format
 for Linguistic Annotation <https://proycon.github.io/folia>`_, aka `FoLiA <https://proycon.github.io/folia>`_. It has
 been in active development since 2010 and used by numerous Natural Language Processing (NLP) tools.
