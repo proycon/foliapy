@@ -7778,6 +7778,8 @@ class Document(object):
 
 
         if 'processor' in kwargs:
+            if isinstance(args, tuple):
+                args = list(args)
             #just some flexibility in case the user used processor= instead of a direct positional argument
             args.append(kwargs['processor'])
             del kwargs['processor']
