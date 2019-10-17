@@ -11,6 +11,10 @@ FoLiA Library for Python
 .. image:: http://applejack.science.ru.nl/lamabadge.php/foliapy
    :target: http://applejack.science.ru.nl/languagemachines/
 
+.. image:: https://www.repostatus.org/badges/latest/active.svg
+   :alt: Project Status: Active – The project has reached a stable, usable state and is being actively developed.
+   :target: https://www.repostatus.org/#active
+
 This Python module provides an extensive library for parsing, creating and otherwise processing documents in the `Format
 for Linguistic Annotation <https://proycon.github.io/folia>`_, aka `FoLiA <https://proycon.github.io/folia>`_. It has
 been in active development since 2010 and used by numerous Natural Language Processing (NLP) tools.
