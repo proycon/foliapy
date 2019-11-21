@@ -7,9 +7,18 @@ from __future__ import print_function
 import os
 import sys
 from setuptools import setup, find_packages
+try:
+    from codemeta.codemeta import CodeMetaCommand
+    cmdclass={
+        'codemeta': CodeMetaCommand,
+    }
+except ImportError:
+    cmdclass={}
 
 def read(fname):
     return open(os.path.join(os.path.dirname(__file__), fname)).read()
+
+
 
 
 setup(
@@ -36,5 +45,6 @@ setup(
     include_package_data=True,
     package_data = {'folia': ['tests/test.sh'] },
     install_requires=['lxml >= 2.2','rdflib'],
-    entry_points = { 'console_scripts': [] }
+    entry_points = { 'console_scripts': [] },
+    cmdclass=cmdclass,
 )

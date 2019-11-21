@@ -19,6 +19,9 @@ FoLiA Library for Python
    :alt: Latest release in the Python Package Index
    :target: https://pypi.org/project/folia/
 
+.. image:: https://zenodo.org/badge/DOI/10.5281/zenodo.594143.svg
+   :target: https://doi.org/10.5281/zenodo.594143
+
 This Python module provides an extensive library for parsing, creating and otherwise processing documents in the `Format
 for Linguistic Annotation <https://proycon.github.io/folia>`_, aka `FoLiA <https://proycon.github.io/folia>`_. It has
 been in active development since 2010 and used by numerous Natural Language Processing (NLP) tools.
