@@ -2720,8 +2720,9 @@ class AbstractElement:
         """
         return sum(1 for i in self.select(Class,set,recursive,ignore,node) )
 
-    def items(self, founditems=set()): #pylint: disable=dangerous-default-value
+    def items(self, founditems=None): #pylint: disable=dangerous-default-value
         """Returns a depth-first flat list of *all* items below this element (not limited to AbstractElement)"""
+        if founditems is None: founditems = set()
         l = []
         for e in self.data:
             if id(e) not in founditems: #prevent going in recursive loops
@@ -2731,8 +2732,9 @@ class AbstractElement:
                     l += e.items(l, founditems)
         return l
 
-    def elements(self, founditems=set()): #pylint: disable=dangerous-default-value
+    def elements(self, founditems=None)): #pylint: disable=dangerous-default-value
         """Returns a depth-first flat list of *all* elements below this element"""
+        if founditems is None: founditems = set()
         l = []
         for e in self.data:
             if id(e) not in founditems: #prevent going in recursive loops
