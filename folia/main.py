@@ -2426,7 +2426,7 @@ class AbstractElement:
         if 'annotator' not in attribs and not self.processor: #do not override if caller already set it
             if self.annotator and (self.ANNOTATIONTYPE not in self.doc.annotationdefaults or self.set not in self.doc.annotationdefaults[self.ANNOTATIONTYPE] or 'annotator' not in self.doc.annotationdefaults[self.ANNOTATIONTYPE][self.set] or self.annotator != self.doc.annotationdefaults[self.ANNOTATIONTYPE][self.set]['annotator']):
                 attribs['annotator'] = self.annotator
-            if self.annotatortype and ((not (self.ANNOTATIONTYPE in self.doc.annotationdefaults)) or (not ('annotatortype' in self.doc.annotationdefaults[self.ANNOTATIONTYPE][self.set])) or (self.annotatortype != self.doc.annotationdefaults[self.ANNOTATIONTYPE][self.set]['annotatortype'])):
+            if self.annotatortype and (self.ANNOTATIONTYPE not in self.doc.annotationdefaults or self.set not in self.doc.annotationdefaults[self.ANNOTATIONTYPE] or 'annotatortype' not in self.doc.annotationdefaults[self.ANNOTATIONTYPE][self.set] or self.annotatortype != self.doc.annotationdefaults[self.ANNOTATIONTYPE][self.set]['annotatortype']):
                 if self.annotatortype == AnnotatorType.AUTO:
                     attribs['annotatortype'] = 'auto'
                 elif self.annotatortype == AnnotatorType.MANUAL:
