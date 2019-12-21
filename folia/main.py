@@ -2732,7 +2732,7 @@ class AbstractElement:
                     l += e.items(l, founditems)
         return l
 
-    def elements(self, founditems=None)): #pylint: disable=dangerous-default-value
+    def elements(self, founditems=None): #pylint: disable=dangerous-default-value
         """Returns a depth-first flat list of *all* elements below this element"""
         if founditems is None: founditems = set()
         l = []
