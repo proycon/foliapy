@@ -1,2 +1,2 @@
 """This package contains the FoLiA library for Python"""
-LIBVERSION = "2.2.3"
+LIBVERSION = "2.2.4"

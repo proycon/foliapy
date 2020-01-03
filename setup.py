@@ -16,14 +16,14 @@ except ImportError:
     cmdclass={}
 
 def read(fname):
-    return open(os.path.join(os.path.dirname(__file__), fname)).read()
+    return open(os.path.join(os.path.dirname(__file__), fname),'r',encoding='utf-8').read()
 
 
 
 
 setup(
     name = "FoLiA",
-    version = "2.2.3", #edit LIBVERSION in __init__.py as well
+    version = "2.2.4", #edit LIBVERSION in __init__.py as well
     author = "Maarten van Gompel",
     author_email = "proycon@anaproy.nl",
     description = ("An extensive library for processing FoLiA documents. FoLiA stands for Format for Linguistic Annotation and is a very rich XML-based format used by various Natural Language Processing tools."),
