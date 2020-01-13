@@ -8329,7 +8329,8 @@ class Document(object):
                 if 'version' in node.attrib:
                     self.version = node.attrib['version']
                 else:
-                    raise Exception("FoLiA Document has no version!")
+                    print("WARNING: FoLiA Document has no version! Assuming an old version (<1.0)",file=sys.stderr)
+                    self.version = "0.12"
                 if self.debug >= 1: print("[FoLiA DEBUG] FoLiA version:", self.version,file=stderr)
                 if checkversion(self.version) > 0:
                     print("WARNING!!! Document uses a newer version of FoLiA than this library! (" + self.version + " vs " + FOLIAVERSION + "). Any possible subsequent failures in parsing or processing may probably be attributed to this. Upgrade foliapy to remedy this.",file=sys.stderr)
