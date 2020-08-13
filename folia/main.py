@@ -226,7 +226,7 @@ class Processor:
         self.parent = parent
 
     def update(self, **kwargs):
-        for key, value in kwargs:
+        for key, value in kwargs.items():
             if key in ('type','command','host','user','begindatetime','enddatetime','src','format','resourcelink') and value:
                 setattr(self, key, value)
             elif key in ('version','folia_version','document_version') and value:
