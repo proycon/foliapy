@@ -2390,6 +2390,18 @@ class AbstractElement:
 
         if self.id:
             attribs['{http://www.w3.org/XML/1998/namespace}id'] = self.id
+        elif form == Form.EXPLICIT:
+            required = tuple(self.REQUIRED_ATTRIBS) if self.REQUIRED_ATTRIBS is not None else tuple()
+            optional = tuple(self.OPTIONAL_ATTRIBS) if self.OPTIONAL_ATTRIBS is not None else tuple()
+            if Attrib.ID in required + optional and self.doc:
+                #we are in explicit form, generate a random ID
+                random_id = None
+                while random_id is None or random_id in self.doc.index:
+                    random_id = "__"  + self.XMLTAG + "." ("%08x" % random.getrandbits(32))  + "__" #assign ID with random elements
+                self.id = random_id
+                self.doc.index[self.id] = self
+                attribs['{http://www.w3.org/XML/1998/namespace}id'] = self.id
+
 
         if form == Form.EXPLICIT:
             if isinstance(self, AbstractStructureElement):
