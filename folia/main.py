@@ -52,7 +52,7 @@ from folia import LIBVERSION
 
 #foliaspec:version:FOLIAVERSION
 #The FoLiA version
-FOLIAVERSION = "2.2.1"
+FOLIAVERSION = "2.3.0"
 
 #foliaspec:namespace:NSFOLIA
 #The FoLiA XML namespace
@@ -97,6 +97,11 @@ for ordinal in range(0x20):
 class Mode:
     MEMORY = 0 #The entire FoLiA structure will be loaded into memory. This is the default and is required for any kind of document manipulation.
     XPATH = 1 #The full XML structure will be loaded into memory, but conversion to FoLiA objects occurs only upon querying. The full power of XPath is available.
+
+#Serialisation form
+class Form:
+    NORMAL = 0
+    EXPLICIT = 1 #Serialises in a more explicit way, not relying on defaults
 
 class AnnotatorType:
     UNSET = None
@@ -443,9 +448,9 @@ class Provenance:
         processors = [ processor.xml() for processor in self ]
         return E.provenance(*processors)
 
-    def xmlstring(self, pretty_print=False):
+    def xmlstring(self, pretty_print=False, form = Form.NORMAL):
         """Serialises this FoLiA element and all its contents to XML."""
-        return str(ElementTree.tostring(self.xml(), xml_declaration=False, pretty_print=pretty_print, encoding='utf-8'),'utf-8')
+        return str(ElementTree.tostring(self.xml(form=form), xml_declaration=False, pretty_print=pretty_print, encoding='utf-8'),'utf-8')
 
     def json(self):
         return { "processors": [ processor.json() for processor in self ] }
@@ -2364,7 +2369,7 @@ class AbstractElement:
         raise NoSuchAnnotation
 
 
-    def xml(self, attribs = None,elements = None, skipchildren = False):
+    def xml(self, attribs = None,elements = None, skipchildren = False, form = Form.NORMAL):
         """Serialises the FoLiA element and all its contents to XML.
 
         Arguments are mostly for internal use.
@@ -2386,21 +2391,44 @@ class AbstractElement:
         if self.id:
             attribs['{http://www.w3.org/XML/1998/namespace}id'] = self.id
 
+        if form == Form.EXPLICIT:
+            if isinstance(self, AbstractStructureElement):
+                attribs['typegroup'] = "structure"
+            elif isinstance(self, AbstractInlineAnnotation):
+                attribs['typegroup'] = "inline"
+            elif isinstance(self, AbstractSpanAnnotation):
+                attribs['typegroup'] = "span"
+            elif isinstance(self, AbstractSpanRole):
+                attribs['typegroup'] = "spanrole"
+            elif isinstance(self, AbstractHigherOrderAnnotation):
+                attribs['typegroup'] = "higherorder"
+            elif isinstance(self, AbstractTextMarkup):
+                attribs['typegroup'] = "textmarkup"
+            elif isinstance(self, AbstractContentAnnotation):
+                attribs['typegroup'] = "content"
+            elif isinstance(self, (AbstractAnnotationLayer, AbstractSubtokenAnnotationLayer)):
+                attribs['typegroup'] = "layer"
+            elif isinstance(self, AbstractSubtokenAnnotation):
+                attribs['typegroup'] = "subtoken"
+            elif isinstance(self, AbstractCorrectionChild):
+                attribs['typegroup'] = "correctionchild"
+            elif isinstance(self, Feature):
+                attribs['typegroup'] = "feature"
 
         #The set attribute is only added on elements that can take classes
         takes_class = (self.REQUIRED_ATTRIBS and Attrib.CLASS in self.REQUIRED_ATTRIBS) or (self.OPTIONAL_ATTRIBS and Attrib.CLASS in self.OPTIONAL_ATTRIBS)
         if takes_class and not isinstance(self, AbstractAnnotationLayer):
             if self.set and 'set' not in attribs: #do not override if overloaded function already set it
                 if self.doc:
-                    #Is there a default set? If so, we need not serialise the set attribute
+                    #Is there a default set? If so, we need not serialise the set attribute (except in explicit form)
                     try:
                         defaultset = self.doc.defaultset(self.ANNOTATIONTYPE)
                     except NoSuchAnnotation:
                         if not FOLIA1: #This may happen for FoLiA v1 as not everything is declared there, for FoLiA v2 we can be strict though
                             raise
                         defaultset = False
-                    if self.set != defaultset:
-                        if self.ANNOTATIONTYPE in self.doc.set_alias and self.set in self.doc.set_alias[self.ANNOTATIONTYPE]:
+                    if self.set != defaultset or form == Form.EXPLICIT:
+                        if form != Form.EXPLICIT and self.ANNOTATIONTYPE in self.doc.set_alias and self.set in self.doc.set_alias[self.ANNOTATIONTYPE]:
                             attribs['set'] = self.doc.set_alias[self.ANNOTATIONTYPE][self.set] #use alias instead
                         elif FOLIA1 and self.doc.keepversion and self.set == "undefined":
                             pass #we don't output the 'undefined' set in FoLiA v1, it is the implicit default
@@ -2469,7 +2497,7 @@ class AbstractElement:
                 attribs['endtime'] = "%02d:%02d:%02d.%03d" % self.endtime
 
         if 'textclass' not in attribs: #do not override if caller already set it
-            if self.textclass and self.textclass != "current":
+            if self.textclass and (self.textclass != "current" or form == Form.EXPLICIT):
                 attribs['textclass'] = self.textclass
 
         if self.OPTIONAL_ATTRIBS and Attrib.SPACE in self.OPTIONAL_ATTRIBS and not self.space:
@@ -2633,12 +2661,12 @@ class AbstractElement:
 
 
 
-    def xmlstring(self, pretty_print=False):
+    def xmlstring(self, pretty_print=False, form= Form.NORMAL):
         """Serialises this FoLiA element and all its contents to XML.
 
         Returns:
             str: a string with XML representation for this element and all its children"""
-        return str(ElementTree.tostring(self.xml(), xml_declaration=False, pretty_print=pretty_print, encoding='utf-8'),'utf-8')
+        return str(ElementTree.tostring(self.xml(form=form), xml_declaration=False, pretty_print=pretty_print, encoding='utf-8'),'utf-8')
 
 
     def select(self, Class, set=False, recursive=True,  ignore=True, node=None): #pylint: disable=bad-classmethod-argument,redefined-builtin
@@ -3030,6 +3058,7 @@ class AbstractElement:
             attribs.append(RXE.attribute(name='space') )
         elif Attrib.SPACE in cls.OPTIONAL_ATTRIBS:
             attribs.append( RXE.optional( RXE.attribute(name='space') ) )
+        attribs.append( RXE.optional( RXE.attribute(name='typegroup') ) )  #used in explicit form only
         if cls.XLINK:
             attribs += [ #loose interpretation of specs, not checking whether xlink combinations are valid
                     RXE.optional(RXE.attribute(name='href',ns="http://www.w3.org/1999/xlink"),RXE.attribute(name='type',ns="http://www.w3.org/1999/xlink") ),
@@ -3190,7 +3219,8 @@ class AbstractElement:
                         key = 'xlink' + key #xlinktype, xlinkrole, xlinklabel, xlinkshow, etc..
 
 
-            kwargs[key] = value
+            if key != "typegroup": #typegroup is for explicit form only, we can safely ignore it during parsing
+                kwargs[key] = value
 
 
         if doc.debug >= 1: print("[FoLiA DEBUG] Found " + node.tag[nslen:],file=stderr)
@@ -3269,8 +3299,8 @@ class Description(AbstractHigherOrderAnnotation):
         return self.value
 
 
-    def xml(self, attribs = None,elements = None, skipchildren = False):
-        return super(Description, self).xml(attribs, [self.value],skipchildren)
+    def xml(self, attribs = None,elements = None, skipchildren = False, form = Form.NORMAL):
+        return super(Description, self).xml(attribs, [self.value],skipchildren, form)
 
     def json(self,attribs =None, recurse=True, ignorelist=False):
         jsonnode = {'type': self.XMLTAG, 'value': self.value}
@@ -3318,8 +3348,8 @@ class Comment(AbstractHigherOrderAnnotation):
         return self.value
 
 
-    def xml(self, attribs = None,elements = None, skipchildren = False):
-        return super(Comment, self).xml(attribs, [self.value],skipchildren)
+    def xml(self, attribs = None,elements = None, skipchildren = False, form = Form.NORMAL):
+        return super(Comment, self).xml(attribs, [self.value],skipchildren, form)
 
     def json(self,attribs =None, recurse=True, ignorelist=False):
         jsonnode = {'type': self.XMLTAG, 'value': self.value}
@@ -3978,12 +4008,12 @@ class AbstractTextMarkup(AbstractElement):
         else:
             return self
 
-    def xml(self, attribs = None,elements = None, skipchildren = False):
+    def xml(self, attribs = None,elements = None, skipchildren = False, form = Form.NORMAL):
         """See :meth:`AbstractElement.xml`"""
         if not attribs: attribs = {}
         if self.idref:
             attribs['id'] = self.idref
-        return super(AbstractTextMarkup,self).xml(attribs,elements, skipchildren)
+        return super(AbstractTextMarkup,self).xml(attribs,elements, skipchildren, form)
 
     def json(self,attribs =None, recurse=True, ignorelist=False):
         """See :meth:`AbstractElement.json`"""
@@ -4034,7 +4064,7 @@ class TextMarkupReference(AbstractTextMarkup):
             self.format = "text/folia+xml"
         super().__init__(doc, *args, **kwargs)
 
-    def xml(self, attribs = None,elements = None, skipchildren = False):
+    def xml(self, attribs = None,elements = None, skipchildren = False, form = Form.NORMAL):
         if not attribs: attribs = {}
         if self.idref:
             attribs['id'] = self.idref
@@ -4042,7 +4072,7 @@ class TextMarkupReference(AbstractTextMarkup):
             attribs['type'] = self.type
         if self.format and self.format != "text/folia+xml":
             attribs['format'] = self.format
-        return super().xml(attribs,elements, skipchildren)
+        return super().xml(attribs,elements, skipchildren, form)
 
     def json(self, attribs=None, recurse=True, ignorelist=False):
         if attribs is None: attribs = {}
@@ -4102,11 +4132,11 @@ class TextMarkupCorrection(AbstractTextMarkup):
             self.original = None
         super(TextMarkupCorrection,self).__init__(doc, *args, **kwargs)
 
-    def xml(self, attribs = None,elements = None, skipchildren = False):
+    def xml(self, attribs = None,elements = None, skipchildren = False, form = Form.NORMAL):
         if not attribs: attribs = {}
         if self.original:
             attribs['original'] = self.original
-        return super(TextMarkupCorrection,self).xml(attribs,elements, skipchildren)
+        return super(TextMarkupCorrection,self).xml(attribs,elements, skipchildren, form)
 
     def json(self,attribs =None, recurse=True, ignorelist=False):
         if not attribs: attribs = {}
@@ -4311,7 +4341,7 @@ class TextContent(AbstractContentAnnotation):
 
 
 
-    def xml(self, attribs = None,elements = None, skipchildren = False):
+    def xml(self, attribs = None,elements = None, skipchildren = False, form = Form.NORMAL):
         """See :meth:`AbstractElement.xml`"""
         attribs = {}
         if not self.offset is None:
@@ -4320,10 +4350,11 @@ class TextContent(AbstractContentAnnotation):
             attribs['ref'] = self.ref
 
 
-        e = super(TextContent,self).xml(attribs,elements,skipchildren)
+        e = super(TextContent,self).xml(attribs,elements,skipchildren, form)
         if 'class' in e.attrib and e.attrib['class'] == "current":
-            #delete 'class=current'
-            del e.attrib['class']
+            #delete 'class=current' unless we are in explicit form
+            if form != Form.EXPLICIT:
+                del e.attrib['class']
         if 'set' in e.attrib and e.attrib['set'] == "undefined" and self.doc and self.doc.FOLIA1:
             del e.attrib['set']
 
@@ -4529,7 +4560,7 @@ class PhonContent(AbstractContentAnnotation):
 
 
 
-    def xml(self, attribs = None,elements = None, skipchildren = False):
+    def xml(self, attribs = None,elements = None, skipchildren = False, form = Form.NORMAL):
         attribs = {}
         if not self.offset is None:
             attribs['offset'] = str(self.offset)
@@ -4537,10 +4568,13 @@ class PhonContent(AbstractContentAnnotation):
             attribs['ref'] = self.ref
 
 
-        e = super(PhonContent,self).xml(attribs,elements,skipchildren)
+        e = super(PhonContent,self).xml(attribs,elements,skipchildren, form)
         if 'class' in e.attrib and e.attrib['class'] == "current":
-            #delete 'class=current'
-            del e.attrib['class']
+            #delete 'class=current' unless we are in explicit form
+            if form != Form.EXPLICIT:
+                del e.attrib['class']
+        if 'set' in e.attrib and e.attrib['set'] == "undefined" and self.doc and self.doc.FOLIA1:
+            del e.attrib['set']
 
         return e
 
@@ -4588,7 +4622,7 @@ class Content(AbstractHigherOrderAnnotation):     #used for raw content, subelem
     def __str__(self):
         return self.value
 
-    def xml(self, attribs = None,elements = None, skipchildren = False):
+    def xml(self, attribs = None,elements = None, skipchildren = False, form = Form.NORMAL):
 
         if not attribs:
             attribs = {}
@@ -4683,7 +4717,7 @@ class Linebreak(AbstractStructureElement, AbstractTextMarkup): #this element has
             kwargs['newpage'] = True
         return super(Linebreak,Class).parsexml(node, doc, **kwargs)
 
-    def xml(self, attribs = None,elements = None, skipchildren = False):
+    def xml(self, attribs = None,elements = None, skipchildren = False, form = Form.NORMAL):
         if attribs is None: attribs = {}
         if self.linenr is not None:
             attribs['linenr'] = str(self.linenr)
@@ -4691,7 +4725,7 @@ class Linebreak(AbstractStructureElement, AbstractTextMarkup): #this element has
             attribs['pagenr'] = str(self.pagenr)
         if self.newpage:
             attribs['newpage'] = "yes"
-        return super(Linebreak, self).xml(attribs,elements,skipchildren)
+        return super(Linebreak, self).xml(attribs,elements,skipchildren, form)
 
     @classmethod
     def relaxng(cls, includechildren=True,extraattribs = None, extraelements=None):
@@ -4736,7 +4770,7 @@ class Hyphbreak(AbstractTextMarkup):
             kwargs['newpage'] = True
         return super(Hyphbreak,Class).parsexml(node, doc, **kwargs)
 
-    def xml(self, attribs = None,elements = None, skipchildren = False):
+    def xml(self, attribs = None,elements = None, skipchildren = False, form = Form.NORMAL):
         if attribs is None: attribs = {}
         if self.linenr is not None:
             attribs['linenr'] = str(self.linenr)
@@ -4744,7 +4778,7 @@ class Hyphbreak(AbstractTextMarkup):
             attribs['pagenr'] = str(self.pagenr)
         if self.newpage:
             attribs['newpage'] = "yes"
-        return super(Hyphbreak, self).xml(attribs,elements,skipchildren)
+        return super(Hyphbreak, self).xml(attribs,elements,skipchildren, form)
 
     @classmethod
     def relaxng(cls, includechildren=True,extraattribs = None, extraelements=None):
@@ -4895,10 +4929,10 @@ class AbstractSubtokenAnnotation(AbstractStructureElement, AllowGenerateID):
 class AbstractSpanAnnotation(AbstractElement, AllowGenerateID, AllowCorrections):
     """Abstract element, all span annotation elements are derived from this class"""
 
-    def xml(self, attribs = None,elements = None, skipchildren = False):
+    def xml(self, attribs = None,elements = None, skipchildren = False, form = Form.NORMAL):
         """See :meth:`AbstractElement.xml`"""
         if not attribs: attribs = {}
-        e = super(AbstractSpanAnnotation,self).xml(attribs, elements, True)
+        e = super(AbstractSpanAnnotation,self).xml(attribs, elements, True, form)
         for child in self:
             if isinstance(child, wrefables):
                 #Include REFERENCES to word items instead of word items themselves
@@ -5185,7 +5219,7 @@ class AbstractAnnotationLayer(AbstractElement, AllowGenerateID, AllowCorrections
         super(AbstractAnnotationLayer,self).__init__(doc, *args, **kwargs)
 
 
-    def xml(self, attribs = None,elements = None, skipchildren = False):
+    def xml(self, attribs = None,elements = None, skipchildren = False, form = Form.NORMAL):
         """See :meth:`AbstractElement.xml`"""
         if self.set is False:
             if len(self.data) == 0: #just skip the entire layer if there are no children at all
@@ -5195,7 +5229,7 @@ class AbstractAnnotationLayer(AbstractElement, AllowGenerateID, AllowCorrections
                 #we just keep it set to False
                 #raise ValueError("No set specified or derivable for annotation layer " + self.__class__.__name__) #too strict at this point, leads to problems
                 pass
-        return super(AbstractAnnotationLayer, self).xml(attribs, elements, skipchildren)
+        return super(AbstractAnnotationLayer, self).xml(attribs, elements, skipchildren, Form)
 
     def append(self, child, *args, **kwargs):
         """See :meth:`AbstractElement.append`"""
@@ -5331,7 +5365,7 @@ class Reference(AbstractStructureElement):
             self.format = "text/folia+xml"
         super(Reference,self).__init__(doc, *args, **kwargs)
 
-    def xml(self, attribs = None,elements = None, skipchildren = False):
+    def xml(self, attribs = None,elements = None, skipchildren = False, form = Form.NORMAL):
         if not attribs: attribs = {}
         if self.idref:
             attribs['id'] = self.idref
@@ -5339,7 +5373,7 @@ class Reference(AbstractStructureElement):
             attribs['type'] = self.type
         if self.format and self.format != "text/folia+xml":
             attribs['format'] = self.format
-        return super(Reference,self).xml(attribs,elements, skipchildren)
+        return super(Reference,self).xml(attribs,elements, skipchildren, form)
 
     def json(self, attribs=None, recurse=True, ignorelist=False):
         if attribs is None: attribs = {}
@@ -5437,7 +5471,7 @@ class LinkReference(AbstractElement):
             else:
                 raise DocumentNotLoaded()
 
-    def xml(self, attribs = None,elements = None, skipchildren = False):
+    def xml(self, attribs = None,elements = None, skipchildren = False, form = Form.NORMAL):
         if self.doc:
             FOLIA1 = self.doc.FOLIA1
         else:
@@ -5492,11 +5526,11 @@ class Relation(AbstractElement):
             del node.attrib['format']
         return super(Relation,Class).parsexml(node, doc, **kwargs)
 
-    def xml(self, attribs = None,elements = None, skipchildren = False):
+    def xml(self, attribs = None,elements = None, skipchildren = False, form = Form.NORMAL):
         if not attribs: attribs = {}
         if self.format and self.format != "text/folia+xml":
             attribs['format'] = self.format
-        return super(Relation,self).xml(attribs,elements, skipchildren)
+        return super(Relation,self).xml(attribs,elements, skipchildren, form)
 
     def json(self, attribs =None, recurse=True, ignorelist=False):
         if not attribs: attribs = {}
@@ -5562,13 +5596,13 @@ class Suggestion(AbstractCorrectionChild):
             del kwargs['annotatortype']
         return super(Suggestion,Class).parsexml(node, doc, **kwargs)
 
-    def xml(self, attribs = None,elements = None, skipchildren = False):
+    def xml(self, attribs = None,elements = None, skipchildren = False, form = Form.NORMAL):
         if not attribs: attribs= {}
 
         if self.split: attribs['split']  = self.split
         if self.merge: attribs['merge']  = self.merge
 
-        return super(Suggestion, self).xml(attribs, elements, skipchildren)
+        return super(Suggestion, self).xml(attribs, elements, skipchildren, form )
 
     @classmethod
     def relaxng(cls, includechildren=True,extraattribs = None, extraelements=None):
@@ -5938,12 +5972,12 @@ class Alternative(AbstractHigherOrderAnnotation, AllowInlineAnnotation, AllowGen
             del kwargs['exclusive']
         super(Alternative,self).__init__(doc, *args, **kwargs)
 
-    def xml(self, attribs = None,elements = None, skipchildren = False):
+    def xml(self, attribs = None,elements = None, skipchildren = False, form = Form.NORMAL):
         """See :meth:`AbstractElement.xml`"""
         if not attribs: attribs = {}
         if self.exclusive:
             attribs['exclusive'] = "yes"
-        return super(Alternative,self).xml(attribs,elements, skipchildren)
+        return super(Alternative,self).xml(attribs,elements, skipchildren, form)
 
     def json(self,attribs =None, recurse=True, ignorelist=False):
         """See :meth:`AbstractElement.json`"""
@@ -5982,12 +6016,12 @@ class AlternativeLayers(AbstractHigherOrderAnnotation):
             del kwargs['exclusive']
         super(AlternativeLayers,self).__init__(doc, *args, **kwargs)
 
-    def xml(self, attribs = None,elements = None, skipchildren = False):
+    def xml(self, attribs = None,elements = None, skipchildren = False, form = Form.NORMAL):
         """See :meth:`AbstractElement.xml`"""
         if not attribs: attribs = {}
         if self.exclusive:
             attribs['exclusive'] = "yes"
-        return super(AlternativeLayers,self).xml(attribs,elements, skipchildren)
+        return super(AlternativeLayers,self).xml(attribs,elements, skipchildren, form)
 
     def json(self,attribs =None, recurse=True, ignorelist=False):
         """See :meth:`AbstractElement.json`"""
@@ -6077,7 +6111,7 @@ class External(AbstractHigherOrderAnnotation):
         if doc.debug >= 1: print("[FoLiA DEBUG] Found external",file=stderr)
         return External(doc, source=source, include=include)
 
-    def xml(self, attribs = None,elements = None, skipchildren = False):
+    def xml(self, attribs = None,elements = None, skipchildren = False, form = Form.NORMAL):
         if not attribs:
             attribs= {}
 
@@ -6088,7 +6122,7 @@ class External(AbstractHigherOrderAnnotation):
         else:
             attribs['include']  = 'no'
 
-        return super(External, self).xml(attribs, elements, skipchildren)
+        return super(External, self).xml(attribs, elements, skipchildren, form)
 
     @classmethod
     def relaxng(cls, includechildren=True,extraattribs = None, extraelements=None):
@@ -6139,7 +6173,7 @@ class WordReference(AbstractElement):
         return RXE.define( RXE.element(RXE.attribute(RXE.text(), name='id'), RXE.optional(RXE.attribute(RXE.text(), name='t')), name=cls.XMLTAG), name=cls.XMLTAG, ns=NSFOLIA)
 
 
-    def xml(self, attribs = None,elements = None, skipchildren = False):
+    def xml(self, attribs = None,elements = None, skipchildren = False, form = Form.NORMAL):
         """Serialises the FoLiA element to XML, by returning an XML Element (in lxml.etree) for this element and all its children. For string output, consider the xmlstring() method instead."""
 
         if not attribs: attribs = {}
@@ -6727,7 +6761,7 @@ class ForeignData(AbstractHigherOrderAnnotation):
         return
         yield
 
-    def xml(self, attribs = None,elements = None, skipchildren = False):
+    def xml(self, attribs = None,elements = None, skipchildren = False, form = Form.NORMAL):
         """Returns the XML node (an lxml.etree.Element) that holds the foreign data"""
         return self.node
 
@@ -7289,7 +7323,7 @@ class Document(object):
         for x in findwords(self,self.words,*args,**kwargs):
             yield x
 
-    def save(self, filename=None):
+    def save(self, filename=None, form = Form.NORMAL):
         """Save the document to file.
 
         Arguments:
@@ -7305,7 +7339,7 @@ class Document(object):
             f = gzip.GzipFile(filename,'wb')
         else:
             f = open(filename,'wb')
-        f.write(ElementTree.tostring(self.xml(), xml_declaration=True, pretty_print=True, encoding='utf-8'))
+        f.write(ElementTree.tostring(self.xml(form=form), xml_declaration=True, pretty_print=True, encoding='utf-8'))
         f.close()
 
 
@@ -7498,7 +7532,7 @@ class Document(object):
         self.pendingsort()
 
 
-    def xml(self):
+    def xml(self, form = Form.NORMAL):
         """Serialise the document to XML.
 
         Returns:
@@ -7520,6 +7554,9 @@ class Document(object):
             attribs['version'] = FOLIAVERSION
 
         attribs['generator'] = 'foliapy-v' + LIBVERSION
+
+        if form == Form.EXPLICIT:
+            attribs['form'] = "explicit"
 
         metadataattribs = {}
         metadataattribs['type'] = self.metadatatype
@@ -8517,9 +8554,9 @@ class Document(object):
                 continue
         return s
 
-    def xmlstring(self):
+    def xmlstring(self, form = Form.NORMAL):
         """Return the XML representation of the document as a string."""
-        return str(ElementTree.tostring(self.xml(), xml_declaration=True, pretty_print=True, encoding='utf-8'),'utf-8')
+        return str(ElementTree.tostring(self.xml(form=form), xml_declaration=True, pretty_print=True, encoding='utf-8'),'utf-8')
 
 
     def __unicode__(self):
@@ -8710,6 +8747,7 @@ def relaxng(filename=None):
                 RXE.attribute(name='id',ns="http://www.w3.org/XML/1998/namespace"),
                 RXE.attribute(name='version'),
                 RXE.optional( RXE.attribute(name='generator') ),
+                RXE.optional( RXE.attribute(name='form') ),
                 RXE.element( #metadata
                     RXE.optional(RXE.attribute(name='type')),
                     RXE.optional(RXE.attribute(name='src')),
