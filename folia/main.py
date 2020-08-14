@@ -2397,16 +2397,16 @@ class AbstractElement:
             elif isinstance(self, AbstractInlineAnnotation):
                 attribs['typegroup'] = "inline"
             elif isinstance(self, AbstractSpanAnnotation):
-                attribs['typegroup'] = "span"
-            elif isinstance(self, AbstractSpanRole):
                 attribs['typegroup'] = "spanrole"
             elif isinstance(self, AbstractHigherOrderAnnotation):
+                attribs['typegroup'] = "span"
+            elif isinstance(self, AbstractSpanRole):
                 attribs['typegroup'] = "higherorder"
             elif isinstance(self, AbstractTextMarkup):
                 attribs['typegroup'] = "textmarkup"
             elif isinstance(self, AbstractContentAnnotation):
                 attribs['typegroup'] = "content"
-            elif isinstance(self, (AbstractAnnotationLayer, AbstractSubtokenAnnotationLayer)):
+            elif isinstance(self, AbstractAnnotationLayer):
                 attribs['typegroup'] = "layer"
             elif isinstance(self, AbstractSubtokenAnnotation):
                 attribs['typegroup'] = "subtoken"
@@ -2572,7 +2572,7 @@ class AbstractElement:
                             e[-1].tail = child
 
                 else:
-                    xml = child.xml() #may return None in rare occassions, meaning we want to skip
+                    xml = child.xml(form=form) #may return None in rare occassions, meaning we want to skip
                     if not xml is None:
                         e.append(xml)
 
@@ -4941,7 +4941,7 @@ class AbstractSpanAnnotation(AbstractElement, AllowGenerateID, AllowCorrections)
                     attribs['t'] = child.text(self.textclass)
                 e.append( E.wref(**attribs) )
             elif not (isinstance(child, Feature) and child.SUBSET): #Don't add pre-defined features, they are already added as attributes
-                e.append( child.xml() )
+                e.append( child.xml(form=form) )
         return e
 
     @classmethod
@@ -5229,7 +5229,7 @@ class AbstractAnnotationLayer(AbstractElement, AllowGenerateID, AllowCorrections
                 #we just keep it set to False
                 #raise ValueError("No set specified or derivable for annotation layer " + self.__class__.__name__) #too strict at this point, leads to problems
                 pass
-        return super(AbstractAnnotationLayer, self).xml(attribs, elements, skipchildren, Form)
+        return super(AbstractAnnotationLayer, self).xml(attribs, elements, skipchildren, form)
 
     def append(self, child, *args, **kwargs):
         """See :meth:`AbstractElement.append`"""
@@ -7577,7 +7577,7 @@ class Document(object):
             )
         )
         for text in self.data:
-            e.append(text.xml())
+            e.append(text.xml(form=form))
         return e
 
     def json(self):
