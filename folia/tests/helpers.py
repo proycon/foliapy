@@ -1,6 +1,7 @@
 
 import re
 import os
+from sys import stderr
 from folia.main import FOLIAVERSION, LIBVERSION
 
 if 'TMPDIR' in os.environ:
@@ -23,7 +24,7 @@ def xmlcheck(xml,expect, version=FOLIAVERSION):
     with open(os.path.join(TMPDIR , 'foliatest.fragment.out.xml'),'w', encoding='utf-8') as f:
         f.write(xmlnorm(xml, version))
 
-    retcode = os.system('xmldiff -c ' + os.path.join(TMPDIR, 'foliatest.fragment.expect.xml') + ' ' + os.path.join(TMPDIR,'foliatest.fragment.out.xml'))
+    retcode = os.system('xmldiff ' + os.path.join(TMPDIR, 'foliatest.fragment.expect.xml') + ' ' + os.path.join(TMPDIR,'foliatest.fragment.out.xml'))
     passed = (retcode == 0)
 
     #obj2 = lxml.objectify.fromstring(xml)

@@ -213,7 +213,7 @@ class Test_Exxx_KeepVersion(unittest.TestCase):
 
         doc = folia.Document(string=LEGACYEXAMPLE, keepversion=True, debug=False)
         doc.save(os.path.join(TMPDIR,'foliatest1.5.xml'))
-        retcode = os.system('xmldiff -c ' + os.path.join(TMPDIR,'foliatest1.5.ref.xml') + ' ' + os.path.join(TMPDIR,'foliatest1.5.xml'))
+        retcode = os.system('xmldiff ' + os.path.join(TMPDIR,'foliatest1.5.ref.xml') + ' ' + os.path.join(TMPDIR,'foliatest1.5.xml'))
         #retcode = 1 #disabled (memory hog)
         self.assertEqual( retcode, 0)
 
@@ -1253,7 +1253,7 @@ class Test02Sanity(unittest.TestCase):
         #use xmldiff to compare the two:
         doc = folia.Document(string=PARTIALLEGACYEXAMPLE, debug=False, keepversion=True)
         doc.save(os.path.join(TMPDIR,'foliatest100.xml'))
-        retcode = os.system('xmldiff -c ' + os.path.join(TMPDIR,'foliatest.xml') + ' ' + os.path.join(TMPDIR,'foliatest100.xml'))
+        retcode = os.system('xmldiff ' + os.path.join(TMPDIR,'foliatest.xml') + ' ' + os.path.join(TMPDIR,'foliatest100.xml'))
         #retcode = 1 #disabled (memory hog)
         self.assertEqual( retcode, 0)
 
