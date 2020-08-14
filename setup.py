@@ -44,7 +44,7 @@ setup(
     zip_safe=False,
     include_package_data=True,
     package_data = {'folia': ['tests/test.sh'] },
-    install_requires=['lxml >= 2.2','rdflib'],
+    install_requires=['lxml >= 2.2','rdflib', 'requests'],
     entry_points = { 'console_scripts': [] },
     cmdclass=cmdclass,
 )
