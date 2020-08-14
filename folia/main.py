@@ -2526,15 +2526,16 @@ class AbstractElement:
         omitchildren =  []
 
         #Are there predetermined Features in ACCEPTED_DATA?
-        for c in self.ACCEPTED_DATA:
-            if issubclass(c, Feature) and c.SUBSET:
-                #Do we have any of those?
-                for c2 in self.data:
-                    if c2.__class__ is c and c.SUBSET == c2.SUBSET and c2.cls:
-                        #Yes, serialize them as attributes
-                        attribs[c2.SUBSET] = c2.cls
-                        omitchildren.append(c2) #and skip them as elements
-                        break #only one
+        if form == Form.NORMAL:
+            for c in self.ACCEPTED_DATA:
+                if issubclass(c, Feature) and c.SUBSET:
+                    #Do we have any of those?
+                    for c2 in self.data:
+                        if c2.__class__ is c and c.SUBSET == c2.SUBSET and c2.cls:
+                            #Yes, serialize them as attributes
+                            attribs[c2.SUBSET] = c2.cls
+                            omitchildren.append(c2) #and skip them as elements
+                            break #only one
 
         tag = self.XMLTAG
         if self.doc and FOLIA1 and self.doc.keepversion and tag in OLDTAGS_REVERSE and tag != "item":
@@ -4875,7 +4876,7 @@ class Feature(AbstractElement):
         if isinstance(self.cls, datetime):
             self.cls = self.cls.strftime("%Y-%m-%dT%H:%M:%S")
 
-    def xml(self):
+    def xml(self, attribs = None, elements = None, skipchildren = False, form = Form.NORMAL):
         attribs = {}
         if self.subset != self.SUBSET:
             attribs['subset'] = self.subset
@@ -4940,7 +4941,7 @@ class AbstractSpanAnnotation(AbstractElement, AllowGenerateID, AllowCorrections)
                 if child.PRINTABLE and child.hastext(self.textclass):
                     attribs['t'] = child.text(self.textclass)
                 e.append( E.wref(**attribs) )
-            elif not (isinstance(child, Feature) and child.SUBSET): #Don't add pre-defined features, they are already added as attributes
+            elif not (isinstance(child, Feature) and child.SUBSET and form != Form.EXPLICIT): #Don't add pre-defined features, they are already added as attributes, except in explicit form
                 e.append( child.xml(form=form) )
         return e
 
