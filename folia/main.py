@@ -2396,12 +2396,12 @@ class AbstractElement:
                 attribs['typegroup'] = "structure"
             elif isinstance(self, AbstractInlineAnnotation):
                 attribs['typegroup'] = "inline"
-            elif isinstance(self, AbstractSpanAnnotation):
-                attribs['typegroup'] = "spanrole"
             elif isinstance(self, AbstractHigherOrderAnnotation):
-                attribs['typegroup'] = "span"
-            elif isinstance(self, AbstractSpanRole):
                 attribs['typegroup'] = "higherorder"
+            elif isinstance(self, AbstractSpanRole):
+                attribs['typegroup'] = "spanrole"
+            elif isinstance(self, AbstractSpanAnnotation):
+                attribs['typegroup'] = "span"
             elif isinstance(self, AbstractTextMarkup):
                 attribs['typegroup'] = "textmarkup"
             elif isinstance(self, AbstractContentAnnotation):
