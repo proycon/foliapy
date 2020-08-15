@@ -2447,6 +2447,8 @@ class AbstractElement:
                 #there are new-style (FoLiA v2) annotators (pointing to processors in provenance data)
                 try:
                     defaultprocessor = self.doc.getdefaultprocessor(self.ANNOTATIONTYPE, self.set)
+                    if form == Form.EXPLICIT:
+                        attribs['processor'] = defaultprocessor.id
                 except NoDefaultError:
                     if not (FOLIA1 and self.doc.keepversion) and self.processor:
                         attribs['processor'] = self.processor.id
