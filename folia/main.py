@@ -9125,7 +9125,7 @@ def validate(filename,schema=None,deep=False):
 #================================= FOLIA SPECIFICATION ==========================================================
 
 #foliaspec:header
-#This file was last updated according to the FoLiA specification for version 2.2.1 on 2019-08-20 15:03:31, using foliaspec.py
+#This file was last updated according to the FoLiA specification for version 2.3.0 on 2020-08-17 19:18:21, using foliaspec.py
 #Code blocks after a foliaspec comment (until the next newline) are automatically generated. **DO NOT EDIT THOSE** and **DO NOT REMOVE ANY FOLIASPEC COMMENTS** !!!
 
 #foliaspec:structurescope:STRUCTURESCOPE
@@ -9543,7 +9543,7 @@ Description.OCCURRENCES = 1
 Description.OPTIONAL_ATTRIBS = (Attrib.ID, Attrib.ANNOTATOR, Attrib.CONFIDENCE, Attrib.DATETIME, Attrib.N, Attrib.METADATA,)
 Description.XMLTAG = "desc"
 #------ Division -------
-Division.ACCEPTED_DATA = (AbstractAnnotationLayer, AbstractInlineAnnotation, Alternative, AlternativeLayers, Comment, Correction, Description, Division, Entry, Event, Example, Feature, Figure, ForeignData, Gap, Head, Linebreak, List, Metric, Note, Paragraph, Part, PhonContent, Quote, Reference, Relation, Sentence, Table, TextContent, Utterance, Whitespace,)
+Division.ACCEPTED_DATA = (AbstractAnnotationLayer, AbstractInlineAnnotation, Alternative, AlternativeLayers, Comment, Correction, Description, Division, Entry, Event, Example, Feature, Figure, ForeignData, Gap, Head, Linebreak, List, Metric, Note, Paragraph, Part, PhonContent, Quote, Reference, Relation, Sentence, Table, TextContent, Utterance, Whitespace, Word,)
 Division.ANNOTATIONTYPE = AnnotationType.DIVISION
 Division.LABEL = "Division"
 Division.TEXTDELIMITER = "\n\n\n"
