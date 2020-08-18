@@ -1031,6 +1031,7 @@ class AbstractElement:
             print("   @confidence   = ", repr(self.confidence),file=stderr)
             print("   @n            = ", repr(self.n),file=stderr)
             print("   @datetime     = ", repr(self.datetime),file=stderr)
+            print("   @href         = ", repr(self.href),file=stderr)
 
 
 
@@ -9125,7 +9126,7 @@ def validate(filename,schema=None,deep=False):
 #================================= FOLIA SPECIFICATION ==========================================================
 
 #foliaspec:header
-#This file was last updated according to the FoLiA specification for version 2.3.0 on 2020-08-17 19:18:21, using foliaspec.py
+#This file was last updated according to the FoLiA specification for version 2.3.0 on 2020-08-18 21:48:12, using foliaspec.py
 #Code blocks after a foliaspec comment (until the next newline) are automatically generated. **DO NOT EDIT THOSE** and **DO NOT REMOVE ANY FOLIASPEC COMMENTS** !!!
 
 #foliaspec:structurescope:STRUCTURESCOPE
@@ -9599,7 +9600,7 @@ External.XMLTAG = "external"
 Feature.LABEL = "Feature"
 Feature.XMLTAG = "feat"
 #------ Figure -------
-Figure.ACCEPTED_DATA = (AbstractAnnotationLayer, Alternative, AlternativeLayers, Caption, Comment, Correction, Description, Feature, ForeignData, Metric, Part, Relation, String, TextContent,)
+Figure.ACCEPTED_DATA = (AbstractAnnotationLayer, Alternative, AlternativeLayers, Caption, Comment, Correction, Description, Feature, ForeignData, Linebreak, Metric, Part, Relation, String, TextContent,)
 Figure.ANNOTATIONTYPE = AnnotationType.FIGURE
 Figure.LABEL = "Figure"
 Figure.SPEAKABLE = False
@@ -9669,7 +9670,7 @@ Linebreak.XMLTAG = "br"
 LinkReference.OPTIONAL_ATTRIBS = (Attrib.IDREF,)
 LinkReference.XMLTAG = "xref"
 #------ List -------
-List.ACCEPTED_DATA = (AbstractAnnotationLayer, AbstractInlineAnnotation, Alternative, AlternativeLayers, Caption, Comment, Correction, Description, Event, Feature, ForeignData, ListItem, Metric, Note, Part, PhonContent, Reference, Relation, String, TextContent,)
+List.ACCEPTED_DATA = (AbstractAnnotationLayer, AbstractInlineAnnotation, Alternative, AlternativeLayers, Caption, Comment, Correction, Description, Event, Feature, ForeignData, Linebreak, ListItem, Metric, Note, Part, PhonContent, Reference, Relation, String, TextContent,)
 List.ANNOTATIONTYPE = AnnotationType.LIST
 List.LABEL = "List"
 List.TEXTDELIMITER = "\n\n"
@@ -9913,7 +9914,7 @@ SyntaxLayer.ANNOTATIONTYPE = AnnotationType.SYNTAX
 SyntaxLayer.PRIMARYELEMENT = False
 SyntaxLayer.XMLTAG = "syntax"
 #------ Table -------
-Table.ACCEPTED_DATA = (AbstractAnnotationLayer, AbstractInlineAnnotation, Alternative, AlternativeLayers, Comment, Correction, Description, Feature, ForeignData, Metric, Part, Relation, Row, TableHead,)
+Table.ACCEPTED_DATA = (AbstractAnnotationLayer, AbstractInlineAnnotation, Alternative, AlternativeLayers, Comment, Correction, Description, Feature, ForeignData, Linebreak, Metric, Part, Relation, Row, TableHead,)
 Table.ANNOTATIONTYPE = AnnotationType.TABLE
 Table.LABEL = "Table"
 Table.XMLTAG = "table"
