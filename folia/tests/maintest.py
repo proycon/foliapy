@@ -1879,6 +1879,7 @@ class Test02Sanity(unittest.TestCase):
         self.assertEqual(len(ca),1)
         relations = list(ca[0].select(folia.Relation))
         self.assertEqual(len(relations),2)
+        self.assertEqual(relations[1].href, "en.folia.xml")
 
     def test106_submetadata(self):
         """Sanity Check - Submetadata"""
