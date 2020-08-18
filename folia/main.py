@@ -2465,11 +2465,11 @@ class AbstractElement:
                     attribs['annotatortype'] = 'manual'
 
         if 'confidence' not in attribs: #do not override if caller already set it
-            if self.confidence:
+            if self.confidence is not None:
                 attribs['confidence'] = str(self.confidence)
 
         if 'n' not in attribs: #do not override if caller already set it
-            if self.n:
+            if self.n is not None:
                 attribs['n'] = str(self.n)
 
         if 'auth' not in attribs: #do not override if caller already set it
