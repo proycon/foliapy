@@ -7677,7 +7677,7 @@ class Document(object):
         self.declareprocessed = True
         for subnode in node: #pylint: disable=too-many-nested-blocks
             if not isinstance(subnode.tag, str): continue
-            if node.text.strip():
+            if node.text and node.text.strip():
                 raise ParseError("Found extra leading text '" + node.text.strip() + "' in handling of <" + node.tag + "> @ line " + str(node.sourceline))
             if isinstance(subnode, ElementTree._Comment): continue #don't trip over comments #pylint: disable=protected-access
             if subnode.tag[:25] == '{' + NSFOLIA + '}' and subnode.tag[-11:] == '-annotation':
@@ -8320,7 +8320,7 @@ class Document(object):
         self.parsexmldeclarations(declarations)
 
     def parsexmlprovenance(self, node):
-        if node.text.strip():
+        if node.text and node.text.strip():
             raise ParseError("Found extra leading text '" + node.text.strip() + "' in handling of <" + node.tag + "> @ line " + str(node.sourceline))
         for subnode in node:
             if subnode.text and subnode.text.strip():
