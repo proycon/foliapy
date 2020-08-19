@@ -5338,7 +5338,10 @@ class AbstractAnnotationLayer(AbstractElement, AllowGenerateID, AllowCorrections
 
 class String(AbstractElement, AllowInlineAnnotation):
     """String"""
-    pass
+
+    def postappend(self):
+        if self.doc and self.doc.textvalidation:
+            self.doc.textvalidationerrors += int(not self.textvalidation())
 
 class AbstractCorrectionChild(AbstractElement):
     def generate_id(self, cls):
