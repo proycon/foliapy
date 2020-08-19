@@ -1034,7 +1034,6 @@ class AbstractElement:
             print("   @href         = ", repr(self.href),file=stderr)
 
 
-
         #set index
         if self.id and doc:
             if self.id in doc.index:
@@ -3983,7 +3982,7 @@ class AbstractTextMarkup(AbstractElement):
         if 'idref' in kwargs:
             self.idref = kwargs['idref']
             del kwargs['idref']
-        else:
+        elif not hasattr(self, 'idref'): #if not already set by a subclass
             self.idref = None
 
         if 'value' in kwargs:
@@ -4099,6 +4098,7 @@ class TextMarkupReference(AbstractTextMarkup):
         if not kwargs: kwargs = {}
         if 'id' in node.attrib:
             kwargs['idref'] = node.attrib['id']
+            print("DEBUG parsed ", kwargs['idref'],file=sys.stderr)
             del node.attrib['id']
         if 'type' in node.attrib:
             kwargs['type'] = node.attrib['type']
