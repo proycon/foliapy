@@ -3179,8 +3179,11 @@ class AbstractElement:
 
         args = []
         if not kwargs: kwargs = {}
-        if (Class.TEXTCONTAINER or Class.PHONCONTAINER) and node.text:
-            args.append(node.text)
+        if node.text:
+            if Class.TEXTCONTAINER or Class.PHONCONTAINER:
+                args.append(node.text)
+            elif node.text.strip()  != "" and Class not in (Comment, Description, TextContent, PhonContent, Content):
+                raise ParseError("Found extra text '" + node.text.strip() + "' in handling of  <" + node.tag[len(NSFOLIA)+2:] + "> @ line " + str(node.sourceline))
 
 
         for subnode in node: #pylint: disable=too-many-nested-blocks
@@ -3200,8 +3203,11 @@ class AbstractElement:
                         raise ParseError("FoLiA exception in handling of <" + subnode.tag[len(NSFOLIA)+2:] + "> @ line " + str(subnode.sourceline) + " (in parent <" + node.tag[len(NSFOLIA)+2:]+"> @ parent line " + str(node.sourceline) + ") : [" + e.__class__.__name__ + "] " + str(e), cause=e)
                     if e is not None:
                         args.append(e)
-                    if (Class.TEXTCONTAINER or Class.PHONCONTAINER) and subnode.tail:
-                        args.append(subnode.tail)
+                    if subnode.tail:
+                        if Class.TEXTCONTAINER or Class.PHONCONTAINER:
+                            args.append(subnode.tail)
+                        elif subnode.tail.strip() != "" and Class not in (Comment, Description, TextContent, PhonContent, Content):
+                            raise ParseError("Found extra trailing text '" + subnode.tail.strip() + "' in handling of <" + node.tag[len(NSFOLIA)+2:] + "> @ line " + str(subnode.sourceline))
                 elif doc.debug >= 1:
                     print("[FoLiA DEBUG] Ignoring subnode outside of FoLiA namespace: " + subnode.tag,file=stderr)
 
@@ -7671,6 +7677,8 @@ class Document(object):
         self.declareprocessed = True
         for subnode in node: #pylint: disable=too-many-nested-blocks
             if not isinstance(subnode.tag, str): continue
+            if node.text.strip():
+                raise ParseError("Found extra leading text '" + node.text.strip() + "' in handling of <" + node.tag + "> @ line " + str(node.sourceline))
             if isinstance(subnode, ElementTree._Comment): continue #don't trip over comments #pylint: disable=protected-access
             if subnode.tag[:25] == '{' + NSFOLIA + '}' and subnode.tag[-11:] == '-annotation':
                 prefix = subnode.tag[25:][:-11]
@@ -7706,6 +7714,9 @@ class Document(object):
                             raise ParseError("Expected <annotator>, got " + annotatornode.tag)
 
                 self.declare(type, set, **subnode.attrib)
+            elif subnode.tail and subnode.tail.strip():
+                raise ParseError("Found extra trailing text '" + subnode.tail.strip() + "' in handling of <annotations> @ line " + str(subnode.sourceline))
+
 
 
 
@@ -8303,14 +8314,23 @@ class Document(object):
             elif subnode.tag == '{http://www.mpi.nl/IMDI/Schema/IMDI}METATRANSCRIPT': #backward-compatibility for old IMDI without foreign-key
                 self.metadatatype = "imdi"
                 self.metadata = ForeignData(self, node=subnode)
+            if subnode.tail and subnode.tail.strip():
+                raise ParseError("Found extra trailing text '" + subnode.tail.strip() + "' in handling of <metadata> @ line " + str(subnode.sourceline))
 
         self.parsexmldeclarations(declarations)
 
     def parsexmlprovenance(self, node):
+        if node.text.strip():
+            raise ParseError("Found extra leading text '" + node.text.strip() + "' in handling of <" + node.tag + "> @ line " + str(node.sourceline))
         for subnode in node:
-            if subnode.tag == '{' + NSFOLIA + '}processor':
+            if subnode.text and subnode.text.strip():
+                raise ParseError("Found extra leading text '" + subnode.text.strip() + "' in handling of <" + subnode.tag + "> @ line " + str(node.sourceline))
+            elif subnode.tag == '{' + NSFOLIA + '}processor':
                 processor = Processor.parsexml(subnode)
                 self.provenance.append(processor)
+            if subnode.tail and subnode.tail.strip():
+                raise ParseError("Found extra trailing text '" + subnode.tail.strip() + "' in handling of <provenance> @ line " + str(subnode.sourceline))
+
 
 
     def parsesubmetadata(self, node):
@@ -8350,6 +8370,8 @@ class Document(object):
                     e.next = ForeignData(self, node=subnode)
                 else:
                     self.submetadata[id] = ForeignData(self, node=subnode)
+            elif subnode.tail and subnode.tail.strip():
+                raise ParseError("Found extra trailing text '" + subnode.tail.strip() + "' in handling of <" + node.tag + "> @ line " + str(subnode.sourceline))
 
     def parsexml(self, node, ParentClass = None):
         """Internal method.
@@ -8410,8 +8432,12 @@ class Document(object):
                     if self.external and not self.parentdoc:
                         raise DeepValidationError("Document is marked as external and should not be loaded independently. However, no parentdoc= has been specified!")
 
+                if node.text and node.text.strip():
+                    raise ParseError("Found extra leading text '" + node.text.strip() + "' in handling of <FoLiA> @ line " + str(node.sourceline))
 
                 for subnode in node:
+                    if subnode.text and subnode.text.strip():
+                        raise ParseError("Found extra leading text '" + subnode.text.strip() + "' in handling of <"+ subnode.tag+"> @ line " + str(node.sourceline))
                     if subnode.tag == '{' + NSFOLIA + '}metadata':
                         self.parsemetadata(subnode)
                     elif (subnode.tag == '{' + NSFOLIA + '}text' or subnode.tag == '{' + NSFOLIA + '}speech') and self.mode == Mode.MEMORY:
@@ -8419,6 +8445,8 @@ class Document(object):
                         e = self.parsexml(subnode)
                         if e is not None:
                             self.data.append(e)
+                    if subnode.tail.strip():
+                        raise ParseError("Found extra trailing text '" + subnode.tail.strip() + "' in handling of <FoLiA> @ line " + str(subnode.sourceline))
             else:
                 #generic handling (FoLiA)
                 if foliatag in OLDTAGS: #backward compatibility

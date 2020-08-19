@@ -1672,8 +1672,8 @@ class Test02Sanity(unittest.TestCase):
         """Sanity Check - Declarations - Testing Aliases"""
         xml = """<?xml version="1.0"?>
 <FoLiA xmlns="http://ilk.uvt.nl/folia" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="test" version="1.5.0" generator="{generator}">
-  <metadata type="native">n"
-    <annotations>n"
+  <metadata type="native">
+    <annotations>
       <gap-annotation set="some very convoluted url or such which clutters all" alias="gap-set" datetime="2012-06-18T17:49"/>
       <division-annotation set="a long div annotation name" alias="div-set" datetime="2012-06-18T17:49"/>
     </annotations>
