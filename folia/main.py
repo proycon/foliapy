@@ -8445,7 +8445,7 @@ class Document(object):
                         e = self.parsexml(subnode)
                         if e is not None:
                             self.data.append(e)
-                    if subnode.tail.strip():
+                    if subnode.tail and subnode.tail.strip():
                         raise ParseError("Found extra trailing text '" + subnode.tail.strip() + "' in handling of <FoLiA> @ line " + str(subnode.sourceline))
             else:
                 #generic handling (FoLiA)
