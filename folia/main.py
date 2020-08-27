@@ -2443,7 +2443,7 @@ class AbstractElement:
                 attribs['class'] = self.cls
 
         if 'processor' not in attribs: #do not override if caller already set it
-            if self.ANNOTATIONTYPE in self.doc.annotators and self.set in self.doc.annotators[self.ANNOTATIONTYPE] and self.doc.annotators[self.ANNOTATIONTYPE][self.set] and (Attrib.ANNOTATOR in self.OPTIONAL_ATTRIBS or Attrib.ANNOTATOR in self.REQUIRED_ATTRIBS):
+            if self.ANNOTATIONTYPE in self.doc.annotators and self.set in self.doc.annotators[self.ANNOTATIONTYPE] and self.doc.annotators[self.ANNOTATIONTYPE][self.set] and ((self.OPTIONAL_ATTRIBS is not None and Attrib.ANNOTATOR in self.OPTIONAL_ATTRIBS) or (self.REQUIRED_ATTRIBS is not None and Attrib.ANNOTATOR in self.REQUIRED_ATTRIBS)):
                 #there are new-style (FoLiA v2) annotators (pointing to processors in provenance data)
                 try:
                     defaultprocessor = self.doc.getdefaultprocessor(self.ANNOTATIONTYPE, self.set)
