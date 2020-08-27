@@ -4890,7 +4890,7 @@ class Feature(AbstractElement):
         if self.subset != self.SUBSET:
             attribs['subset'] = self.subset
         attribs['class'] =  self.cls
-        return getattr(E, self.XMLTAG)(**attribs)
+        return getattr(E, Feature.XMLTAG)(**attribs)
 
     def json(self,attribs=None, recurse=True, ignorelist=False):
         jsonnode= {'type': Feature.XMLTAG}
