@@ -2443,7 +2443,7 @@ class AbstractElement:
                 attribs['class'] = self.cls
 
         if 'processor' not in attribs: #do not override if caller already set it
-            if self.ANNOTATIONTYPE in self.doc.annotators and self.set in self.doc.annotators[self.ANNOTATIONTYPE] and self.doc.annotators[self.ANNOTATIONTYPE][self.set]:
+            if self.ANNOTATIONTYPE in self.doc.annotators and self.set in self.doc.annotators[self.ANNOTATIONTYPE] and self.doc.annotators[self.ANNOTATIONTYPE][self.set] and (Attrib.ANNOTATOR in self.OPTIONAL_ATTRIBS or Attrib.ANNOTATOR in self.REQUIRED_ATTRIBS):
                 #there are new-style (FoLiA v2) annotators (pointing to processors in provenance data)
                 try:
                     defaultprocessor = self.doc.getdefaultprocessor(self.ANNOTATIONTYPE, self.set)
@@ -4887,7 +4887,7 @@ class Feature(AbstractElement):
 
     def xml(self, attribs = None, elements = None, skipchildren = False, form = Form.NORMAL):
         attribs = {}
-        if self.subset != self.SUBSET:
+        if self.subset != self.SUBSET or form == Form.EXPLICIT:
             attribs['subset'] = self.subset
         attribs['class'] =  self.cls
         return getattr(E, Feature.XMLTAG)(**attribs)
