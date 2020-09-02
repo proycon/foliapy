@@ -10,7 +10,7 @@ notifications:
       - "%{repository_slug}#%{build_number} %{message} --> %{build_url}"
     skip_join: true
 language: python
-dist: trusty
+dist: bionic
 python:
     - "3.5"
     - "3.6"
