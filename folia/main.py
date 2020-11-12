@@ -9168,7 +9168,7 @@ def validate(filename,schema=None,deep=False):
 #================================= FOLIA SPECIFICATION ==========================================================
 
 #foliaspec:header
-#This file was last updated according to the FoLiA specification for version 2.4.0 on 2020-11-12 23:03:26, using foliaspec.py
+#This file was last updated according to the FoLiA specification for version 2.4.0 on 2020-11-12 23:08:40, using foliaspec.py
 #Code blocks after a foliaspec comment (until the next newline) are automatically generated. **DO NOT EDIT THOSE** and **DO NOT REMOVE ANY FOLIASPEC COMMENTS** !!!
 
 #foliaspec:structurescope:STRUCTURESCOPE
@@ -9749,7 +9749,6 @@ ModalitiesLayer.XMLTAG = "modalities"
 Modality.ACCEPTED_DATA = (AbstractInlineAnnotation, Comment, Cue, Description, Feature, ForeignData, LinkReference, Metric, Relation, Scope, Source, Target,)
 Modality.ANNOTATIONTYPE = AnnotationType.MODALITY
 Modality.LABEL = "Modality"
-Modality.REQUIRED_DATA = (,)
 Modality.XMLTAG = "modality"
 #------ ModalityFeature -------
 ModalityFeature.SUBSET = "modality"
