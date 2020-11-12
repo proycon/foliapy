@@ -52,7 +52,7 @@ from folia import LIBVERSION
 
 #foliaspec:version:FOLIAVERSION
 #The FoLiA version
-FOLIAVERSION = "2.3.0"
+FOLIAVERSION = "2.4.0"
 
 #foliaspec:namespace:NSFOLIA
 #The FoLiA XML namespace
@@ -120,7 +120,7 @@ class Attrib:
 #foliaspec:annotationtype
 #Defines all annotation types (as part of the AnnotationType enumeration)
 class AnnotationType:
-    TEXT, TOKEN, DIVISION, PARAGRAPH, HEAD, LIST, FIGURE, WHITESPACE, LINEBREAK, SENTENCE, POS, LEMMA, DOMAIN, SENSE, SYNTAX, CHUNKING, ENTITY, CORRECTION, ERRORDETECTION, PHON, SUBJECTIVITY, MORPHOLOGICAL, EVENT, DEPENDENCY, TIMESEGMENT, GAP, QUOTE, NOTE, REFERENCE, RELATION, SPANRELATION, COREFERENCE, SEMROLE, METRIC, LANG, STRING, TABLE, STYLE, PART, UTTERANCE, ENTRY, TERM, DEFINITION, EXAMPLE, PHONOLOGICAL, PREDICATE, OBSERVATION, SENTIMENT, STATEMENT, ALTERNATIVE, RAWCONTENT, COMMENT, DESCRIPTION, HYPHENATION, HIDDENTOKEN = range(55)
+    TEXT, TOKEN, DIVISION, PARAGRAPH, HEAD, LIST, FIGURE, WHITESPACE, LINEBREAK, SENTENCE, POS, LEMMA, DOMAIN, SENSE, SYNTAX, CHUNKING, ENTITY, CORRECTION, ERRORDETECTION, PHON, SUBJECTIVITY, MORPHOLOGICAL, EVENT, DEPENDENCY, TIMESEGMENT, GAP, QUOTE, NOTE, REFERENCE, RELATION, SPANRELATION, COREFERENCE, SEMROLE, METRIC, LANG, STRING, TABLE, STYLE, PART, UTTERANCE, ENTRY, TERM, DEFINITION, EXAMPLE, PHONOLOGICAL, PREDICATE, OBSERVATION, SENTIMENT, STATEMENT, ALTERNATIVE, RAWCONTENT, COMMENT, DESCRIPTION, HYPHENATION, HIDDENTOKEN, MODALITY = range(56)
 
 
 
@@ -9168,7 +9168,7 @@ def validate(filename,schema=None,deep=False):
 #================================= FOLIA SPECIFICATION ==========================================================
 
 #foliaspec:header
-#This file was last updated according to the FoLiA specification for version 2.3.0 on 2020-08-18 21:48:12, using foliaspec.py
+#This file was last updated according to the FoLiA specification for version 2.4.0 on 2020-11-12 23:03:26, using foliaspec.py
 #Code blocks after a foliaspec comment (until the next newline) are automatically generated. **DO NOT EDIT THOSE** and **DO NOT REMOVE ANY FOLIASPEC COMMENTS** !!!
 
 #foliaspec:structurescope:STRUCTURESCOPE
@@ -9204,6 +9204,7 @@ ANNOTATIONTYPE2XML = {
     AnnotationType.LINEBREAK:  "br" ,
     AnnotationType.LIST:  "list" ,
     AnnotationType.METRIC:  "metric" ,
+    AnnotationType.MODALITY:  "modality" ,
     AnnotationType.MORPHOLOGICAL:  "morpheme" ,
     AnnotationType.NOTE:  "note" ,
     AnnotationType.OBSERVATION:  "observation" ,
@@ -9249,6 +9250,7 @@ XML2CLASS = {
     "coreferences": CoreferenceLayer,
     "coreferencelink": CoreferenceLink,
     "correction": Correction,
+    "cue": Cue,
     "current": Current,
     "def": Definition,
     "dependencies": DependenciesLayer,
@@ -9280,6 +9282,8 @@ XML2CLASS = {
     "list": List,
     "item": ListItem,
     "metric": Metric,
+    "modalities": ModalitiesLayer,
+    "modality": Modality,
     "morpheme": Morpheme,
     "morphology": MorphologyLayer,
     "new": New,
@@ -9298,6 +9302,7 @@ XML2CLASS = {
     "ref": Reference,
     "relation": Relation,
     "row": Row,
+    "scope": Scope,
     "semrole": SemanticRole,
     "semroles": SemanticRolesLayer,
     "sense": SenseAnnotation,
@@ -9351,6 +9356,7 @@ ANNOTATIONTYPE2LAYERCLASS = {
     AnnotationType.COREFERENCE:  CoreferenceLayer ,
     AnnotationType.DEPENDENCY:  DependenciesLayer ,
     AnnotationType.ENTITY:  EntitiesLayer ,
+    AnnotationType.MODALITY:  ModalitiesLayer ,
     AnnotationType.MORPHOLOGICAL:  MorphologyLayer ,
     AnnotationType.OBSERVATION:  ObservationLayer ,
     AnnotationType.PHONOLOGICAL:  PhonologyLayer ,
@@ -9552,6 +9558,11 @@ Correction.PRINTABLE = True
 Correction.SPEAKABLE = True
 Correction.TEXTDELIMITER = None
 Correction.XMLTAG = "correction"
+#------ Cue -------
+Cue.LABEL = "Cue"
+Cue.OCCURRENCES = 1
+Cue.PRIMARYELEMENT = False
+Cue.XMLTAG = "cue"
 #------ Current -------
 Current.ANNOTATIONTYPE = AnnotationType.CORRECTION
 Current.OCCURRENCES = 1
@@ -9729,6 +9740,17 @@ Metric.ANNOTATIONTYPE = AnnotationType.METRIC
 Metric.LABEL = "Metric"
 Metric.OPTIONAL_ATTRIBS = (Attrib.ID, Attrib.CLASS, Attrib.ANNOTATOR, Attrib.N, Attrib.CONFIDENCE, Attrib.DATETIME, Attrib.SRC, Attrib.BEGINTIME, Attrib.ENDTIME, Attrib.SPEAKER, Attrib.METADATA,)
 Metric.XMLTAG = "metric"
+#------ ModalitiesLayer -------
+ModalitiesLayer.ACCEPTED_DATA = (Comment, Correction, Description, ForeignData, Modality,)
+ModalitiesLayer.ANNOTATIONTYPE = AnnotationType.MODALITY
+ModalitiesLayer.PRIMARYELEMENT = False
+ModalitiesLayer.XMLTAG = "modalities"
+#------ Modality -------
+Modality.ACCEPTED_DATA = (AbstractInlineAnnotation, Comment, Cue, Description, Feature, ForeignData, LinkReference, Metric, Relation, Scope, Source, Target,)
+Modality.ANNOTATIONTYPE = AnnotationType.MODALITY
+Modality.LABEL = "Modality"
+Modality.REQUIRED_DATA = (,)
+Modality.XMLTAG = "modality"
 #------ ModalityFeature -------
 ModalityFeature.SUBSET = "modality"
 ModalityFeature.XMLTAG = None
@@ -9844,6 +9866,12 @@ Row.ACCEPTED_DATA = (AbstractAnnotationLayer, AbstractInlineAnnotation, Alternat
 Row.LABEL = "Table Row"
 Row.TEXTDELIMITER = "\n"
 Row.XMLTAG = "row"
+#------ Scope -------
+Scope.ACCEPTED_DATA = (AbstractInlineAnnotation, Comment, Cue, Description, Feature, ForeignData, LinkReference, Metric, Relation, Source, Target, WordReference,)
+Scope.LABEL = "Scope"
+Scope.OCCURRENCES = 1
+Scope.PRIMARYELEMENT = False
+Scope.XMLTAG = "scope"
 #------ SemanticRole -------
 SemanticRole.ACCEPTED_DATA = (AbstractInlineAnnotation, Comment, Description, Feature, ForeignData, Headspan, LinkReference, Metric, Relation, WordReference,)
 SemanticRole.ANNOTATIONTYPE = AnnotationType.SEMROLE
