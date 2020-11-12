@@ -6237,10 +6237,16 @@ class DependencyDependent(AbstractSpanRole):
     pass
 
 class Source(AbstractSpanRole):
-    """The source span role is used to mark the source in a :class:`Sentiment` or :class:`Statement` """
+    """The source span role is used to mark the source in a :class:`Modality` or :class:`Statement` """
 
 class Target(AbstractSpanRole):
-    """The target span role is used to mark the target in a :class:`Sentiment` """
+    """The target span role is used to mark the target in a :class:`Modality`"""
+
+class Scope(AbstractSpanRole):
+    """The scope span role is used to mark the scope of a :class:`Modality`"""
+
+class Cue(AbstractSpanRole):
+    """The cue span role is used to mark the cue/trigger of a :class:`Modality`"""
 
 class StatementRelation(AbstractSpanRole):
     """The relation span role is used to mark the relation between the content of a statement and its source in a :class:`Statement`"""
@@ -6256,6 +6262,8 @@ class Dependency(AbstractSpanAnnotation):
         """Returns the dependent of the dependency relation. Instance of :class:`DependencyDependent`"""
         return next(self.select(DependencyDependent))
 
+class Modality(AbstractSpanAnnotation):
+    """Span annotation element to encode modality (e.g. sentiment, negation, truthfulness, doubt)"""
 
 class ModalityFeature(Feature):
     """Modality feature, to be used with coreferences"""
@@ -6339,6 +6347,9 @@ class EntitiesLayer(AbstractAnnotationLayer):
 
 class DependenciesLayer(AbstractAnnotationLayer):
     """Dependencies Layer: Annotation layer for :class:`Dependency` span annotation elements. For dependency entities."""
+
+class ModalitiesLayer(AbstractAnnotationLayer):
+    """ModalitiesLayer Layer: Annotation layer for :class:`Modality` span annotation elements."""
 
 class MorphologyLayer(AbstractAnnotationLayer):
     """Morphology Layer: Annotation layer for :class:`Morpheme` subtoken annotation elements. For morphological analysis."""
