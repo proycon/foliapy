@@ -6072,43 +6072,43 @@ class External(AbstractHigherOrderAnnotation):
         self.doc = doc
         self.id = None
         self.source = kwargs['source']
-        if 'include' in kwargs and kwargs['include'] != 'no':
-            self.include = bool(kwargs['include'])
-        else:
-            self.include = False
+        if 'include' in kwargs:
+            #deprecated, ignore this
+            del kwargs['include']
+            pass
         self.data = []
-        self.subdoc = None
+        #self.subdoc = None
 
-        if self.include:
-            if doc.debug >= 1: print("[FoLiA DEBUG] Loading subdocument for inclusion: " + self.source,file=stderr)
-            #load subdocument
+        #if self.include:
+        #   if doc.debug >= 1: print("[FoLiA DEBUG] Loading subdocument for inclusion: " + self.source,file=stderr)
+        #   #load subdocument
 
-            #check if it is already loaded, if multiple references are made to the same doc we reuse the instance
-            if self.source in self.doc.subdocs:
-                self.subdoc = self.doc.subdocs[self.source]
-            elif self.source[:7] == 'http://' or self.source[:8] == 'https://':
-                #document is remote, download (in memory)
-                try:
-                    f = urlopen(self.source)
-                except:
-                    raise DeepValidationError("Unable to download subdocument for inclusion: " + self.source)
-                try:
-                    content = u(f.read())
-                except IOError:
-                    raise DeepValidationError("Unable to download subdocument for inclusion: " + self.source)
-                f.close()
-                self.subdoc = Document(string=content, parentdoc = self.doc, setdefinitions=self.doc.setdefinitions)
-            elif os.path.exists(self.source):
-                #document is on disk:
-                self.subdoc = Document(file=self.source, parentdoc = self.doc, setdefinitions=self.doc.setdefinitions)
-            else:
-                #document not found
-                raise DeepValidationError("Unable to find subdocument for inclusion: " + self.source)
+        #   #check if it is already loaded, if multiple references are made to the same doc we reuse the instance
+        #   if self.source in self.doc.subdocs:
+        #       self.subdoc = self.doc.subdocs[self.source]
+        #   elif self.source[:7] == 'http://' or self.source[:8] == 'https://':
+        #       #document is remote, download (in memory)
+        #       try:
+        #           f = urlopen(self.source)
+        #       except:
+        #           raise DeepValidationError("Unable to download subdocument for inclusion: " + self.source)
+        #       try:
+        #           content = u(f.read())
+        #       except IOError:
+        #           raise DeepValidationError("Unable to download subdocument for inclusion: " + self.source)
+        #       f.close()
+        #       self.subdoc = Document(string=content, parentdoc = self.doc, setdefinitions=self.doc.setdefinitions)
+        #   elif os.path.exists(self.source):
+        #       #document is on disk:
+        #       self.subdoc = Document(file=self.source, parentdoc = self.doc, setdefinitions=self.doc.setdefinitions)
+        #   else:
+        #       #document not found
+        #       raise DeepValidationError("Unable to find subdocument for inclusion: " + self.source)
 
-            self.subdoc.parentdoc = self.doc
-            self.doc.subdocs[self.source] = self.subdoc
-            #TODO: verify there are no clashes in declarations between parent and child
-            #TODO: check validity of elements under subdoc/text with respect to self.parent
+        #   self.subdoc.parentdoc = self.doc
+        #   self.doc.subdocs[self.source] = self.subdoc
+        #   #TODO: verify there are no clashes in declarations between parent and child
+        #   #TODO: check validity of elements under subdoc/text with respect to self.parent
 
 
     @classmethod
@@ -6117,12 +6117,8 @@ class External(AbstractHigherOrderAnnotation):
         if not kwargs: kwargs = {}
         #special handling for external
         source = node.attrib['src']
-        if 'include' in node.attrib:
-            include = node.attrib['include']
-        else:
-            include = False
         if doc.debug >= 1: print("[FoLiA DEBUG] Found external",file=stderr)
-        return External(doc, source=source, include=include)
+        return External(doc, source=source)
 
     def xml(self, attribs = None,elements = None, skipchildren = False, form = Form.NORMAL):
         if not attribs:
@@ -6130,22 +6126,19 @@ class External(AbstractHigherOrderAnnotation):
 
         attribs['src'] = self.source
 
-        if self.include:
-            attribs['include']  = 'yes'
-
         return super(External, self).xml(attribs, elements, skipchildren, form)
 
     @classmethod
     def relaxng(cls, includechildren=True,extraattribs = None, extraelements=None):
-        return RXE.define( RXE.element(RXE.attribute(RXE.text(), name='src'), RXE.optional(RXE.attribute(RXE.text(), name='include')), name=cls.XMLTAG), name=cls.XMLTAG, ns=NSFOLIA)
+        return RXE.define( RXE.element(RXE.attribute(RXE.text(), name='src'), name=cls.XMLTAG), name=cls.XMLTAG, ns=NSFOLIA)
 
 
     def select(self, Class, set=False, recursive=True,  ignore=True, node=None):
         """See :meth:`AbstractElement.select`"""
-        if self.include:
-            return self.subdoc.data[0].select(Class,set,recursive, ignore, node) #pass it on to the text node of the subdoc
-        else:
-            return iter([])
+        #if self.include:
+        #    return self.subdoc.data[0].select(Class,set,recursive, ignore, node) #pass it on to the text node of the subdoc
+        #else:
+        return iter([])
 
 
 class WordReference(AbstractElement):
