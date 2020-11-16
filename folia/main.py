@@ -6063,82 +6063,9 @@ class AlternativeLayers(AbstractHigherOrderAnnotation):
 
 
 class External(AbstractHigherOrderAnnotation):
+    """External annotation makes a reference to an external FoLiA document whose structure is inserted at the exact place the external element occurs."""
+    pass
 
-    def __init__(self, doc, *args, **kwargs): #pylint: disable=super-init-not-called
-        #Special constructor, not calling super constructor
-        if 'source' not in kwargs:
-            raise Exception("Source required for External")
-        assert(isinstance(doc,Document))
-        self.doc = doc
-        self.id = None
-        self.source = kwargs['source']
-        if 'include' in kwargs:
-            #deprecated, ignore this
-            del kwargs['include']
-            pass
-        self.data = []
-        #self.subdoc = None
-
-        #if self.include:
-        #   if doc.debug >= 1: print("[FoLiA DEBUG] Loading subdocument for inclusion: " + self.source,file=stderr)
-        #   #load subdocument
-
-        #   #check if it is already loaded, if multiple references are made to the same doc we reuse the instance
-        #   if self.source in self.doc.subdocs:
-        #       self.subdoc = self.doc.subdocs[self.source]
-        #   elif self.source[:7] == 'http://' or self.source[:8] == 'https://':
-        #       #document is remote, download (in memory)
-        #       try:
-        #           f = urlopen(self.source)
-        #       except:
-        #           raise DeepValidationError("Unable to download subdocument for inclusion: " + self.source)
-        #       try:
-        #           content = u(f.read())
-        #       except IOError:
-        #           raise DeepValidationError("Unable to download subdocument for inclusion: " + self.source)
-        #       f.close()
-        #       self.subdoc = Document(string=content, parentdoc = self.doc, setdefinitions=self.doc.setdefinitions)
-        #   elif os.path.exists(self.source):
-        #       #document is on disk:
-        #       self.subdoc = Document(file=self.source, parentdoc = self.doc, setdefinitions=self.doc.setdefinitions)
-        #   else:
-        #       #document not found
-        #       raise DeepValidationError("Unable to find subdocument for inclusion: " + self.source)
-
-        #   self.subdoc.parentdoc = self.doc
-        #   self.doc.subdocs[self.source] = self.subdoc
-        #   #TODO: verify there are no clashes in declarations between parent and child
-        #   #TODO: check validity of elements under subdoc/text with respect to self.parent
-
-
-    @classmethod
-    def parsexml(Class, node, doc, **kwargs):
-        assert Class is External or issubclass(Class, External)
-        if not kwargs: kwargs = {}
-        #special handling for external
-        source = node.attrib['src']
-        if doc.debug >= 1: print("[FoLiA DEBUG] Found external",file=stderr)
-        return External(doc, source=source)
-
-    def xml(self, attribs = None,elements = None, skipchildren = False, form = Form.NORMAL):
-        if not attribs:
-            attribs= {}
-
-        attribs['src'] = self.source
-
-        return super(External, self).xml(attribs, elements, skipchildren, form)
-
-    @classmethod
-    def relaxng(cls, includechildren=True,extraattribs = None, extraelements=None):
-        return RXE.define( RXE.element(RXE.attribute(RXE.text(), name='src'), name=cls.XMLTAG), name=cls.XMLTAG, ns=NSFOLIA)
-
-
-    def select(self, Class, set=False, recursive=True,  ignore=True, node=None):
-        """See :meth:`AbstractElement.select`"""
-        #if self.include:
-        #    return self.subdoc.data[0].select(Class,set,recursive, ignore, node) #pass it on to the text node of the subdoc
-        #else:
-        return iter([])
 
 
 class WordReference(AbstractElement):
