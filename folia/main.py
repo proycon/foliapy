@@ -1726,6 +1726,20 @@ class AbstractElement:
         """Alias for :meth:`text`"""
         return self.text()
 
+    def move(self, newdoc, idsuffix=""):
+        """Move elements of one document to another
+
+        Parameters:
+            newdoc (:class:`Document`): The document the copy should be associated with.
+            idsuffix (str or bool): If set to a string, the ID of the copy will be append with this (prevents duplicate IDs when making copies for the same document). If set to ``True``, a random suffix will be generated.
+
+        Returns:
+            a copy of the element
+        """
+        if idsuffix is True: idsuffix = ".copy." + "%08x" % random.getrandbits(32) #random 32-bit hash for each copy, same one will be reused for all children
+        self.setdoc(newdoc, idsuffix)
+        return self
+
     def copy(self, newdoc=None, idsuffix=""):
         """Make a deep copy of this element and all its children.
 
@@ -1738,10 +1752,7 @@ class AbstractElement:
         """
         if idsuffix is True: idsuffix = ".copy." + "%08x" % random.getrandbits(32) #random 32-bit hash for each copy, same one will be reused for all children
         c = deepcopy(self)
-        if idsuffix:
-            c.addidsuffix(idsuffix)
-        c.setparents()
-        c.setdoc(newdoc)
+        c.setdoc(newdoc, idsuffix)
         return c
 
     def copychildren(self, newdoc=None, idsuffix=""):
@@ -1772,14 +1783,17 @@ class AbstractElement:
                 c.parent = self
                 c.setparents()
 
-    def setdoc(self,newdoc):
-        """Set a different document. Usually no need to call this directly, invoked implicitly by :meth:`copy`"""
+    def setdoc(self,newdoc, idsuffix=""):
+        """Set a different document and handles setting an id suffix. Usually no need to call this directly, invoked implicitly by :meth:`copy`"""
+        if self.id and idsuffix: self.id += idsuffix
         self.doc = newdoc
         if self.doc and self.id:
             self.doc.index[self.id] = self
         for c in self:
             if isinstance(c, AbstractElement):
+                c.parent = self
                 c.setdoc(newdoc)
+
 
     def hastext(self,cls='current',strict=True, correctionhandling=CorrectionHandling.CURRENT, hidden=False): #pylint: disable=too-many-return-statements
         """Does this element have text (of the specified class)
