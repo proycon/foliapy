@@ -1792,7 +1792,7 @@ class AbstractElement:
         for c in self:
             if isinstance(c, AbstractElement):
                 c.parent = self
-                c.setdoc(newdoc)
+                c.setdoc(newdoc, idsuffix)
 
 
     def hastext(self,cls='current',strict=True, correctionhandling=CorrectionHandling.CURRENT, hidden=False): #pylint: disable=too-many-return-statements
