@@ -1,9 +1,9 @@
 #% -*- coding: utf-8 -*-
 #----------------------------------------------------------------
 # FoLiA Library for Python
-# /  by Maarten van Gompel
-#   Centre for Language Studies
-#   Radboud University Nijmegen
+#    by Maarten van Gompel
+#   Centre for Language & Speech Technology, Radboud University Nijmegen
+#   & KNAW Humanities Cluster
 #
 #   https://proycon.github.io/folia
 #   httsp://github.com/proycon/foliapy

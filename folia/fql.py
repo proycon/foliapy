@@ -1,9 +1,10 @@
 #---------------------------------------------------------------
 
-# PyNLPl - FoLiA Query Language
-#   by Maarten van Gompel
-#   Centre for Language Studies
-#   Radboud University Nijmegen
+# FoLiA Query Language Library
+#    by Maarten van Gompel
+#   Centre for Language & Speech Technology, Radboud University Nijmegen
+#   & KNAW Humanities Cluster
+#
 #   http://proycon.github.com/folia
 #   http://www.github.com/proycon/pynlpl
 #   proycon AT anaproy DOT nl
