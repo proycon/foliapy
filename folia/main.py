@@ -1391,9 +1391,15 @@ class AbstractElement:
 
         if self.TEXTCONTAINER:
             s = ""
-            for e in self:
+            l = len(self)
+            for i, e in enumerate(self):
                 if isstring(e):
-                    s += e
+                    if i == 0:
+                        s += e.lstrip() #strips leading whitespace (proycon/folia#88)
+                    elif i == l -1:
+                        s += e.rstrip() #strips trailing whitespace (proycon/folia#88)
+                    else:
+                        s += e
                 elif e.PRINTABLE:
                     if s: s += e.TEXTDELIMITER #for AbstractMarkup, will usually be ""
                     s += e.text()
