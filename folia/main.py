@@ -52,7 +52,7 @@ from folia import LIBVERSION
 
 #foliaspec:version:FOLIAVERSION
 #The FoLiA version
-FOLIAVERSION = "2.4.0"
+FOLIAVERSION = "2.4.1"
 
 #foliaspec:namespace:NSFOLIA
 #The FoLiA XML namespace
@@ -9112,7 +9112,7 @@ def validate(filename,schema=None,deep=False):
 #================================= FOLIA SPECIFICATION ==========================================================
 
 #foliaspec:header
-#This file was last updated according to the FoLiA specification for version 2.4.0 on 2020-11-16 14:07:47, using foliaspec.py
+#This file was last updated according to the FoLiA specification for version 2.4.1 on 2020-12-08 15:30:37, using foliaspec.py
 #Code blocks after a foliaspec comment (until the next newline) are automatically generated. **DO NOT EDIT THOSE** and **DO NOT REMOVE ANY FOLIASPEC COMMENTS** !!!
 
 #foliaspec:structurescope:STRUCTURESCOPE
