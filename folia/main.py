@@ -1395,7 +1395,7 @@ class AbstractElement:
             for i, e in enumerate(self):
                 if isstring(e):
                     if i == 0 and i == l - 1:
-                        s += e.lstrip() #strips leading and trailing whitespace (proycon/folia#88)
+                        s += e.strip() #strips leading and trailing whitespace (proycon/folia#88)
                     elif i == 0:
                         s += e.lstrip() #strips leading whitespace (proycon/folia#88)
                     elif i == l -1:
