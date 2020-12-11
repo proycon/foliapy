@@ -4343,7 +4343,7 @@ het    ook   ?
     </text>
 </FoLiA>""".format(version=folia.FOLIAVERSION, generator='foliapy-v' + folia.LIBVERSION)
         doc = folia.Document(string=xml, textvalidation=True)
-        self.assertEqual( doc['test.s'].text(), "Dit\n         is een rare test.\n")
+        self.assertEqual( doc['test.s'].text(), "Dit\n         is een rare test.")
 
 
 with open(os.path.join(FOLIAPATH, 'examples/full-legacy.1.5.folia.xml'), 'r',encoding='utf-8') as foliaexample_f:
