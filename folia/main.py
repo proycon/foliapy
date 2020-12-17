@@ -6359,6 +6359,12 @@ class EnddatetimeFeature(Feature):
 class StyleFeature(Feature):
     pass
 
+class FontFeature(Feature):
+    """Font feature, to be used within :class:`TextMarkupStyle`"""
+
+class SizeFeature(Feature):
+    """Size feature, to be used within :class:`TextMarkupStyle`"""
+
 class Note(AbstractStructureElement):
     """Element used for notes, such as footnotes or warnings or notice blocks."""
 
