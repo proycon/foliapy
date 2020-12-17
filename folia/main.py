@@ -9114,7 +9114,7 @@ def validate(filename,schema=None,deep=False):
 #================================= FOLIA SPECIFICATION ==========================================================
 
 #foliaspec:header
-#This file was last updated according to the FoLiA specification for version 2.4.2 on 2020-12-17 17:30:27, using foliaspec.py
+#This file was last updated according to the FoLiA specification for version 2.4.2 on 2020-12-17 17:39:53, using foliaspec.py
 #Code blocks after a foliaspec comment (until the next newline) are automatically generated. **DO NOT EDIT THOSE** and **DO NOT REMOVE ANY FOLIASPEC COMMENTS** !!!
 
 #foliaspec:structurescope:STRUCTURESCOPE
@@ -9606,6 +9606,9 @@ Figure.LABEL = "Figure"
 Figure.SPEAKABLE = False
 Figure.TEXTDELIMITER = "\n\n"
 Figure.XMLTAG = "figure"
+#------ FontFeature -------
+FontFeature.SUBSET = "font"
+FontFeature.XMLTAG = None
 #------ ForeignData -------
 ForeignData.XMLTAG = "foreign-data"
 #------ FunctionFeature -------
@@ -9851,6 +9854,9 @@ SentimentLayer.ACCEPTED_DATA = (Comment, Correction, Description, ForeignData, S
 SentimentLayer.ANNOTATIONTYPE = AnnotationType.SENTIMENT
 SentimentLayer.PRIMARYELEMENT = False
 SentimentLayer.XMLTAG = "sentiments"
+#------ SizeFeature -------
+SizeFeature.SUBSET = "size"
+SizeFeature.XMLTAG = None
 #------ Source -------
 Source.LABEL = "Source"
 Source.OCCURRENCES = 1
@@ -9985,6 +9991,7 @@ TextMarkupString.ANNOTATIONTYPE = AnnotationType.STRING
 TextMarkupString.PRIMARYELEMENT = False
 TextMarkupString.XMLTAG = "t-str"
 #------ TextMarkupStyle -------
+TextMarkupStyle.ACCEPTED_DATA = (AbstractTextMarkup, Comment, Description, Feature, FontFeature, Linebreak, SizeFeature,)
 TextMarkupStyle.ANNOTATIONTYPE = AnnotationType.STYLE
 TextMarkupStyle.PRIMARYELEMENT = True
 TextMarkupStyle.XMLTAG = "t-style"
