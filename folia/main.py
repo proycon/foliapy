@@ -492,7 +492,7 @@ def parsetime(s):
 
 
 def norm_spaces(s):
-    """Normalize spaces, splits on whitespace (\n\r\t\s) and rejoins (faster than a s/\s+// regexp)"""
+    r"""Normalize spaces, splits on whitespace (\n\r\t\s) and rejoins (faster than a s/\s+// regexp)"""
     return ' '.join(s.split())
 
 def parse_datetime(s): #source: http://stackoverflow.com/questions/2211362/how-to-parse-xsddatetime-format
@@ -6950,12 +6950,13 @@ this, first a trivial example of searching for one word::
 class ExternalMetaData(object):
     def __init__(self, url):
         self.url = url
-
+        self.next = None #reserved for chaining, not used yet
 
 class NativeMetaData(object):
     def __init__(self, *args, **kwargs):
         self.data = {}
         self.order = []
+        self.next = None #Foreign data
         for key, value in kwargs.items():
             self[key] = value
 
@@ -7594,33 +7595,33 @@ class Document(object):
     def xmlmetadata(self):
         """Internal method to serialize metadata to XML"""
         elements = []
-        if self.metadatatype == "native":
-            if isinstance(self.metadata, NativeMetaData):
-                for key, value in self.metadata.items():
-                    elements.append(E.meta(value,id=key) )
-        else:
-            if isinstance(self.metadata, ForeignData):
-                #in-document
-                m = self.metadata
-                while m is not None:
+        if not isinstance(self.metadata, ExternalMetaData):
+            #in-document
+            m = self.metadata
+            while m is not None:
+                if isinstance(m, NativeMetaData):
+                    for key, value in self.metadata.items():
+                        elements.append(E.meta(value,id=key) )
+                else:
+                    #ForeignData
                     elements.append(m.xml())
-                    m = m.next
+                m = m.next
         for metadata_id, submetadata in self.submetadata.items():
             subelements = []
             attribs = {
                 "{http://www.w3.org/XML/1998/namespace}id": metadata_id,
                 "type": self.submetadatatype.get(metadata_id,"native") }
-            if isinstance(submetadata, NativeMetaData):
-                for key, value in submetadata.items():
-                    subelements.append(E.meta(value,id=key) )
-            elif isinstance(submetadata, ExternalMetaData):
-                attribs['src'] = submetadata.url
-            elif isinstance(submetadata, ForeignData):
-                #in-document
-                m = submetadata
-                while m is not None:
+            m = submetadata
+            while m is not None:
+                if isinstance(m, NativeMetaData):
+                    for key, value in m.items():
+                        subelements.append(E.meta(value,id=key) )
+                elif isinstance(m, ExternalMetaData):
+                    attribs['src'] = m.url
+                elif isinstance(m, ForeignData):
+                    #ForeignData
                     subelements.append(m.xml())
-                    m = m.next
+                m = m.next
             elements.append( E.submetadata(*subelements, **attribs))
         return elements
 
@@ -8241,12 +8242,15 @@ class Document(object):
             #no type specified, default to native
             self.metadatatype = "native"
 
+        externalmetadata = False
         if 'src' in node.attrib:
             self.metadata = ExternalMetaData(node.attrib['src'])
+            externalmetadata = True
         elif self.metadatatype == "native":
             self.metadata = NativeMetaData()
         else:
             self.metadata = None #may be set below to ForeignData
+
 
         declarations = None
         for subnode in node:
@@ -8256,16 +8260,17 @@ class Document(object):
             elif subnode.tag == '{' + NSFOLIA + '}provenance':
                 self.parsexmlprovenance(subnode)
             elif subnode.tag == '{' + NSFOLIA + '}meta':
-                if self.metadatatype == "native":
+                if not externalmetadata:
+                    if self.metadata is None: self.metadata = NativeMetaData()
                     if subnode.text:
                         self.metadata[subnode.attrib['id']] = subnode.text
                 else:
-                    raise MetaDataError("Encountered a meta element but metadata type is not native!")
+                    raise MetaDataError("Encountered a meta element but metadata is external!")
             elif subnode.tag == '{' + NSFOLIA + '}foreign-data':
-                if self.metadatatype == "native":
-                    raise MetaDataError("Encountered a foreign-data element but metadata type is native!")
+                if externalmetadata:
+                    raise MetaDataError("Encountered a foreign-data element but metadata is external!")
                 elif self.metadata is not None:
-                    #multiple foreign-data elements, chain:
+                    #multiple foreign-data elementss, chain, also works with NativeMetaData:
                     e = self.metadata
                     while e.next is not None:
                         e = e.next
