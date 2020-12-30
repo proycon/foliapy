@@ -126,41 +126,33 @@ class AnnotationType:
 
 class NoSuchAnnotation(Exception):
     """Exception raised when the requested type of annotation does not exist for the selected element"""
-    pass
 
 class NoSuchText(Exception):
     """Exception raised when the requested type of text content does not exist for the selected element"""
-    pass
 
 class NoSuchPhon(Exception):
     """Exception raised when the requested type of phonetic content does not exist for the selected element"""
-    pass
 
 class InconsistentText(Exception):
     """Exception raised when the the text of a structural element is inconsistent with text on deeper levels"""
-    pass
 
 class DuplicateAnnotationError(Exception):
     pass
 
 class DuplicateIDError(Exception):
     """Exception raised when an identifier that is already in use is assigned again to another element"""
-    pass
 
 class InvalidReference(Exception):
     """Exception raised when an identifier points to something that does not exist"""
-    pass
 
 class NoCommonAncestor(Exception):
     """Exception raised when two elements do not share a common ancestor"""
-    pass
 
 class NoDefaultError(Exception):
     pass
 
 class DeclarationError(Exception):
     """Exception raised when there is an issue with missing declarations"""
-    pass
 
 class UnresolvableTextContent(Exception):
     pass
