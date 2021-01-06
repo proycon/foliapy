@@ -9117,7 +9117,7 @@ def validate(filename,schema=None,deep=False):
 #================================= FOLIA SPECIFICATION ==========================================================
 
 #foliaspec:header
-#This file was last updated according to the FoLiA specification for version 2.4.2 on 2020-12-17 17:39:53, using foliaspec.py
+#This file was last updated according to the FoLiA specification for version 2.4.2 on 2021-01-06 15:20:13, using foliaspec.py
 #Code blocks after a foliaspec comment (until the next newline) are automatically generated. **DO NOT EDIT THOSE** and **DO NOT REMOVE ANY FOLIASPEC COMMENTS** !!!
 
 #foliaspec:structurescope:STRUCTURESCOPE
@@ -9759,7 +9759,7 @@ Part.LABEL = "Part"
 Part.TEXTDELIMITER = " "
 Part.XMLTAG = "part"
 #------ PhonContent -------
-PhonContent.ACCEPTED_DATA = (Comment, Description,)
+PhonContent.ACCEPTED_DATA = (Comment, Description, Feature,)
 PhonContent.ANNOTATIONTYPE = AnnotationType.PHON
 PhonContent.LABEL = "Phonetic Content"
 PhonContent.PHONCONTAINER = True
@@ -9965,7 +9965,7 @@ Text.OPTIONAL_ATTRIBS = (Attrib.ID, Attrib.ANNOTATOR, Attrib.DATETIME, Attrib.SR
 Text.TEXTDELIMITER = "\n\n\n"
 Text.XMLTAG = "text"
 #------ TextContent -------
-TextContent.ACCEPTED_DATA = (AbstractTextMarkup, Comment, Description, Linebreak,)
+TextContent.ACCEPTED_DATA = (AbstractTextMarkup, Comment, Description, Feature, Linebreak,)
 TextContent.ANNOTATIONTYPE = AnnotationType.TEXT
 TextContent.LABEL = "Text"
 TextContent.PRINTABLE = True
