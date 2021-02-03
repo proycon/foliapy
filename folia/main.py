@@ -1259,7 +1259,7 @@ class AbstractElement:
                 return CorrectionHandling.CURRENT
 
 
-    def textvalidation(self, warnonly=None, trimspaces=True):
+    def textvalidation(self, warnonly=None, trim_spaces=True):
         """Run text validation on this element. Checks whether any text redundancy is consistent and whether offsets are valid.
 
         Parameters:
@@ -1285,9 +1285,9 @@ class AbstractElement:
                     if self.doc and self.doc.debug: print("[FoLiA DEBUG] SKIPPING Text validation on " + repr(self) + ", too complex to handle (nested corrections or inconsistent use)",file=stderr)
                     return True #just assume it's valid then
 
-                strictnormtext = self.text(cls,retaintokenisation=False,strict=True, normalize_spaces=True, hidden=False, trimspaces=trimspaces )
+                strictnormtext = self.text(cls,retaintokenisation=False,strict=True, normalize_spaces=True, hidden=False, trim_spaces=trim_spaces )
                 try:
-                    deepnormtext = self.text(cls,retaintokenisation=False,strict=False, normalize_spaces=True, hidden=False, trimspaces=trimspaces)
+                    deepnormtext = self.text(cls,retaintokenisation=False,strict=False, normalize_spaces=True, hidden=False, trim_spaces=trim_spaces)
                 except NoSuchText:
                     deepnormtext = ""
                     if self.doc and self.doc.debug: print("[FoLiA DEBUG] deepnormtext on " + repr(self) + " is empty! (NoSuchText)",file=stderr)
@@ -1300,7 +1300,7 @@ class AbstractElement:
                             break
                     msg = "Text for " + repr(self) + ", is inconsistent: EXPECTED (after normalization) *****>\n" + deepnormtext + "\n****> BUT FOUND (after normalization) ****>\n" + strictnormtext + "\n******* DEVIATION POINT: " + strictnormtext[max(0,deviation-10):deviation] + "<*HERE*>" + strictnormtext[deviation:deviation+10]
 
-                    if trimspaces:
+                    if trim_spaces:
                         #prior to FoLiA v2.4.1, we didn't strip leading/trailing whitespace
                         #see issue https://github.com/proycon/folia/issues/88
                         #This means it is possible for older FoLiA to be invalid since
@@ -1309,7 +1309,7 @@ class AbstractElement:
 
                         #Test if the element is valid according to the old rules
                         try:
-                            self.textvalidation(None, trimspaces=False)
+                            self.textvalidation(None, trim_spaces=False)
                             warnonly = True
                             msg += "\nHowever, according to the older rules (<v2.4.1) the text is consistent. So we are treating this as a warning rather than an error. We do recommend fixing this if this is a document you intend to publish."
                         except InconsistentText as e:
@@ -1370,7 +1370,7 @@ class AbstractElement:
         """Alias for :meth:`text` with ``retaintokenisation=True``"""
         return self.text(cls,retaintokenisation=True)
 
-    def text(self, cls='current', retaintokenisation=False, previousdelimiter="",strict=False, correctionhandling=CorrectionHandling.CURRENT, normalize_spaces=False, hidden=False, trimspaces=True):
+    def text(self, cls='current', retaintokenisation=False, previousdelimiter="",strict=False, correctionhandling=CorrectionHandling.CURRENT, normalize_spaces=False, hidden=False, trim_spaces=True):
         """Get the text associated with this element (of the specified class)
 
         The text will be constructed from child-elements whereever possible, as they are more specific.
@@ -1384,7 +1384,7 @@ class AbstractElement:
             strict (bool):  Set this iif you are strictly interested in the text explicitly associated with the element, without recursing into children. Defaults to ``False``.
             correctionhandling: Specifies what text to retrieve when corrections are encountered. The default is ``CorrectionHandling.CURRENT``, which will retrieve the corrected/current text. You can set this to ``CorrectionHandling.ORIGINAL`` if you want the text prior to correction, and ``CorrectionHandling.EITHER`` if you don't care.
             normalize_spaces (bool): Return the text with multiple spaces, linebreaks, tabs normalized to single spaces
-            trimspaces (bool): Trim leading and trailing spaces, this is default behaviour since FoLiA v2.4.1
+            trim_spaces (bool): Trim leading and trailing spaces, this is default behaviour since FoLiA v2.4.1
             hidden (bool): Include hidden elements, defaults to ``False``.
 
         Example::
@@ -1399,24 +1399,24 @@ class AbstractElement:
         """
 
         if strict:
-            return self.textcontent(cls, correctionhandling,hidden=hidden).text(normalize_spaces=normalize_spaces, trimspaces=trimspaces)
+            return self.textcontent(cls, correctionhandling,hidden=hidden).text(normalize_spaces=normalize_spaces, trim_spaces=trim_spaces)
 
         if self.TEXTCONTAINER:
             s = ""
             l = len(self)
             for i, e in enumerate(self):
                 if isstring(e):
-                    if trimspaces and i == 0 and i == l - 1:
+                    if trim_spaces and i == 0 and i == l - 1:
                         s += e.strip() #strips leading and trailing whitespace (proycon/folia#88)
-                    elif trimspaces  and i == 0:
+                    elif trim_spaces  and i == 0:
                         s += e.lstrip() #strips leading whitespace (proycon/folia#88)
-                    elif trimspaces  and i == l -1:
+                    elif trim_spaces  and i == l -1:
                         s += e.rstrip() #strips trailing whitespace (proycon/folia#88)
                     else:
                         s += e
                 elif e.PRINTABLE:
                     if s: s += e.TEXTDELIMITER #for AbstractMarkup, will usually be ""
-                    s += e.text(trimspaces=trimspaces)
+                    s += e.text(trim_spaces=trim_spaces)
             if normalize_spaces:
                 return norm_spaces(s)
             else:
@@ -4279,9 +4279,9 @@ class TextContent(AbstractContentAnnotation):
         #    raise ValueError("There are illegal unicode control characters present in TextContent: " + repr(self.data[0]))
 
 
-    def text(self, normalize_spaces=False, trimspaces=True):
+    def text(self, normalize_spaces=False, trim_spaces=True):
         """Obtain the text (unicode instance)"""
-        return super(TextContent,self).text(normalize_spaces=normalize_spaces, trimspaces=trimspaces) #AbstractElement will handle it now, merely overridden to get rid of parameters that dont make sense in this context
+        return super(TextContent,self).text(normalize_spaces=normalize_spaces, trim_spaces=trim_spaces) #AbstractElement will handle it now, merely overridden to get rid of parameters that dont make sense in this context
 
     def settext(self, text):
         self.data = [text]
@@ -4744,7 +4744,7 @@ class Linebreak(AbstractStructureElement, AbstractTextMarkup): #this element has
         super(Linebreak, self).__init__(doc, *args, **kwargs)
 
 
-    def text(self, cls='current', retaintokenisation=False, previousdelimiter="", strict=False, correctionhandling=None, normalize_spaces=False, hidden=False, trimspaces=True):
+    def text(self, cls='current', retaintokenisation=False, previousdelimiter="", strict=False, correctionhandling=None, normalize_spaces=False, hidden=False, trim_spaces=True):
         if normalize_spaces:
             return " "
         else:
@@ -4800,7 +4800,7 @@ class Hyphbreak(AbstractTextMarkup):
             self.newpage = False
         super(Hyphbreak, self).__init__(doc, *args, **kwargs)
 
-    def text(self, cls='current', retaintokenisation=False, previousdelimiter="", strict=False, correctionhandling=None, normalize_spaces=False, hidden=False, trimspaces=True):
+    def text(self, cls='current', retaintokenisation=False, previousdelimiter="", strict=False, correctionhandling=None, normalize_spaces=False, hidden=False, trim_spaces=True):
         return ""
 
     @classmethod
