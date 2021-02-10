@@ -826,7 +826,8 @@ class AbstractElement:
             except NoDefaultError as e:
                 if doc.fixunassignedprocessor:
                     for processor in doc.getprocessors(annotationtype, self.set): #iterate over all
-                        self.processor = processor #assign the last one
+                        self.processor = processor #assign the first one
+                        break
                 else:
                     raise e
 
