@@ -2420,8 +2420,8 @@ class AbstractElement:
         else:
             FOLIA1 = False
 
-        if attribs is None: attribs = {}
-        if elements is None: elements = []
+        if not attribs: attribs = {}
+        if not elements: elements = []
 
         if self.id:
             attribs['{http://www.w3.org/XML/1998/namespace}id'] = self.id
