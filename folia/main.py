@@ -521,14 +521,14 @@ def xmltreefromstring(s):
     if isinstance(s,str):
         s = s.encode('utf-8')
     try:
-        return ElementTree.parse(BytesIO(s), ElementTree.XMLParser(collect_ids=False))
+        return ElementTree.parse(BytesIO(s), ElementTree.XMLParser(collect_ids=False, huge_tree=True))
     except TypeError:
         return ElementTree.parse(BytesIO(s), ElementTree.XMLParser()) #older lxml, may leak!!!!
 
 def xmltreefromfile(filename):
     """Internal function to read an XML file"""
     try:
-        return ElementTree.parse(filename, ElementTree.XMLParser(collect_ids=False))
+        return ElementTree.parse(filename, ElementTree.XMLParser(collect_ids=False, huge_tree=True))
     except TypeError:
         return ElementTree.parse(filename, ElementTree.XMLParser()) #older lxml, may leak!!
 
@@ -2420,8 +2420,8 @@ class AbstractElement:
         else:
             FOLIA1 = False
 
-        if not attribs: attribs = {}
-        if not elements: elements = []
+        if attribs is None: attribs = {}
+        if elements is None: elements = []
 
         if self.id:
             attribs['{http://www.w3.org/XML/1998/namespace}id'] = self.id
@@ -2577,8 +2577,7 @@ class AbstractElement:
         tag = self.XMLTAG
         if self.doc and FOLIA1 and self.doc.keepversion and tag in OLDTAGS_REVERSE and tag != "item":
             tag = OLDTAGS_REVERSE[tag]
-        e = getattr(E, tag)(**attribs)
-
+        e = E(tag,**attribs)
 
 
         if not skipchildren and self.data:
@@ -6099,8 +6098,6 @@ class AlternativeLayers(AbstractHigherOrderAnnotation):
 
 class External(AbstractHigherOrderAnnotation):
     """External annotation makes a reference to an external FoLiA document whose structure is inserted at the exact place the external element occurs."""
-    pass
-
 
 
 class WordReference(AbstractElement):
@@ -9107,7 +9104,7 @@ def validate(filename,schema=None,deep=False):
 
     try:
         try:
-            doc = ElementTree.parse(filename, ElementTree.XMLParser(collect_ids=False) )
+            doc = ElementTree.parse(filename, ElementTree.XMLParser(collect_ids=False, huge_tree=True) )
         except TypeError:
             doc = ElementTree.parse(filename, ElementTree.XMLParser() ) #older lxml, may leak!
     except:
