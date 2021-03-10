@@ -2541,7 +2541,7 @@ class AbstractElement:
             attribs['space'] = 'no'
 
         if 'metadata' not in attribs: #do not override if caller already set it
-            if self.metadata:
+            if self.metadata and self.metadata in self.doc.submetadata:
                 attribs['metadata'] = self.metadata
 
         if self.XLINK:
