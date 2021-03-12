@@ -660,7 +660,7 @@ class AbstractElement:
     def __getattr__(self, attr):
         """Internal method"""
         #overriding getattr so we can get defaults here rather than needing a copy on each element, saves memory
-        if attr in ('set','cls','processor', 'confidence','datetime','n','href','src','speaker','begintime','endtime','xlinktype','xlinktitle','xlinklabel','xlinkrole','xlinkshow','label', 'textclass', 'metadata','exclusive'):
+        if attr in ('set','cls','processor', 'confidence','datetime','n','href','src','speaker','begintime','endtime','xlinktype','xlinktitle','xlinklabel','xlinkrole','xlinkshow','label', 'textclass', 'metadata','exclusive', 'preservespace'):
             return None
         elif attr == 'annotator':
             if self.processor:
@@ -1014,6 +1014,10 @@ class AbstractElement:
                 self.xlinktitle = kwargs['xlinktitle']
                 del kwargs['xlinktitle']
 
+        if 'preservespace' in kwargs:
+            self.preservespace = kwargs['preservespace']
+            del kwargs['preservespace']
+
         if doc and doc.debug >= 2:
             print("   @id           = ", repr(self.id),file=stderr)
             print("   @set          = ", repr(self.set),file=stderr)
@@ -1025,6 +1029,7 @@ class AbstractElement:
             print("   @n            = ", repr(self.n),file=stderr)
             print("   @datetime     = ", repr(self.datetime),file=stderr)
             print("   @href         = ", repr(self.href),file=stderr)
+            print("   @preservespace= ", repr(self.preservespace),file=stderr)
 
 
         #set index
@@ -1308,6 +1313,9 @@ class AbstractElement:
                         #v2.4.1. We don't want a hard failure in that case as older
                         #documents must continue to be valid.
 
+                        #Since v2.5.0, the trim behaviour is even stricter/more consistent
+                        #and more in line with what TEI also does
+
                         #Test if the element is valid according to the old rules
                         try:
                             self.textvalidation(None, trim_spaces=False)
@@ -1382,7 +1390,7 @@ class AbstractElement:
             cls (str): The class of the text content to obtain, defaults to ``current``.
             retaintokenisation (bool): If set, the space attribute on words will be ignored, otherwise it will be adhered to and text will be detokenised as much as possible. Defaults to ``False``.
             previousdelimiter (str): Can be set to a delimiter that was last outputed, useful when chaining calls to :meth:`text`. Defaults to an empty string.
-            strict (bool):  Set this iif you are strictly interested in the text explicitly associated with the element, without recursing into children. Defaults to ``False``.
+            strict (bool):  Set this if you are strictly interested in the text explicitly associated with the element, without recursing into children. Defaults to ``False``.
             correctionhandling: Specifies what text to retrieve when corrections are encountered. The default is ``CorrectionHandling.CURRENT``, which will retrieve the corrected/current text. You can set this to ``CorrectionHandling.ORIGINAL`` if you want the text prior to correction, and ``CorrectionHandling.EITHER`` if you don't care.
             normalize_spaces (bool): Return the text with multiple spaces, linebreaks, tabs normalized to single spaces
             trim_spaces (bool): Trim leading and trailing spaces, this is default behaviour since FoLiA v2.4.1
@@ -1404,21 +1412,57 @@ class AbstractElement:
 
         if self.TEXTCONTAINER:
             s = ""
-            l = len(self)
-            for i, e in enumerate(self):
+            pendingspace = None
+            emitted_pending_space = False
+            for e in self:
                 if isstring(e):
-                    if trim_spaces and i == 0 and i == l - 1:
-                        s += e.strip() #strips leading and trailing whitespace (proycon/folia#88)
-                    elif trim_spaces  and i == 0:
-                        s += e.lstrip() #strips leading whitespace (proycon/folia#88)
-                    elif trim_spaces  and i == l -1:
-                        s += e.rstrip() #strips trailing whitespace (proycon/folia#88)
+                    if pendingspace:
+                        s += pendingspace
+                        pendingspace = None
+                        emitted_pending_space = True
+                    else:
+                        emitted_pending_space = False
+                    if trim_spaces:
+                        #This implements https://github.com/proycon/folia/issues/88
+                        #FoLiA >= v2.5 behaviour (introduced earlier in v2.4.1 but modified thereafter)
+                        l = len(s)
+                        for j, line in enumerate(e.split("\n")):
+                            if j == 0 and not emitted_pending_space and line and line[0] in (" \n"):
+                                #we have an initial whitespace, if the previous item
+                                #did not end in a newline then this is not indentation
+                                #and we preserve it: strip only the tail
+                                s2 = line.rstrip(" \r") #strips  trailing whitespace per line (proycon/folia#88)
+                            else:
+                                s2 = line.strip(" \r") #strips  trailing whitespace per line (proycon/folia#88)
+                                                   #only spaces in the middle (including multiple!) are preserved as is
+                                                   #also strips artefacts of DOS-style line-endings
+                            if j > 0 and s2 and len(s) != l: s += " "
+                            s += s2
+
+                        if e and e[-1] in " \n\t" and s:
+                            #this item has trailing spaces but we stripped them
+                            #this may be premature so
+                            #we reserve to output a them in case there is a next item
+                            pendingspace = ""
+                            for c in reversed(e):
+                                if c in " \t":
+                                    pendingspace += c
+                                elif c == "\n":
+                                    #there is newline involved, all trailing spaces are therefore indentation and are normalized to one
+                                    pendingspace = " "
+                                    break
+                                else:
+                                    break
                     else:
                         s += e
                 elif e.PRINTABLE:
-                    if s: s += e.TEXTDELIMITER #for AbstractMarkup, will usually be ""
-                    s += e.text(trim_spaces=trim_spaces)
-            if normalize_spaces:
+                    if pendingspace:
+                        s += pendingspace
+                        pendingspace = None
+                    if s:
+                        s += e.TEXTDELIMITER #for AbstractMarkup, will usually be "" (but we need it still for <br/>)
+                    s += e.text(trim_spaces=trim_spaces) #(no need to propagate normalize_spaces because we handle it on a macro-level below)
+            if not self.preservespace or normalize_spaces: #unlike trim_spaces, this also normalizes multiple spaces in the middle of content
                 return norm_spaces(s)
             else:
                 return s
@@ -1997,6 +2041,10 @@ class AbstractElement:
         if not self.doc and self.parent.doc:
             self.setdocument(self.parent.doc)
 
+        #Inherit xml:space attribute per XML-specification
+        if self.preservespace is None and self.parent.preservespace is not None:
+            self.preservespace = self.parent.preservespace
+
         if self.doc and self.doc.deepvalidation:
             self.deepvalidation()
 
@@ -2425,6 +2473,12 @@ class AbstractElement:
 
         if self.id:
             attribs['{http://www.w3.org/XML/1998/namespace}id'] = self.id
+
+        #output xml:space (value is typically None, meaning it doesn't get ouputted)
+        if self.preservespace is True:
+            attribs['{http://www.w3.org/XML/1998/namespace}space'] = "preserve"
+        elif self.preservespace is False:
+            attribs['{http://www.w3.org/XML/1998/namespace}space'] = "default"
 
         if form == Form.EXPLICIT:
             if isinstance(self, AbstractStructureElement):
@@ -3096,6 +3150,8 @@ class AbstractElement:
         elif Attrib.SPACE in cls.OPTIONAL_ATTRIBS:
             attribs.append( RXE.optional( RXE.attribute(name='space') ) )
         attribs.append( RXE.optional( RXE.attribute(name='typegroup') ) )  #used in explicit form only
+        attribs.append( RXE.optional(RXE.attribute(RXE.data(type='ID',datatypeLibrary='http://www.w3.org/2001/XMLSchema-datatypes'),name='space', ns="http://www.w3.org/XML/1998/namespace")) )  #xml:space attribute
+
         if cls.XLINK:
             attribs += [ #loose interpretation of specs, not checking whether xlink combinations are valid
                     RXE.optional(RXE.attribute(name='href',ns="http://www.w3.org/1999/xlink"),RXE.attribute(name='type',ns="http://www.w3.org/1999/xlink") ),
@@ -3251,6 +3307,12 @@ class AbstractElement:
             if key[0] == '{':
                 if key == '{http://www.w3.org/XML/1998/namespace}id':
                     key = 'id'
+                elif key == '{http://www.w3.org/XML/1998/namespace}space':
+                    key = 'preservespace'
+                    if value == "preserve":
+                        value = True
+                    else:
+                        value = False
                 elif key.startswith( '{' + NSFOLIA + '}'):
                     key = key[nslen:]
                     if key == 'id':
