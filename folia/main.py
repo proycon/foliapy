@@ -2042,7 +2042,7 @@ class AbstractElement:
             self.setdocument(self.parent.doc)
 
         #Inherit xml:space attribute per XML-specification
-        if self.preservespace is None and self.parent.preservespace is not None:
+        if not hasattr(self,'preservespace') and hasattr(self.parent,'preservespace'):
             self.preservespace = self.parent.preservespace
 
         if self.doc and self.doc.deepvalidation:
