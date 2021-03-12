@@ -8535,8 +8535,8 @@ class Document(object):
                 if tc.offset is not None:
                     try:
                         tc.getreference(validate=True)
-                    except UnresolvableTextContent:
-                        msg = "Text for " + structureelement.__class__.__name__ + ", ID " + str(structureelement.id) + ", textclass " + textclass  + ", has incorrect offset " + str(tc.offset) + " or invalid reference"
+                    except UnresolvableTextContent as e:
+                        msg = "Text for " + structureelement.__class__.__name__ + ", ID " + str(structureelement.id) + ", textclass " + textclass  + ", has incorrect offset " + str(tc.offset) + " or invalid reference: " + str(e)
                         print("TEXT VALIDATION ERROR: " + msg,file=sys.stderr)
                         if not warnonly:
                             raise
