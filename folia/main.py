@@ -1432,7 +1432,7 @@ class AbstractElement:
             pendingspace = None
             for e in self:
                 if isstring(e):
-                    if pendingspace:
+                    if pendingspace: #flush the pendingspace buffer
                         s += pendingspace
                         pendingspace = None
                     if trim_spaces:
@@ -1459,7 +1459,7 @@ class AbstractElement:
                         if e and e[-1] in " \n\t" and s:
                             #this item has trailing spaces but we stripped them
                             #this may be premature so
-                            #we reserve to output a them in case there is a next item
+                            #we reserve to output them later in case there is a next item
                             pendingspace = ""
                             for c in reversed(e):
                                 if c in " \t":
@@ -3174,7 +3174,7 @@ class AbstractElement:
         elif Attrib.SPACE in cls.OPTIONAL_ATTRIBS:
             attribs.append( RXE.optional( RXE.attribute(name='space') ) )
         attribs.append( RXE.optional( RXE.attribute(name='typegroup') ) )  #used in explicit form only
-        attribs.append( RXE.optional(RXE.attribute(RXE.data(type='ID',datatypeLibrary='http://www.w3.org/2001/XMLSchema-datatypes'),name='space', ns="http://www.w3.org/XML/1998/namespace")) )  #xml:space attribute
+        attribs.append( RXE.optional(RXE.attribute(RXE.data(type='string',datatypeLibrary='http://www.w3.org/2001/XMLSchema-datatypes'),name='space', ns="http://www.w3.org/XML/1998/namespace")) )  #xml:space attribute
 
         if cls.XLINK:
             attribs += [ #loose interpretation of specs, not checking whether xlink combinations are valid
