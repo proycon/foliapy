@@ -487,6 +487,10 @@ def norm_spaces(s):
     r"""Normalize spaces, splits on whitespace (\t\s) and rejoins (faster than a s/\s+// regexp)"""
     return ' '.join(s.replace("\t"," ").split(" "))
 
+def norm_spaces_pre25(s):
+    r"""Normalize spaces, splits on whitespace (\n\r\t\s) and rejoins (faster than a s/\s+// regexp)"""
+    return ' '.join(s.split())
+
 def postprocess_spaces(s):
     r"""Postprocessing for spaces, translates temporary \0 bytes to spaces if they are are not preceeded by whitespace"""
     s2 = ""
@@ -1437,17 +1441,19 @@ class AbstractElement:
                         l = len(s)
                         for j, line in enumerate(e.split("\n")):
                             if self.preservespace:
-                                s2 = line.strip("\r")
+                                s2 = line.strip("\r") #strip only artefacts of DOS-style line endings, leave all intact
                             else:
                                 s2 = norm_spaces(line.strip(" \r")) #strips leading and trailing whitespace per line (proycon/folia#88)
-                                                   #only spaces in the middle (including multiple!) are preserved as is
-                                                   #also strips artefacts of DOS-style line-endings
+                                                                    #norm_spaces strips multi-spaces in the middle
+                                                                    #also strips artefacts of DOS-style line-endings
                             if j > 0 and s2 and len(s) != l:
-                                #spaces between lines
+                                #insert spaces between lines that used to be newline separated
                                 s += " "
                             elif j == 0 and s2 and line[0] in " \t" and not self.preservespace:
                                 #we have leading indentation we may need to collapse or ignore entirely
-                                s += "\0" #will be handled in postprocess_spaces() (converts to a space only if no space preceeds it)
+                                #we can't be sure yet what to do so we add a temporary placeholder \0
+                                #this will later be handled in postprocess_spaces() (converts to a space only if no space preceeds it)
+                                s += "\0"
                             s += s2
 
                         if e and e[-1] in " \n\t" and s:
@@ -1466,6 +1472,7 @@ class AbstractElement:
                                 else:
                                     break
                     else:
+                        #old FoLiA <= v2.4.1 behaviour, we don't trim anything
                         s += e
                 elif e.PRINTABLE:
                     if pendingspace:
@@ -1475,10 +1482,14 @@ class AbstractElement:
                         s += e.gettextdelimiter() #for AbstractMarkup, will usually be "" (but we need it still for <br/>)
                     s += e.text(trim_spaces=trim_spaces) #(no need to propagate normalize_spaces because we handle it on a macro-level below)
 
-            if not self.preservespace or normalize_spaces: #unlike trim_spaces, this also normalizes multiple spaces in the middle of content
+            if not trim_spaces and normalize_spaces:
+                #old FoLiA < v2.4.1 behaviour
+                return norm_spaces_pre25(s)
+            elif trim_spaces and (not self.preservespace or normalize_spaces): #unlike trim_spaces, this also normalizes multiple spaces in the middle of content
                 return postprocess_spaces(s)
             else:
                 return s
+
         elif not self.PRINTABLE or (self.HIDDEN and not hidden): #only printable elements can hold text and hidden elements don't contain text unless explicitly queried
             raise NoSuchText
         else:
