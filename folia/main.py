@@ -1476,7 +1476,7 @@ class AbstractElement:
                     s += e.text(trim_spaces=trim_spaces) #(no need to propagate normalize_spaces because we handle it on a macro-level below)
 
             if not self.preservespace or normalize_spaces: #unlike trim_spaces, this also normalizes multiple spaces in the middle of content
-                return norm_spaces(postprocess_spaces(s))
+                return postprocess_spaces(s)
             else:
                 return s
         elif not self.PRINTABLE or (self.HIDDEN and not hidden): #only printable elements can hold text and hidden elements don't contain text unless explicitly queried
