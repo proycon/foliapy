@@ -3069,11 +3069,12 @@ class Test08Validation(unittest.TestCase):
         doc = folia.Document(file=os.path.join(TMPDIR,'foliatest.xml'), loadsetdefinitions=True)
         assert isinstance( doc.setdefinitions["http://raw.github.com/proycon/folia/master/setdefinitions/namedentities.foliaset.xml"], folia.SetDefinition)
 
-class Test09Validation(unittest.TestCase):
+class Test09aDeepValidation(unittest.TestCase):
     def test001_deepvalidation(self):
         """Validation - Deep Validation"""
         folia.Document(file=os.path.join(FOLIAPATH,'examples/frog-deep.1.3.2.folia.xml'), deepvalidation=True, textvalidation=True, allowadhocsets=True)
 
+class Test09bTextValidation(unittest.TestCase):
     def test002_textvalidation(self):
         """Validation - Text Validation"""
         folia.Document(file=os.path.join(FOLIAPATH,'examples/textvalidation.1.5.0.folia.xml'), textvalidation=True)
@@ -3099,6 +3100,29 @@ class Test09Validation(unittest.TestCase):
   </text>
 </FoLiA>""".format(version=folia.FOLIAVERSION, generator='foliapy-v' + folia.LIBVERSION)
         self.assertRaises( folia.InconsistentText, folia.Document, string=xml, textvalidation=True) #exception
+
+    def test003b_valid_text_whitespace(self):
+        """Validation - Valid text (Only whitespace differences)"""
+        xml = """<?xml version="1.0" encoding="UTF-8"?>
+<FoLiA xmlns="http://ilk.uvt.nl/folia" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="test" version="1.5.0" generator="{generator}">
+  <metadata type="native">
+    <annotations>
+      <token-annotation annotator="ucto" annotatortype="auto" datetime="2017-09-25T10:29:52" set="tokconfig-nld"/>
+    </annotations>
+  </metadata>
+  <text xml:id="example.text">
+    <p xml:id="example.p.1">
+      <t>Is
+      het creëren van een volwaardig literair     oeuvre voorbehouden aan schrijvers als Couperus, Haasse, of Grunberg?</t>
+      <s xml:id="example.p.1.s.1">
+        <t>Is het creëren van een volwaardig literair oeuvre voorbehouden aan schrijvers
+	als Couperus, 	Haasse, of
+	Grunberg?</t>
+      </s>
+    </p>
+  </text>
+</FoLiA>""".format(version=folia.FOLIAVERSION, generator='foliapy-v' + folia.LIBVERSION)
+        folia.Document(string=xml, textvalidation=True)
 
 
     def test004_invalid_text_missing(self):
@@ -3228,6 +3252,86 @@ het    ook   ?
     def test008_offset(self):
         """Validation - Offset validation"""
         xml = """<?xml version="1.0" encoding="UTF-8"?>
+<FoLiA xmlns="http://ilk.uvt.nl/folia" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="test" version="2.5.0" generator="{generator}">
+  <metadata type="native">
+    <annotations>
+      <token-annotation annotator="ucto" annotatortype="auto" datetime="2017-09-25T10:29:52" set="tokconfig-nld"/>
+    </annotations>
+  </metadata>
+  <text xml:id="example.text">
+    <p xml:id="example.p.1">
+      <s xml:id="example.p.1.s.1">
+        <t>Is het creëren van een volwaardig literair oeuvre voorbehouden aan schrijvers
+	als Couperus, 	Haasse, of
+	Grunberg?</t>
+        <w xml:id="example.p.1.s.1.w.1" class="WORD">
+          <t offset="0">Is</t>
+        </w>
+        <w xml:id="example.p.1.s.1.w.2" class="WORD">
+          <t offset="3">het</t>
+        </w>
+        <w xml:id="example.p.1.s.1.w.3" class="WORD">
+          <t offset="7">creëren</t>
+        </w>
+        <w xml:id="example.p.1.s.1.w.4" class="WORD">
+          <t offset="15">van</t>
+        </w>
+        <w xml:id="example.p.1.s.1.w.5" class="WORD">
+          <t offset="19">een</t>
+        </w>
+        <w xml:id="example.p.1.s.1.w.6" class="WORD">
+          <t offset="23">volwaardig</t>
+        </w>
+        <w xml:id="example.p.1.s.1.w.7" class="WORD">
+          <t offset="34">literair</t>
+        </w>
+        <w xml:id="example.p.1.s.1.w.8" class="WORD">
+          <t offset="43">oeuvre</t>
+        </w>
+        <w xml:id="example.p.1.s.1.w.9" class="WORD">
+          <t offset="50">voorbehouden</t>
+        </w>
+        <w xml:id="example.p.1.s.1.w.10" class="WORD">
+          <t offset="63">aan</t>
+        </w>
+        <w xml:id="example.p.1.s.1.w.11" class="WORD">
+          <t offset="67">schrijvers</t>
+        </w>
+        <w xml:id="example.p.1.s.1.w.12" class="WORD">
+          <t offset="78">als</t>
+        </w>
+        <w xml:id="example.p.1.s.1.w.13" class="WORD" space="no">
+          <t offset="82">Couperus</t>
+        </w>
+        <w xml:id="example.p.1.s.1.w.14" class="PUNCTUATION">
+          <t offset="90">,</t>
+        </w>
+        <w xml:id="example.p.1.s.1.w.15" class="WORD" space="no">
+          <t offset="92">Haasse</t>
+        </w>
+        <w xml:id="example.p.1.s.1.w.16" class="PUNCTUATION">
+          <t offset="98">,</t>
+        </w>
+        <w xml:id="example.p.1.s.1.w.17" class="WORD">
+          <t offset="100">of</t>
+        </w>
+        <w xml:id="example.p.1.s.1.w.18" class="WORD" space="no">
+          <t offset="103">Grunberg</t>
+        </w>
+        <w xml:id="example.p.1.s.1.w.19" class="PUNCTUATION">
+          <t offset="111">?</t>
+        </w>
+      </s>
+    </p>
+  </text>
+</FoLiA>""".format(version=folia.FOLIAVERSION, generator='foliapy-v' + folia.LIBVERSION)
+        doc = folia.Document(string=xml, textvalidation=True)
+        self.assertEqual( doc['example.p.1.s.1.w.19'].textcontent().getreference(), doc['example.p.1.s.1'] ) #testing resolving implicit reference
+
+
+    def test008_offset_legacy(self):
+        """Validation - Offset validation (legacy)"""
+        xml = """<?xml version="1.0" encoding="UTF-8"?>
 <FoLiA xmlns="http://ilk.uvt.nl/folia" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="test" version="1.5.0" generator="{generator}">
   <metadata type="native">
     <annotations>
@@ -3302,14 +3406,12 @@ het    ook   ?
   </text>
 </FoLiA>""".format(version=folia.FOLIAVERSION, generator='foliapy-v' + folia.LIBVERSION)
         doc = folia.Document(string=xml, textvalidation=True)
-        self.assertEqual( doc['example.p.1.s.1.w.19'].textcontent().getreference(), doc['example.p.1.s.1'] ) #testing resolving implicit reference
-
-
+        self.assertEqual( doc['example.p.1.s.1.w.19'].textcontent().getreference(trim_spaces=False), doc['example.p.1.s.1'] ) #testing resolving implicit reference
 
     def test009_invalid_offset(self):
         """Validation - Offset validation (invalid)"""
         xml = """<?xml version="1.0" encoding="UTF-8"?>
-<FoLiA xmlns="http://ilk.uvt.nl/folia" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="test" version="1.5.0" generator="{generator}">
+<FoLiA xmlns="http://ilk.uvt.nl/folia" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="test" version="2.5.0" generator="{generator}">
   <metadata type="native">
     <annotations>
       <token-annotation annotator="ucto" annotatortype="auto" datetime="2017-09-25T10:29:52" set="tokconfig-nld"/>
@@ -3331,7 +3433,7 @@ het    ook   ?
           <t offset="7">creëren</t>
         </w>
         <w xml:id="example.p.1.s.1.w.4" class="WORD">
-          <t offset="10">van</t> <!-- this one is invalid -->
+          <t offset="15">van</t>
         </w>
         <w xml:id="example.p.1.s.1.w.5" class="WORD">
           <t offset="19">een</t>
@@ -3355,28 +3457,29 @@ het    ook   ?
           <t offset="67">schrijvers</t>
         </w>
         <w xml:id="example.p.1.s.1.w.12" class="WORD">
-          <t offset="79">als</t>
+          <t offset="78">als</t>
         </w>
         <w xml:id="example.p.1.s.1.w.13" class="WORD" space="no">
-          <t offset="83">Couperus</t>
+          <t offset="82">Couperus</t>
         </w>
         <w xml:id="example.p.1.s.1.w.14" class="PUNCTUATION">
-          <t offset="91">,</t>
+          <t offset="90">,</t>
         </w>
         <w xml:id="example.p.1.s.1.w.15" class="WORD" space="no">
-          <t offset="94">Haasse</t>
+          <t offset="92">Haasse</t>
         </w>
         <w xml:id="example.p.1.s.1.w.16" class="PUNCTUATION">
-          <t offset="100">,</t>
+          <t offset="98">,</t>
         </w>
         <w xml:id="example.p.1.s.1.w.17" class="WORD">
-          <t offset="102">of</t>
+          <t offset="100">of</t>
         </w>
         <w xml:id="example.p.1.s.1.w.18" class="WORD" space="no">
-          <t offset="106">Grunberg</t>
+          <!-- This one is invalid -->
+          <t offset="104">Grunberg</t>
         </w>
         <w xml:id="example.p.1.s.1.w.19" class="PUNCTUATION">
-          <t offset="114">?</t>
+          <t offset="111">?</t>
         </w>
       </s>
     </p>
@@ -3433,28 +3536,28 @@ het    ook   ?
           <t offset="67" ref="example.p.1">schrijvers</t>
         </w>
         <w xml:id="example.p.1.s.1.w.12" class="WORD">
-          <t offset="79" ref="example.p.1">als</t>
+          <t offset="78" ref="example.p.1">als</t>
         </w>
         <w xml:id="example.p.1.s.1.w.13" class="WORD" space="no">
-          <t offset="83" ref="example.p.1">Couperus</t>
+          <t offset="82" ref="example.p.1">Couperus</t>
         </w>
         <w xml:id="example.p.1.s.1.w.14" class="PUNCTUATION">
-          <t offset="91" ref="example.p.1">,</t>
+          <t offset="90" ref="example.p.1">,</t>
         </w>
         <w xml:id="example.p.1.s.1.w.15" class="WORD" space="no">
-          <t offset="94" ref="example.p.1">Haasse</t>
+          <t offset="92" ref="example.p.1">Haasse</t>
         </w>
         <w xml:id="example.p.1.s.1.w.16" class="PUNCTUATION">
-          <t offset="100" ref="example.p.1">,</t>
+          <t offset="98" ref="example.p.1">,</t>
         </w>
         <w xml:id="example.p.1.s.1.w.17" class="WORD">
-          <t offset="102" ref="example.p.1">of</t>
+          <t offset="100" ref="example.p.1">of</t>
         </w>
         <w xml:id="example.p.1.s.1.w.18" class="WORD" space="no">
-          <t offset="106" ref="example.p.1">Grunberg</t>
+          <t offset="103" ref="example.p.1">Grunberg</t>
         </w>
         <w xml:id="example.p.1.s.1.w.19" class="PUNCTUATION">
-          <t offset="114" ref="example.p.1">?</t>
+          <t offset="111" ref="example.p.1">?</t>
         </w>
       </s>
     </p>
@@ -3516,25 +3619,25 @@ het    ook   ?
           <t offset="79">als</t>
         </w>
         <w xml:id="example.p.1.s.1.w.13" class="WORD" space="no">
-          <t offset="83">Couperus</t>
+          <t offset="82">Couperus</t>
         </w>
         <w xml:id="example.p.1.s.1.w.14" class="PUNCTUATION">
-          <t offset="91">,</t>
+          <t offset="90">,</t>
         </w>
         <w xml:id="example.p.1.s.1.w.15" class="WORD" space="no">
-          <t offset="94">Haasse</t>
+          <t offset="92">Haasse</t>
         </w>
         <w xml:id="example.p.1.s.1.w.16" class="PUNCTUATION">
-          <t offset="100">,</t>
+          <t offset="98">,</t>
         </w>
         <w xml:id="example.p.1.s.1.w.17" class="WORD">
-          <t offset="102">of</t>
+          <t offset="100">of</t>
         </w>
         <w xml:id="example.p.1.s.1.w.18" class="WORD" space="no">
-          <t offset="106">Grunberg</t>
+          <t offset="103">Grunberg</t>
         </w>
         <w xml:id="example.p.1.s.1.w.19" class="PUNCTUATION">
-          <t offset="114">?</t>
+          <t offset="111">?</t>
         </w>
       </s>
     </p>
@@ -3595,25 +3698,25 @@ het    ook   ?
           <t offset="79">als</t>
         </w>
         <w xml:id="example.p.1.s.1.w.13" class="WORD" space="no">
-          <t offset="83">Couperus</t>
+          <t offset="82">Couperus</t>
         </w>
         <w xml:id="example.p.1.s.1.w.14" class="PUNCTUATION">
-          <t offset="91">,</t>
+          <t offset="90">,</t>
         </w>
         <w xml:id="example.p.1.s.1.w.15" class="WORD" space="no">
-          <t offset="94">Haasse</t>
+          <t offset="92">Haasse</t>
         </w>
         <w xml:id="example.p.1.s.1.w.16" class="PUNCTUATION">
-          <t offset="100">,</t>
+          <t offset="98">,</t>
         </w>
         <w xml:id="example.p.1.s.1.w.17" class="WORD">
-          <t offset="102">of</t>
+          <t offset="100">of</t>
         </w>
         <w xml:id="example.p.1.s.1.w.18" class="WORD" space="no">
-          <t offset="106">Grunberg</t>
+          <t offset="103">Grunberg</t>
         </w>
         <w xml:id="example.p.1.s.1.w.19" class="PUNCTUATION">
-          <t offset="114">?</t>
+          <t offset="111">?</t>
         </w>
       </s>
     </p>
@@ -4343,7 +4446,7 @@ het    ook   ?
     </text>
 </FoLiA>""".format(version=folia.FOLIAVERSION, generator='foliapy-v' + folia.LIBVERSION)
         doc = folia.Document(string=xml, textvalidation=True)
-        self.assertEqual( doc['test.s'].text(), "Dit\n         is een rare test.")
+        self.assertEqual( doc['test.s'].text(), "Dit is een rare test.")
 
 class Test88b_Whitespace(unittest.TestCase):
     def setUp(self):

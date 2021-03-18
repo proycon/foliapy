@@ -485,11 +485,8 @@ def parsetime(s):
 
 def norm_spaces(s):
     r"""Normalize spaces, splits on whitespace (\t\s) and rejoins (faster than a s/\s+// regexp)"""
-    return ' '.join(s.replace("\t"," ").split(" "))
-
-def norm_spaces_pre25(s):
-    r"""Normalize spaces, splits on whitespace (\n\r\t\s) and rejoins (faster than a s/\s+// regexp)"""
     return ' '.join(s.split())
+
 
 def postprocess_spaces(s):
     r"""Postprocessing for spaces, translates temporary \0 bytes to spaces if they are are not preceeded by whitespace"""
@@ -1321,7 +1318,7 @@ class AbstractElement:
                         if c1 != c2:
                             deviation = i
                             break
-                    msg = "Text for " + repr(self) + ", is inconsistent: EXPECTED (after normalization) *****>\n" + deepnormtext + "\n****> BUT FOUND (after normalization) ****>\n" + strictnormtext + "\n******* DEVIATION POINT: " + strictnormtext[max(0,deviation-10):deviation] + "<*HERE*>" + strictnormtext[deviation:deviation+10]
+                    msg = "Text for " + repr(self) + ", is inconsistent: EXPECTED (deep text after normalization) *****>\n" + deepnormtext + "\n****> BUT FOUND (strict text after normalization) ****>\n" + strictnormtext + "\n******* DEVIATION POINT: " + strictnormtext[max(0,deviation-10):deviation] + "<*HERE*>" + strictnormtext[deviation:deviation+10]
 
                     if trim_spaces:
                         #prior to FoLiA v2.4.1, we didn't strip leading/trailing whitespace
@@ -1343,7 +1340,7 @@ class AbstractElement:
                             pass
 
                     if warnonly:
-                        print("TEXT VALIDATION ERROR: " + msg,file=sys.stderr)
+                        print("TEXT VALIDATION ERROR: " + msg + "\n",file=sys.stderr)
                     else:
                         raise InconsistentText(msg)
 
@@ -1472,9 +1469,8 @@ class AbstractElement:
                         s += e.gettextdelimiter() #for AbstractMarkup, will usually be "" (but we need it still for <br/>)
                     s += e.text(trim_spaces=trim_spaces) #(no need to propagate normalize_spaces because we handle it on a macro-level below)
 
-            if not trim_spaces and normalize_spaces:
-                #old FoLiA < v2.4.1 behaviour
-                return norm_spaces_pre25(s)
+            if normalize_spaces:
+                return norm_spaces(s)
             elif trim_spaces and (not self.preservespace or normalize_spaces):
                 return postprocess_spaces(s)
             else:
@@ -4367,7 +4363,7 @@ class TextContent(AbstractContentAnnotation):
         #    raise ValueError("There are illegal unicode control characters present in TextContent: " + repr(self.data[0]))
 
 
-    def getreference(self, validate=True):
+    def getreference(self, validate=True, trim_spaces=True):
         """Returns and validates the Text Content's reference. Raises UnresolvableTextContent when invalid"""
 
         if self.offset is None: return None #nothing to test
@@ -4380,8 +4376,8 @@ class TextContent(AbstractContentAnnotation):
             raise UnresolvableTextContent("Default reference for textcontent not found!")
         elif not ref.hastext(self.cls):
             raise UnresolvableTextContent("Reference (ID " + str(ref.id) + ") has no such text (class=" + self.cls+")")
-        elif validate and self.text() != ref.textcontent(self.cls).text()[self.offset:self.offset+len(self.data[0])]:
-            raise UnresolvableTextContent("Reference (ID " + str(ref.id) + ", class=" + self.cls+") found but no text match at specified offset ("+str(self.offset)+")! Expected '" + self.text() + "', got '" + ref.textcontent(self.cls).text()[self.offset:self.offset+len(self.data[0])] +"'")
+        elif validate and self.text() != ref.textcontent(self.cls).text(trim_spaces=trim_spaces)[self.offset:self.offset+len(self.data[0])]:
+            raise UnresolvableTextContent("Reference (ID " + str(ref.id) + ", class=" + self.cls+") found but no text match at specified offset ("+str(self.offset)+")! Expected '" + self.text() + "', got '" + ref.textcontent(self.cls).text(trim_spaces=trim_spaces)[self.offset:self.offset+len(self.data[0])] +"'")
         else:
             #finally, we made it!
             return ref
@@ -8540,7 +8536,7 @@ class Document(object):
             warnonly = (checkversion(self.version, '1.5.0') < 0) #warn only for documents older than FoLiA v1.5
         if self.textvalidation:
             while self.offsetvalidationbuffer:
-                structureelement, textclass = self.offsetvalidationbuffer.pop()
+                structureelement, textclass = self.offsetvalidationbuffer.pop(0)
 
                 if self.debug: print("[FoLiA DEBUG] Performing offset validation on " + repr(structureelement) + " textclass " + textclass,file=stderr)
 
@@ -8551,8 +8547,17 @@ class Document(object):
                         tc.getreference(validate=True)
                     except UnresolvableTextContent as e:
                         msg = "Text for " + structureelement.__class__.__name__ + ", ID " + str(structureelement.id) + ", textclass " + textclass  + ", has incorrect offset " + str(tc.offset) + " or invalid reference: " + str(e)
+
+                        warn_legacy = False
+                        try:
+                            tc.getreference(validate=True, trim_spaces=False)
+                            msg += "\nHowever, according to the older rules (<v2.4.1) the offsets are accepted. So we are treating this as a warning rather than an error. We do recommend fixing this if this is a document you intend to publish."
+                            warn_legacy = True
+                        except UnresolvableTextContent as e2:
+                            msg += "\n(also checked against older rules prior to FoLiA v2.4.1)"
+
                         print("TEXT VALIDATION ERROR: " + msg,file=sys.stderr)
-                        if not warnonly:
+                        if not warnonly and not warn_legacy:
                             raise
 
 
