@@ -1470,7 +1470,7 @@ class AbstractElement:
                     s += e.text(trim_spaces=trim_spaces) #(no need to propagate normalize_spaces because we handle it on a macro-level below)
 
             if normalize_spaces:
-                return norm_spaces(s)
+                return norm_spaces(postprocess_spaces(s))
             elif trim_spaces and (not self.preservespace or normalize_spaces):
                 return postprocess_spaces(s)
             else:

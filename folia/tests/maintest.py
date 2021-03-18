@@ -3174,7 +3174,7 @@ het    ook   ?
     </p>
   </text>
 </FoLiA>""".format(version=folia.FOLIAVERSION, generator='foliapy-v' + folia.LIBVERSION)
-        folia.Document(file=os.path.join(FOLIAPATH,'examples/textvalidation.1.5.0.folia.xml'), textvalidation=True)
+        folia.Document(string=xml, textvalidation=True)
 
     def test006_multiple_textclasses(self):
         """Validation - Invalid Text (Multiple classes)"""
