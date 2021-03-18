@@ -484,8 +484,21 @@ def parsetime(s):
 
 
 def norm_spaces(s):
-    r"""Normalize spaces, splits on whitespace (\n\r\t\s) and rejoins (faster than a s/\s+// regexp)"""
-    return ' '.join(s.split())
+    r"""Normalize spaces, splits on whitespace (\t\s) and rejoins (faster than a s/\s+// regexp)"""
+    return ' '.join(s.replace("\t"," ").split(" "))
+
+def postprocess_spaces(s):
+    r"""Postprocessing for spaces, translates temporary \0 bytes to spaces if they are are not preceeded by whitespace"""
+    s2 = ""
+    for i, c in enumerate(s):
+        if c == "\0":
+            if i > 0 and s[i-1] not in (" ","\n","\r","\t"):
+                s2 += " "
+            #null byte is dropped otherwise
+        else:
+            s2 += c
+    return s2
+
 
 def parse_datetime(s): #source: http://stackoverflow.com/questions/2211362/how-to-parse-xsddatetime-format
     """Returns (datetime, tz offset in minutes) or (None, None)."""
@@ -1413,30 +1426,28 @@ class AbstractElement:
         if self.TEXTCONTAINER:
             s = ""
             pendingspace = None
-            emitted_pending_space = False
             for e in self:
                 if isstring(e):
                     if pendingspace:
                         s += pendingspace
                         pendingspace = None
-                        emitted_pending_space = True
-                    else:
-                        emitted_pending_space = False
                     if trim_spaces:
                         #This implements https://github.com/proycon/folia/issues/88
                         #FoLiA >= v2.5 behaviour (introduced earlier in v2.4.1 but modified thereafter)
                         l = len(s)
                         for j, line in enumerate(e.split("\n")):
-                            if j == 0 and not emitted_pending_space and line and line[0] in (" \n"):
-                                #we have an initial whitespace, if the previous item
-                                #did not end in a newline then this is not indentation
-                                #and we preserve it: strip only the tail
-                                s2 = line.rstrip(" \r") #strips  trailing whitespace per line (proycon/folia#88)
+                            if self.preservespace:
+                                s2 = line.strip("\r")
                             else:
-                                s2 = line.strip(" \r") #strips  trailing whitespace per line (proycon/folia#88)
+                                s2 = norm_spaces(line.strip(" \r")) #strips leading and trailing whitespace per line (proycon/folia#88)
                                                    #only spaces in the middle (including multiple!) are preserved as is
                                                    #also strips artefacts of DOS-style line-endings
-                            if j > 0 and s2 and len(s) != l: s += " "
+                            if j > 0 and s2 and len(s) != l:
+                                #spaces between lines
+                                s += " "
+                            elif j == 0 and s2 and line[0] in " \t" and not self.preservespace:
+                                #we have leading indentation we may need to collapse or ignore entirely
+                                s += "\0" #will be handled in postprocess_spaces() (converts to a space only if no space preceeds it)
                             s += s2
 
                         if e and e[-1] in " \n\t" and s:
@@ -1446,7 +1457,8 @@ class AbstractElement:
                             pendingspace = ""
                             for c in reversed(e):
                                 if c in " \t":
-                                    pendingspace += c
+                                    if not self.preservespace:
+                                        pendingspace = " "
                                 elif c == "\n":
                                     #there is newline involved, all trailing spaces are therefore indentation and are normalized to one
                                     pendingspace = " "
@@ -1460,10 +1472,11 @@ class AbstractElement:
                         s += pendingspace
                         pendingspace = None
                     if s:
-                        s += e.TEXTDELIMITER #for AbstractMarkup, will usually be "" (but we need it still for <br/>)
+                        s += e.gettextdelimiter() #for AbstractMarkup, will usually be "" (but we need it still for <br/>)
                     s += e.text(trim_spaces=trim_spaces) #(no need to propagate normalize_spaces because we handle it on a macro-level below)
+
             if not self.preservespace or normalize_spaces: #unlike trim_spaces, this also normalizes multiple spaces in the middle of content
-                return norm_spaces(s)
+                return norm_spaces(postprocess_spaces(s))
             else:
                 return s
         elif not self.PRINTABLE or (self.HIDDEN and not hidden): #only printable elements can hold text and hidden elements don't contain text unless explicitly queried
