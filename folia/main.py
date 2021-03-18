@@ -1410,7 +1410,7 @@ class AbstractElement:
             strict (bool):  Set this if you are strictly interested in the text explicitly associated with the element, without recursing into children. Defaults to ``False``.
             correctionhandling: Specifies what text to retrieve when corrections are encountered. The default is ``CorrectionHandling.CURRENT``, which will retrieve the corrected/current text. You can set this to ``CorrectionHandling.ORIGINAL`` if you want the text prior to correction, and ``CorrectionHandling.EITHER`` if you don't care.
             normalize_spaces (bool): Return the text with multiple spaces, linebreaks, tabs normalized to single spaces
-            trim_spaces (bool): Trim leading and trailing spaces, this is default behaviour since FoLiA v2.4.1
+            trim_spaces (bool): Trim leading and trailing spaces, this is default behaviour since FoLiA v2.4.1 and should only be set to False for compatibility with older documents
             hidden (bool): Include hidden elements, defaults to ``False``.
 
         Example::
@@ -1429,12 +1429,12 @@ class AbstractElement:
 
         if self.TEXTCONTAINER:
             s = ""
-            pendingspace = None
+            pendingspace = False
             for e in self:
                 if isstring(e):
                     if pendingspace: #flush the pendingspace buffer
-                        s += pendingspace
-                        pendingspace = None
+                        s += " "
+                        pendingspace = False
                     if trim_spaces:
                         #This implements https://github.com/proycon/folia/issues/88
                         #FoLiA >= v2.5 behaviour (introduced earlier in v2.4.1 but modified thereafter)
@@ -1449,35 +1449,25 @@ class AbstractElement:
                             if j > 0 and s2 and len(s) != l:
                                 #insert spaces between lines that used to be newline separated
                                 s += " "
-                            elif j == 0 and s2 and line[0] in " \t" and not self.preservespace:
+                            elif j == 0 and s2 and line and line[0] in " \t" and not self.preservespace:
                                 #we have leading indentation we may need to collapse or ignore entirely
                                 #we can't be sure yet what to do so we add a temporary placeholder \0
                                 #this will later be handled in postprocess_spaces() (converts to a space only if no space preceeds it)
                                 s += "\0"
                             s += s2
 
-                        if e and e[-1] in " \n\t" and s:
+                        if e and e[-1] in " \n\t" and s and not self.preservespace:
                             #this item has trailing spaces but we stripped them
                             #this may be premature so
                             #we reserve to output them later in case there is a next item
-                            pendingspace = ""
-                            for c in reversed(e):
-                                if c in " \t":
-                                    if not self.preservespace:
-                                        pendingspace = " "
-                                elif c == "\n":
-                                    #there is newline involved, all trailing spaces are therefore indentation and are normalized to one
-                                    pendingspace = " "
-                                    break
-                                else:
-                                    break
+                            pendingspace = True
                     else:
                         #old FoLiA <= v2.4.1 behaviour, we don't trim anything
                         s += e
                 elif e.PRINTABLE:
                     if pendingspace:
-                        s += pendingspace
-                        pendingspace = None
+                        s += " "
+                        pendingspace = False
                     if s:
                         s += e.gettextdelimiter() #for AbstractMarkup, will usually be "" (but we need it still for <br/>)
                     s += e.text(trim_spaces=trim_spaces) #(no need to propagate normalize_spaces because we handle it on a macro-level below)
@@ -1485,7 +1475,7 @@ class AbstractElement:
             if not trim_spaces and normalize_spaces:
                 #old FoLiA < v2.4.1 behaviour
                 return norm_spaces_pre25(s)
-            elif trim_spaces and (not self.preservespace or normalize_spaces): #unlike trim_spaces, this also normalizes multiple spaces in the middle of content
+            elif trim_spaces and (not self.preservespace or normalize_spaces):
                 return postprocess_spaces(s)
             else:
                 return s
