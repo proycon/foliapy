@@ -4345,6 +4345,62 @@ het    ook   ?
         doc = folia.Document(string=xml, textvalidation=True)
         self.assertEqual( doc['test.s'].text(), "Dit\n         is een rare test.")
 
+class Test88b_Whitespace(unittest.TestCase):
+    def setUp(self):
+        self.doc = folia.Document(file=os.path.join(FOLIAPATH,"examples/tests/issue88b.2.5.0.folia.xml"))
+
+    def test001_doublenested(self):
+        """Whitespace - Heavy markedup, double nested and multiline"""
+        self.assertEqual( self.doc['test.p.1'].text() , "deel woord extra" )
+
+    def test002_multiline_markup(self):
+        """Whitespace - Multiline markup"""
+        self.assertEqual( self.doc['test.p.2'].text() , "deel woord extra" )
+
+    def test003_multiline_plain(self):
+        """Whitespace - Multiline plain"""
+        self.assertEqual( self.doc['test.p.3'].text() , "deel woord extra" )
+
+    def test004_oneline_simple_markup(self):
+        """Whitespace - Single line simple markup"""
+        self.assertEqual( self.doc['test.p.4'].text() , "deel woord extra" )
+
+    def test005_strip_space(self):
+        """Whitespace - Strip leading/trailing space"""
+        self.assertEqual( self.doc['test.p.5'].text() , "deel woord extra" )
+
+    def test006_collapse_space(self):
+        """Whitespace - Collapse multi-space"""
+        self.assertEqual( self.doc['test.p.6'].text() , "deel woord extra" )
+
+    def test007_preserve_multispace(self):
+        """Whitespace - Preserve multispace"""
+        self.assertEqual( self.doc['test.p.7'].text() , "deel  woord  extra" )
+
+    def test008_preserve_ltspace(self):
+        """Whitespace - Preserve leading/trailing space"""
+        self.assertEqual( self.doc['test.p.8'].text() , "  deel      woord        extra" )
+
+    def test009_nospace(self):
+        """Whitespace - No space between non-spaced markup elements"""
+        self.assertEqual( self.doc['test.p.9'].text() , "deelwoord extra" )
+
+    def test010_linebreaks(self):
+        """Whitespace - Explicit linebreaks"""
+        self.assertEqual( self.doc['test.p.10'].text() , "deel\nwoord\nextra\n" )
+
+    def test011_running(self):
+        """Whitespace - Running text"""
+        self.assertEqual( self.doc['test.p.11'].text() , "I Buiten- en binnenlandse hoogleraren, lectoren en oud-docenten in de neerlandistiek, sprekers, bestuurs- en stafleden van de IVN." )
+
+    def test012_running2(self):
+        """Whitespace - Running text with space after markup"""
+        self.assertEqual( self.doc['test.p.12'].text() , "I Buiten- en binnenlandse hoogleraren, lectoren en oud-docenten in de neerlandistiek, sprekers, bestuurs- en stafleden van de IVN ." )
+
+    def test013_nospace_feat(self):
+        """Whitespace - No space despite t-hbr, markup and features"""
+        self.assertEqual( self.doc['test.p.13'].text() , "Es entspricht einerseits nicht den Erwartungen derjenigen, welche in betreff der Lage der Landarbeiter nur solche" )
+
 
 with open(os.path.join(FOLIAPATH, 'examples/full-legacy.1.5.folia.xml'), 'r',encoding='utf-8') as foliaexample_f:
     LEGACYEXAMPLE = foliaexample_f.read()
