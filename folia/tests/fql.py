@@ -73,7 +73,7 @@ Qcomplexadd = "APPEND w (ADD t WITH text \"gisteren\" ADD lemma OF \"lemmas-nl\"
 Qedittext = "EDIT w WHERE text = \"terweil\" WITH text \"terwijl\""
 Qedittext2 = "EDIT t WITH text \"terwijl\" FOR w WHERE text = \"terweil\" RETURN target"
 Qedittext3 = "EDIT t WITH text \"de\" FOR w ID \"WR-P-E-J-0000000001.p.1.s.8.w.10\" RETURN target"
-Qedittext4 = "EDIT t WITH text \"ter\nwijl\" FOR w WHERE text = \"terweil\" RETURN target"
+Qedittext4 = "EDIT t WITH text \"ter wijl\" FOR w WHERE text = \"terweil\" RETURN target"
 
 Qhas = "SELECT w WHERE (pos HAS class = \"LET()\")"
 Qhas_shortcut = "SELECT w WHERE :pos = \"LET()\""
@@ -405,7 +405,7 @@ class Test3Evaluation(unittest.TestCase):
     def test12d_edittext(self):
         q = fql.Query(Qedittext4)
         results = q(self.doc)
-        self.assertEqual(results[0].text(), "ter\nwijl")
+        self.assertEqual(results[0].text(), "ter wijl")
         self.assertTrue(xmlcheck(results[0].xmlstring(), "<w xmlns=\"http://ilk.uvt.nl/folia\" xml:id=\"WR-P-E-J-0000000001.p.1.s.8.w.9\"><t>ter\nwijl</t><errordetection class=\"spelling\"/><pos class=\"VG(onder)\" set=\"https://raw.githubusercontent.com/proycon/folia/master/setdefinitions/frog-mbpos-cgn\"/><lemma class=\"terweil\"/></w>"))
 
     def test13_subfilter(self):
