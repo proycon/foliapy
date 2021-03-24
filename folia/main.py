@@ -120,7 +120,7 @@ class Attrib:
 #foliaspec:annotationtype
 #Defines all annotation types (as part of the AnnotationType enumeration)
 class AnnotationType:
-    TEXT, TOKEN, DIVISION, PARAGRAPH, HEAD, LIST, FIGURE, WHITESPACE, LINEBREAK, SENTENCE, POS, LEMMA, DOMAIN, SENSE, SYNTAX, CHUNKING, ENTITY, CORRECTION, ERRORDETECTION, PHON, SUBJECTIVITY, MORPHOLOGICAL, EVENT, DEPENDENCY, TIMESEGMENT, GAP, QUOTE, NOTE, REFERENCE, RELATION, SPANRELATION, COREFERENCE, SEMROLE, METRIC, LANG, STRING, TABLE, STYLE, PART, UTTERANCE, ENTRY, TERM, DEFINITION, EXAMPLE, PHONOLOGICAL, PREDICATE, OBSERVATION, SENTIMENT, STATEMENT, ALTERNATIVE, RAWCONTENT, COMMENT, DESCRIPTION, HYPHENATION, HIDDENTOKEN, MODALITY, EXTERNAL = range(57)
+    TEXT, TOKEN, DIVISION, PARAGRAPH, HEAD, LIST, FIGURE, WHITESPACE, LINEBREAK, SENTENCE, POS, LEMMA, DOMAIN, SENSE, SYNTAX, CHUNKING, ENTITY, CORRECTION, ERRORDETECTION, PHON, SUBJECTIVITY, MORPHOLOGICAL, EVENT, DEPENDENCY, TIMESEGMENT, GAP, QUOTE, NOTE, REFERENCE, RELATION, SPANRELATION, COREFERENCE, SEMROLE, METRIC, LANG, STRING, TABLE, STYLE, PART, UTTERANCE, ENTRY, TERM, DEFINITION, EXAMPLE, PHONOLOGICAL, PREDICATE, OBSERVATION, SENTIMENT, STATEMENT, ALTERNATIVE, RAWCONTENT, COMMENT, DESCRIPTION, HYPHENATION, HIDDENTOKEN, MODALITY, EXTERNAL, HSPACE = range(58)
 
 
 
@@ -4284,6 +4284,25 @@ class TextMarkupError(AbstractTextMarkup):
 class TextMarkupStyle(AbstractTextMarkup):
     """Markup element to style text content (:class:`TextContent`), e.g. make text bold, italics, underlined, coloured, etc.."""
 
+class TextMarkupWhitespace(AbstractTextMarkup):
+    """Whitespace element, signals a vertical whitespace"""
+
+    def text(self, cls='current', retaintokenisation=False, previousdelimiter="", strict=False, correctionhandling=None, normalize_spaces=False, hidden=False):
+        if normalize_spaces:
+            return " "
+        else:
+            return previousdelimiter.strip(' ') + "\n\n"
+
+class TextMarkupHSpace(AbstractTextMarkup):
+    """Whitespace element, signals a horizontal whitespace"""
+
+    def text(self, cls='current', retaintokenisation=False, previousdelimiter="", strict=False, correctionhandling=None, normalize_spaces=False, hidden=False):
+        if normalize_spaces:
+            return " "
+        else:
+            return previousdelimiter.strip(' ') + " "
+
+
 class AbstractContentAnnotation(AbstractElement):
     """Abstract element for content annotation (TextContent and PhonContent)"""
     pass
@@ -4912,6 +4931,7 @@ class Whitespace(AbstractStructureElement):
             return " "
         else:
             return previousdelimiter.strip(' ') + "\n\n"
+
 
 
 class Word(AbstractStructureElement, AbstractWord, AllowCorrections):
@@ -9216,7 +9236,7 @@ def validate(filename,schema=None,deep=False):
 #================================= FOLIA SPECIFICATION ==========================================================
 
 #foliaspec:header
-#This file was last updated according to the FoLiA specification for version 2.5.0 on 2021-03-12 14:23:09, using foliaspec.py
+#This file was last updated according to the FoLiA specification for version 2.5.0 on 2021-03-24 21:06:56, using foliaspec.py
 #Code blocks after a foliaspec comment (until the next newline) are automatically generated. **DO NOT EDIT THOSE** and **DO NOT REMOVE ANY FOLIASPEC COMMENTS** !!!
 
 #foliaspec:structurescope:STRUCTURESCOPE
@@ -9278,6 +9298,7 @@ ANNOTATIONTYPE2XML = {
     AnnotationType.TABLE:  "table" ,
     AnnotationType.TERM:  "term" ,
     AnnotationType.TEXT:  "t" ,
+    AnnotationType.HSPACE:  "t-hspace" ,
     AnnotationType.STYLE:  "t-style" ,
     AnnotationType.TIMESEGMENT:  "timesegment" ,
     AnnotationType.UTTERANCE:  "utt" ,
@@ -9379,9 +9400,11 @@ XML2CLASS = {
     "t-correction": TextMarkupCorrection,
     "t-error": TextMarkupError,
     "t-gap": TextMarkupGap,
+    "t-hspace": TextMarkupHSpace,
     "t-ref": TextMarkupReference,
     "t-str": TextMarkupString,
     "t-style": TextMarkupStyle,
+    "t-whitespace": TextMarkupWhitespace,
     "timesegment": TimeSegment,
     "timing": TimingLayer,
     "utt": Utterance,
@@ -10084,6 +10107,10 @@ TextMarkupError.XMLTAG = "t-error"
 TextMarkupGap.ANNOTATIONTYPE = AnnotationType.GAP
 TextMarkupGap.PRIMARYELEMENT = False
 TextMarkupGap.XMLTAG = "t-gap"
+#------ TextMarkupHSpace -------
+TextMarkupHSpace.ANNOTATIONTYPE = AnnotationType.HSPACE
+TextMarkupHSpace.TEXTDELIMITER = " "
+TextMarkupHSpace.XMLTAG = "t-hspace"
 #------ TextMarkupReference -------
 TextMarkupReference.ANNOTATIONTYPE = AnnotationType.REFERENCE
 TextMarkupReference.PRIMARYELEMENT = False
@@ -10097,6 +10124,11 @@ TextMarkupStyle.ACCEPTED_DATA = (AbstractTextMarkup, Comment, Description, Featu
 TextMarkupStyle.ANNOTATIONTYPE = AnnotationType.STYLE
 TextMarkupStyle.PRIMARYELEMENT = True
 TextMarkupStyle.XMLTAG = "t-style"
+#------ TextMarkupWhitespace -------
+TextMarkupWhitespace.ANNOTATIONTYPE = AnnotationType.WHITESPACE
+TextMarkupWhitespace.PRIMARYELEMENT = False
+TextMarkupWhitespace.TEXTDELIMITER = ""
+TextMarkupWhitespace.XMLTAG = "t-whitespace"
 #------ TimeFeature -------
 TimeFeature.SUBSET = "time"
 TimeFeature.XMLTAG = None
