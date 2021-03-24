@@ -4504,6 +4504,9 @@ class Test88b_Whitespace(unittest.TestCase):
         """Whitespace - No space despite t-hbr, markup and features"""
         self.assertEqual( self.doc['test.p.13'].text() , "Es entspricht einerseits nicht den Erwartungen derjenigen, welche in betreff der Lage der Landarbeiter nur solche" )
 
+    def test014_leadingspace(self):
+        """Whitespace - Maintain leading space"""
+        self.assertEqual( self.doc['test.p.14'].text() , "Terwijl hij den gemiddelden prijs van een karaat geslepen op £ 8 stelde, den prijs van een steen van 2 karaat op 22 X 8 = £ 32" )
 
 with open(os.path.join(FOLIAPATH, 'examples/full-legacy.1.5.folia.xml'), 'r',encoding='utf-8') as foliaexample_f:
     LEGACYEXAMPLE = foliaexample_f.read()

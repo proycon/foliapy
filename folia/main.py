@@ -1446,7 +1446,7 @@ class AbstractElement:
                             if j > 0 and s2 and len(s) != l:
                                 #insert spaces between lines that used to be newline separated
                                 s += " "
-                            elif j == 0 and s2 and line and line[0] in " \t" and not self.preservespace:
+                            elif s2 and line and line[0] in " \t" and not self.preservespace:
                                 #we have leading indentation we may need to collapse or ignore entirely
                                 #we can't be sure yet what to do so we add a temporary placeholder \0
                                 #this will later be handled in postprocess_spaces() (converts to a space only if no space preceeds it)
