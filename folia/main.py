@@ -33,6 +33,7 @@ import multiprocessing
 import bz2
 import gzip
 import random
+import unicodedata
 from socket import getfqdn
 
 
@@ -1438,9 +1439,9 @@ class AbstractElement:
                         l = len(s)
                         for j, line in enumerate(e.split("\n")):
                             if self.preservespace:
-                                s2 = line.strip("\r") #strip only artefacts of DOS-style line endings, leave all intact
+                                s2 = unicodedata.normalize('NFC', line.strip("\r")) #strip only artefacts of DOS-style line endings, leave all intact
                             else:
-                                s2 = norm_spaces(line.strip(" \r")) #strips leading and trailing whitespace per line (proycon/folia#88)
+                                s2 = unicodedata.normalize('NFC', norm_spaces(line.strip(" \r"))) #strips leading and trailing whitespace per line (proycon/folia#88)
                                                                     #norm_spaces strips multi-spaces in the middle
                                                                     #also strips artefacts of DOS-style line-endings
                             if j > 0 and s2 and len(s) != l:
