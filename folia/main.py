@@ -485,9 +485,8 @@ def parsetime(s):
 
 
 def norm_spaces(s):
-    r"""Normalize spaces, splits on whitespace (\t\s) and rejoins"""
-    return " ".join(re.split(r"\s+",s))
-
+    r"""Normalize spaces, splits on all kinds of whitespace and rejoins"""
+    return " ".join(( x for x in re.split(r"\s+",s) if x))
 
 def postprocess_spaces(s):
     r"""Postprocessing for spaces, translates temporary \0 bytes to spaces if they are are not preceeded by whitespace"""
