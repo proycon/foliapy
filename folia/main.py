@@ -4290,7 +4290,7 @@ class TextMarkupStyle(AbstractTextMarkup):
 class TextMarkupWhitespace(AbstractTextMarkup):
     """Whitespace element, signals a vertical whitespace"""
 
-    def text(self, cls='current', retaintokenisation=False, previousdelimiter="", strict=False, correctionhandling=None, normalize_spaces=False, hidden=False):
+    def text(self, cls='current', retaintokenisation=False, previousdelimiter="", strict=False, correctionhandling=None, normalize_spaces=False, hidden=False, trim_spaces=True):
         if normalize_spaces:
             return " "
         else:
@@ -4299,7 +4299,7 @@ class TextMarkupWhitespace(AbstractTextMarkup):
 class TextMarkupHSpace(AbstractTextMarkup):
     """Whitespace element, signals a horizontal whitespace"""
 
-    def text(self, cls='current', retaintokenisation=False, previousdelimiter="", strict=False, correctionhandling=None, normalize_spaces=False, hidden=False):
+    def text(self, cls='current', retaintokenisation=False, previousdelimiter="", strict=False, correctionhandling=None, normalize_spaces=False, hidden=False, trim_spaces=True):
         if normalize_spaces:
             return " "
         else:
@@ -8650,7 +8650,7 @@ class Document(object):
 
 
 
-    def text(self, cls='current', retaintokenisation=False, hidden=False):
+    def text(self, cls='current', retaintokenisation=False, hidden=False, trim_spaces=True):
         """Returns the text of the entire document (returns a unicode instance)
 
         See also:
@@ -8666,7 +8666,7 @@ class Document(object):
         for c in self.data:
             if s: s += "\n\n\n"
             try:
-                s += c.text(cls, retaintokenisation=retaintokenisation, hidden=hidden)
+                s += c.text(cls, retaintokenisation=retaintokenisation, hidden=hidden, trim_spaces=trim_spaces)
             except NoSuchText:
                 continue
         return s
@@ -10112,7 +10112,7 @@ TextMarkupGap.PRIMARYELEMENT = False
 TextMarkupGap.XMLTAG = "t-gap"
 #------ TextMarkupHSpace -------
 TextMarkupHSpace.ANNOTATIONTYPE = AnnotationType.HSPACE
-TextMarkupHSpace.TEXTDELIMITER = " "
+TextMarkupHSpace.TEXTDELIMITER = ""
 TextMarkupHSpace.XMLTAG = "t-hspace"
 #------ TextMarkupReference -------
 TextMarkupReference.ANNOTATIONTYPE = AnnotationType.REFERENCE
