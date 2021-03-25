@@ -488,12 +488,15 @@ def norm_spaces(s):
     r"""Normalize spaces, splits on all kinds of whitespace and rejoins"""
     return " ".join(( x for x in re.split(r"\s+",s) if x))
 
+def is_space(c):
+    return c in (" ","\n","\r","\t", chr(0x00a0), chr(0x1680), chr(0x2000), chr(0x2001), chr(0x2003),chr(0x2004), chr(0x2005), chr(0x2006), chr(0x2007), chr(0x2008), chr(0x2009), chr(0x200a), chr(0x2028), chr(0x2029), chr(0x202f), chr(0x205f), chr(0x3000))
+
 def postprocess_spaces(s):
     r"""Postprocessing for spaces, translates temporary \0 bytes to spaces if they are are not preceeded by whitespace"""
     s2 = ""
     for i, c in enumerate(s):
         if c == "\0":
-            if i > 0 and s[i-1] not in (" ","\n","\r","\t"):
+            if i > 0 and not is_space(s[i-1]):
                 s2 += " "
             #null byte is dropped otherwise
         else:
@@ -1446,14 +1449,14 @@ class AbstractElement:
                             if j > 0 and s2 and len(s) != l:
                                 #insert spaces between lines that used to be newline separated
                                 s += " "
-                            elif s2 and line and line[0] in " \t" and not self.preservespace:
+                            elif s2 and line and (line[0] != "\n" and is_space(line[0])) and not self.preservespace:
                                 #we have leading indentation we may need to collapse or ignore entirely
                                 #we can't be sure yet what to do so we add a temporary placeholder \0
                                 #this will later be handled in postprocess_spaces() (converts to a space only if no space preceeds it)
                                 s += "\0"
                             s += s2
 
-                        if e and e[-1] in " \n\t" and s and not self.preservespace:
+                        if e and is_space(e[-1]) and s and not self.preservespace:
                             #this item has trailing spaces but we stripped them
                             #this may be premature so
                             #we reserve to output them later in case there is a next item
