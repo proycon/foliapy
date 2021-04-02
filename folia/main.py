@@ -679,7 +679,7 @@ class AbstractElement:
         #overriding getattr so we can get defaults here rather than needing a copy on each element, saves memory
         if attr in ('set','cls','processor', 'confidence','datetime','n','href','src','speaker','begintime','endtime','xlinktype','xlinktitle','xlinklabel','xlinkrole','xlinkshow','label', 'textclass', 'metadata','exclusive', 'preservespace'):
             return None
-        elif attr == 'tag':
+        elif attr == 'tags':
             return []
         elif attr == 'annotator':
             if self.processor:
@@ -2618,9 +2618,6 @@ class AbstractElement:
             if self.metadata and self.metadata in self.doc.submetadata:
                 attribs['metadata'] = self.metadata
 
-        if 'tag' not in attribs: #do not override if caller already set it
-            if self.tags:
-                attribs['tag'] = " ".join(self.tags)
 
         if self.XLINK:
             if self.href:
@@ -2656,6 +2653,10 @@ class AbstractElement:
         if self.doc and FOLIA1 and self.doc.keepversion and tag in OLDTAGS_REVERSE and tag != "item":
             tag = OLDTAGS_REVERSE[tag]
         e = E(tag,**attribs)
+
+        if self.tags:
+            #we have to add this after the creating because ElementMaker treats 'tag' as a reserved keyword parameter
+            e.attrib['tag'] = " ".join(self.tags) #XML property uses singular, API plural
 
 
         if not skipchildren and self.data:
