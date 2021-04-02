@@ -4305,6 +4305,9 @@ class TextMarkupHSpace(AbstractTextMarkup):
         else:
             return previousdelimiter.strip(' ') + " "
 
+class TextMarkupLanguage(AbstractTextMarkup):
+    """Language annotation as markup"""
+
 
 class AbstractContentAnnotation(AbstractElement):
     """Abstract element for content annotation (TextContent and PhonContent)"""
@@ -9239,7 +9242,7 @@ def validate(filename,schema=None,deep=False):
 #================================= FOLIA SPECIFICATION ==========================================================
 
 #foliaspec:header
-#This file was last updated according to the FoLiA specification for version 2.5.0 on 2021-03-24 21:06:56, using foliaspec.py
+#This file was last updated according to the FoLiA specification for version 2.5.0 on 2021-04-02 13:21:26, using foliaspec.py
 #Code blocks after a foliaspec comment (until the next newline) are automatically generated. **DO NOT EDIT THOSE** and **DO NOT REMOVE ANY FOLIASPEC COMMENTS** !!!
 
 #foliaspec:structurescope:STRUCTURESCOPE
@@ -9404,6 +9407,7 @@ XML2CLASS = {
     "t-error": TextMarkupError,
     "t-gap": TextMarkupGap,
     "t-hspace": TextMarkupHSpace,
+    "t-lang": TextMarkupLanguage,
     "t-ref": TextMarkupReference,
     "t-str": TextMarkupString,
     "t-style": TextMarkupStyle,
@@ -10114,6 +10118,10 @@ TextMarkupGap.XMLTAG = "t-gap"
 TextMarkupHSpace.ANNOTATIONTYPE = AnnotationType.HSPACE
 TextMarkupHSpace.TEXTDELIMITER = ""
 TextMarkupHSpace.XMLTAG = "t-hspace"
+#------ TextMarkupLanguage -------
+TextMarkupLanguage.ANNOTATIONTYPE = AnnotationType.LANG
+TextMarkupLanguage.PRIMARYELEMENT = False
+TextMarkupLanguage.XMLTAG = "t-lang"
 #------ TextMarkupReference -------
 TextMarkupReference.ANNOTATIONTYPE = AnnotationType.REFERENCE
 TextMarkupReference.PRIMARYELEMENT = False
