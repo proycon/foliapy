@@ -4508,6 +4508,33 @@ class Test88b_Whitespace(unittest.TestCase):
         """Whitespace - Maintain leading space"""
         self.assertEqual( self.doc['test.p.14'].text() , "Terwijl hij den gemiddelden prijs van een karaat geslepen op £ 8 stelde, den prijs van een steen van 2 karaat op 22 X 8 = £ 32" )
 
+class Test_Exxx_Tags(unittest.TestCase): #Issue #93
+    def setUp(self):
+        self.doc = folia.Document(file=os.path.join(FOLIAPATH,"examples/tests/tags.2.5.0.folia.xml"))
+
+    def test_tag_sanity1(self):
+        """Testing sanity of processing tags"""
+        e = self.doc['example.list.1.item.2']
+        self.assertEqual(e.tags, ['remove'])
+        self.assertTrue(e.hastag('remove'))
+        self.assertFalse(e.hastag('blah'))
+
+    def test_tag_sanity1(self):
+        """Testing sanity of processing tags"""
+        e = self.doc['example.list.1.item.3']
+        self.assertEqual(e.tags, ['highlight','translate'])
+        self.assertTrue(e.hastag('translate'))
+        self.assertFalse(e.hastag('blah'))
+
+    def test_tag_sanity3(self):
+        """Testing sanity when modifying tags"""
+        e = self.doc['example.list.1.item.3']
+        self.assertEqual(e.tags, ['highlight','translate'])
+        e.untag('highlight')
+        self.assertFalse(e.hastag('highlight'))
+        self.assertTrue(e.hastag('translate'))
+
+
 with open(os.path.join(FOLIAPATH, 'examples/full-legacy.1.5.folia.xml'), 'r',encoding='utf-8') as foliaexample_f:
     LEGACYEXAMPLE = foliaexample_f.read()
 
