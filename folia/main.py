@@ -679,6 +679,8 @@ class AbstractElement:
         #overriding getattr so we can get defaults here rather than needing a copy on each element, saves memory
         if attr in ('set','cls','processor', 'confidence','datetime','n','href','src','speaker','begintime','endtime','xlinktype','xlinktitle','xlinklabel','xlinkrole','xlinkshow','label', 'textclass', 'metadata','exclusive', 'preservespace'):
             return None
+        elif attr == 'tag':
+            return []
         elif attr == 'annotator':
             if self.processor:
                 return self.processor.name
@@ -988,6 +990,11 @@ class AbstractElement:
         else:
             if Attrib.TEXTCLASS in supported:
                 self.textclass = "current"
+
+        if 'tag' in kwargs:
+            if kwargs['tag']:
+                self.tags = kwargs['tag'].split(" ")
+            del kwargs['tag']
 
         if Attrib.SPACE in supported:
             self.space = True #use spacing as determined by textdelimiter
@@ -2611,6 +2618,10 @@ class AbstractElement:
             if self.metadata and self.metadata in self.doc.submetadata:
                 attribs['metadata'] = self.metadata
 
+        if 'tag' not in attribs: #do not override if caller already set it
+            if self.tags:
+                attribs['tag'] = " ".join(self.tags)
+
         if self.XLINK:
             if self.href:
                 attribs['{http://www.w3.org/1999/xlink}href'] = self.href
@@ -3162,6 +3173,8 @@ class AbstractElement:
             attribs.append(RXE.attribute(name='space') )
         elif Attrib.SPACE in cls.OPTIONAL_ATTRIBS:
             attribs.append( RXE.optional( RXE.attribute(name='space') ) )
+        if Attrib.TAG in cls.OPTIONAL_ATTRIBS:
+            attribs.append( RXE.optional( RXE.attribute(name='tag') ) )
         attribs.append( RXE.optional( RXE.attribute(name='typegroup') ) )  #used in explicit form only
         attribs.append( RXE.optional(RXE.attribute(RXE.data(type='string',datatypeLibrary='http://www.w3.org/2001/XMLSchema-datatypes'),name='space', ns="http://www.w3.org/XML/1998/namespace")) )  #xml:space attribute
 
@@ -3382,6 +3395,27 @@ class AbstractElement:
             e = e.parent
         return None
 
+    def tag(self, tag):
+        """Add a processing tag"""
+        if ' ' in tag:
+            raise ValueError("Processing tags may not contain spaces")
+        if self.tags:
+            self.tags.append(tag)
+        else:
+            self.tags = [tag]
+
+    def hastag(self, tag):
+        """Check whether a processing tag is present"""
+        return tag in self.tags
+
+    def untag(self, tag):
+        """Remove a processing tag"""
+        if tag in self.tags:
+            self.tags.remove(tag)
+            return True
+        else:
+            return False
+
 class AbstractHigherOrderAnnotation(AbstractElement):
     pass
 
@@ -3481,6 +3515,7 @@ class Comment(AbstractHigherOrderAnnotation):
         if not kwargs: kwargs = {}
         kwargs['value'] = node.text
         return super(Comment,Class).parsexml(node, doc, **kwargs)
+
 
 class AllowCorrections(object):
     def correct(self, **kwargs):
