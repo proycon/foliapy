@@ -228,7 +228,9 @@ class Filter(object): #WHERE ....
                 elif q[i] in ("text","value","phon"):
                     v = lambda x,y='text': getattr(x,'value') if isinstance(x, (folia.Description, folia.Comment, folia.Content)) else getattr(x,'phon') if isinstance(x,folia.PhonContent) else getattr(x,'text')()
                 elif q[i] == 'textclass':
-                    v = lambda x,y='text': getattr(x,'cls') if isinstance(x, folia.TextContent) else getattr(x,'textcontent')().cls
+                    v = lambda x,y='current': getattr(x,'cls') if isinstance(x, folia.TextContent) else getattr(x,'textcontent')().cls
+                elif q[i] == 'tag':
+                    v = lambda x,y='sometag': y if x.hastag(y) else False
                 else:
                     v = lambda x,y=q[i]: getattr(x,y)
                 if q[i] == 'confidence':
@@ -1372,6 +1374,12 @@ def getassignments(q, i, assignments,  focus=None):
         elif q.kw(i, 'textclass'):
             assignments[key] = q[i+1]
             i+=2
+        elif q.kw(i, 'tag'):
+            assignments[key] = q[i+1]
+            i+=2
+        elif q.kw(i, 'untag'):
+            assignments[key] = q[i+1]
+            i+=2
         elif q.kw(i, 'datetime'):
             if q[i+1] == "now":
                 assignments[q[i]] = datetime.datetime.now()
@@ -1676,6 +1684,10 @@ class Action(object): #Action expression
                                         focus.cls = value
                                     elif attr == "textclass":
                                         pass #is handled only in combination with setting text
+                                    elif attr == "tag":
+                                        focus.tag(value)
+                                    elif attr == "untag":
+                                        focus.untag(value)
                                     else:
                                         if debug: print("[FQL EVALUATION DEBUG] Action - " + attr +  " = " + str(value) + " on focus ", repr(focus),file=sys.stderr)
                                         setattr(focus, attr, value)
