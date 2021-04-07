@@ -1262,7 +1262,7 @@ class Correction(object): #AS CORRECTION/SUGGESTION expression...
 
         kwargs = self.assemblesuggestions(query,substitution,debug,kwargs)
 
-        if debug: print("[FQL EVALUATION DEBUG] Correction.substitute - Applying and returning correction",file=sys.stderr)
+        if debug: print("[FQL EVALUATION DEBUG] Correction.substitute - Applying and returning correction with keyword arguments:", repr(kwargs),file=sys.stderr)
         return substitution['parent'].correct(**kwargs)
 
 
@@ -1278,6 +1278,10 @@ class Correction(object): #AS CORRECTION/SUGGESTION expression...
                     except KeyError:
                         actionassignments['set'] = query.doc.defaultset(Class)
             actionassignments['id'] = "corrected.%08x" % random.getrandbits(32) #generate a random ID
+            if 'textclass' in actionassignments:
+                #FQL uses text class differently (to set) than the folia library's textclass property (for provenance)
+                actionassignments['settextclass'] = actionassignments['textclass']
+                del actionassignments['textclass']
             e = Class(query.doc, **actionassignments)
             if debug: print("[FQL EVALUATION DEBUG] Correction.assemblesuggestions - Adding to new",file=sys.stderr)
             kwargs['new'].append(e)
@@ -1674,10 +1678,11 @@ class Action(object): #Action expression
                                             if debug: print("[FQL EVALUATION DEBUG] Action - setphon("+ value+ ") on focus ", repr(focus),file=sys.stderr)
                                             focus.setphon(value)
                                         else:
-                                            if debug: print("[FQL EVALUATION DEBUG] Action - settext("+ value+ ") on focus ", repr(focus),file=sys.stderr)
                                             if attr == 'text' and 'textclass' in action.assignments:
+                                                if debug: print("[FQL EVALUATION DEBUG] Action - settext("+ value+ ",cls=" + action.assignments['textclass'] + ") on focus ", repr(focus),file=sys.stderr)
                                                 focus.settext(value, action.assignments['textclass'])
                                             else:
+                                                if debug: print("[FQL EVALUATION DEBUG] Action - settext("+ value+ ") on focus ", repr(focus),file=sys.stderr)
                                                 focus.settext(value)
                                     elif attr == "class":
                                         if debug: print("[FQL EVALUATION DEBUG] Action - " + attr +  " = " + value + " on focus ", repr(focus),file=sys.stderr)
@@ -1870,6 +1875,7 @@ class Action(object): #Action expression
                 constrainedtargetselection_all = []
                 constrainedtargetselection = []
                 if action.form:
+                    if debug: print("[FQL EVALUATION DEBUG] Form - Invoking Subtitution through Form (" + repr(action.form)+")",file=sys.stderr)
                     result = action.form.substitute(query, substitution, None, debug)
                     if len(actions) > 1:
                         focusselection_all.append(result)

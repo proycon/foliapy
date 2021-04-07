@@ -974,7 +974,11 @@ class AbstractElement:
 
         if 'text' in kwargs:
             if kwargs['text']:
-                self.settext(kwargs['text'])
+                if 'settextclass' in kwargs:
+                    self.settext(kwargs['text'], kwargs['settextclass'])
+                    del kwargs['settextclass']
+                else:
+                    self.settext(kwargs['text'])
             del kwargs['text']
 
         if 'phon' in kwargs:
