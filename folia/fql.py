@@ -1372,13 +1372,13 @@ def getassignments(q, i, assignments,  focus=None):
             assignments[key] = q[i+1]
             i+=2
         elif q.kw(i, 'textclass'):
-            assignments[key] = q[i+1]
+            assignments[q[i]] = q[i+1]
             i+=2
         elif q.kw(i, 'tag'):
-            assignments[key] = q[i+1]
+            assignments[q[i]] = q[i+1]
             i+=2
         elif q.kw(i, 'untag'):
-            assignments[key] = q[i+1]
+            assignments[q[i]] = q[i+1]
             i+=2
         elif q.kw(i, 'datetime'):
             if q[i+1] == "now":
