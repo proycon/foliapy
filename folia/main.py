@@ -2439,6 +2439,38 @@ class AbstractElement:
             self.updatetext()
             return e
 
+    def substitute(self, oldchild, newchild, *args, **kwargs):
+        """Substitutes a particular child element with another. The child element can be specified like with ``append()``. Unlike the ``replace()`` function, here you specify explicitly the old child elements, and it can be any child element.
+
+        Arguments:
+            oldchild: The child instance to replace
+
+        See :meth:`AbstractElement.append` for more information and all parameters.
+        """
+        index = self.getindex(oldchild)
+        self.data[index] = None #temporarily clear the entry so it doesn't interfere in any checks
+
+        if inspect.isclass(newchild):
+            newchild = newchild(self.doc, *args, **kwargs)
+
+        if isinstance(oldchild, AbstractElement):
+            oldchild.parent = None
+            if oldchild.id and oldchild.id in self.doc.index:
+                del self.doc.index[oldchild.id]
+
+        if isinstance(newchild,str) and TextContent in self.ACCEPTED_DATA:
+            newchild = TextContent(self.doc, newchild)
+
+
+        if isinstance(newchild, AbstractElement) and newchild.__class__.addable(self, newchild.set):
+            self.data[index] = newchild
+        elif isinstance(newchild, str) and (self.TEXTCONTAINER or self.PHONCONTAINER):
+            self.data[index] = newchild
+        else:
+            raise ValueError("Unable to substitute to an object of type " + newchild.__class__.__name__ + " in " + self.__class__.__name__ + ". Type not allowed as child.")
+
+        newchild.postappend()
+
     def ancestors(self, Class=None):
         """Generator yielding all ancestors of this element, effectively back-tracing its path to the root element. A tuple of multiple classes may be specified.
 
@@ -2817,6 +2849,7 @@ class AbstractElement:
         if not node:
             node = self
         for e in self.data: #pylint: disable=too-many-nested-blocks
+            if e is None: continue #may sometimes occur as a temporary placeholder
             if (not self.TEXTCONTAINER and not self.PHONCONTAINER) or isinstance(e, AbstractElement):
                 if ignore is True:
                     try:

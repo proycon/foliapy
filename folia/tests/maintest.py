@@ -2500,6 +2500,16 @@ class Test04Edit(unittest.TestCase):
 
         self.assertTrue( xmlcheck(word.xmlstring(), '<w xmlns="http://ilk.uvt.nl/folia" xml:id="WR-P-E-J-0000000001.p.1.s.3.w.14"><t>plaats</t><lemma class="plaats"/><pos set="https://raw.githubusercontent.com/proycon/folia/master/setdefinitions/frog-mbpos-cgn" class="BOGUS"/></w>'))
 
+    def test014b_substitute(self):
+        """Edit Check - Substituting an annotation"""
+        word = self.doc['WR-P-E-J-0000000001.p.1.s.3.w.14']
+        word.substitute(word.annotation(folia.PosAnnotation), folia.PosAnnotation, cls='BOGUS', set="https://raw.githubusercontent.com/proycon/folia/master/setdefinitions/frog-mbpos-cgn" )
+
+        self.assertEqual( len(list(word.annotations(folia.PosAnnotation))), 1)
+        self.assertEqual( word.annotation(folia.PosAnnotation).cls, 'BOGUS')
+
+        self.assertTrue( xmlcheck(word.xmlstring(), '<w xmlns="http://ilk.uvt.nl/folia" xml:id="WR-P-E-J-0000000001.p.1.s.3.w.14"><t>plaats</t><lemma class="plaats"/><pos set="https://raw.githubusercontent.com/proycon/folia/master/setdefinitions/frog-mbpos-cgn" class="BOGUS"/></w>'))
+
     def test015_remove(self):
         """Edit Check - Removing an annotation"""
         word = self.doc['WR-P-E-J-0000000001.p.1.s.3.w.14']
