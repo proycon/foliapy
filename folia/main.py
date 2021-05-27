@@ -1291,6 +1291,7 @@ class AbstractElement:
             if correctionhandling is None:
                 #well, we couldn't find our textclass in any correction, just fall back to current and let text validation fail if needed
                 return CorrectionHandling.CURRENT
+            return correctionhandling
 
 
     def textvalidation(self, warnonly=None, trim_spaces=True):
@@ -1314,6 +1315,7 @@ class AbstractElement:
             if self.hastext(cls, strict=True) and not isinstance(self, (Linebreak, Whitespace)):
                 if self.doc and self.doc.debug: print("[FoLiA DEBUG] Text validation on " + repr(self),file=stderr)
                 correctionhandling = self.findcorrectionhandling(cls)
+                print("correctionhandling: ", correctionhandling,file=sys.stderr)
                 if correctionhandling is None:
                     #skipping text validation, correction is too complex (nested) to handle for now; just assume valid (benefit of the doubt)
                     if self.doc and self.doc.debug: print("[FoLiA DEBUG] SKIPPING Text validation on " + repr(self) + ", too complex to handle (nested corrections or inconsistent use)",file=stderr)
