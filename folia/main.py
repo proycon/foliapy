@@ -1315,7 +1315,6 @@ class AbstractElement:
             if self.hastext(cls, strict=True) and not isinstance(self, (Linebreak, Whitespace)):
                 if self.doc and self.doc.debug: print("[FoLiA DEBUG] Text validation on " + repr(self),file=stderr)
                 correctionhandling = self.findcorrectionhandling(cls)
-                print("correctionhandling: ", correctionhandling,file=sys.stderr)
                 if correctionhandling is None:
                     #skipping text validation, correction is too complex (nested) to handle for now; just assume valid (benefit of the doubt)
                     if self.doc and self.doc.debug: print("[FoLiA DEBUG] SKIPPING Text validation on " + repr(self) + ", too complex to handle (nested corrections or inconsistent use)",file=stderr)
