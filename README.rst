@@ -1,8 +1,8 @@
 FoLiA Library for Python
 ================================
 
-.. image:: https://travis-ci.com/proycon/foliapy.svg?branch=master
-    :target: https://travis-ci.com/proycon/foliapy
+.. image:: https://github.com/proycon/analiticcl/actions/workflows/foliapy.yml/badge.svg?branch=master
+    :target: https://github.com/proycon/foliapy/actions/
 
 .. image:: http://readthedocs.org/projects/foliapy/badge/?version=latest
 	:target: http://foliapy.readthedocs.io/en/latest/?badge=latest
