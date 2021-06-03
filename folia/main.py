@@ -1320,9 +1320,9 @@ class AbstractElement:
                     if self.doc and self.doc.debug: print("[FoLiA DEBUG] SKIPPING Text validation on " + repr(self) + ", too complex to handle (nested corrections or inconsistent use)",file=stderr)
                     return True #just assume it's valid then
 
-                strictnormtext = self.text(cls,retaintokenisation=False,strict=True, normalize_spaces=True, hidden=False, trim_spaces=trim_spaces )
+                strictnormtext = self.text(cls,retaintokenisation=False,strict=True, normalize_spaces=True, hidden=False, trim_spaces=trim_spaces, correctionhandling=correctionhandling)
                 try:
-                    deepnormtext = self.text(cls,retaintokenisation=False,strict=False, normalize_spaces=True, hidden=False, trim_spaces=trim_spaces)
+                    deepnormtext = self.text(cls,retaintokenisation=False,strict=False, normalize_spaces=True, hidden=False, trim_spaces=trim_spaces, correctionhandling=correctionhandling)
                 except NoSuchText:
                     deepnormtext = ""
                     if self.doc and self.doc.debug: print("[FoLiA DEBUG] deepnormtext on " + repr(self) + " is empty! (NoSuchText)",file=stderr)
