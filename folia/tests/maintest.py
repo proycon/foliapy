@@ -4529,7 +4529,7 @@ class Test_Exxx_Tags(unittest.TestCase): #Issue #93
         self.assertTrue(e.hastag('remove'))
         self.assertFalse(e.hastag('blah'))
 
-    def test_tag_sanity1(self):
+    def test_tag_sanity2(self):
         """Testing sanity of processing tags"""
         e = self.doc['example.list.1.item.3']
         self.assertEqual(e.tags, ['highlight','translate'])
@@ -4543,6 +4543,18 @@ class Test_Exxx_Tags(unittest.TestCase): #Issue #93
         e.untag('highlight')
         self.assertFalse(e.hastag('highlight'))
         self.assertTrue(e.hastag('translate'))
+
+class Test_Exxx_InvalidReferences(unittest.TestCase):
+    def test_invalidreference1(self):
+        """Testing writing a file with invalid references"""
+        doc = folia.Document(file=os.path.join(FOLIAPATH,"examples/erroneous/invalid-wref.2.0.0.folia.xml"), checkreferences=False)
+        doc.save(os.path.join(TMPDIR,'foliatest_refs.xml'))
+
+    def test_invalidreference2(self):
+        """Testing fixing a file with invalid references"""
+        doc = folia.Document(file=os.path.join(FOLIAPATH,"examples/erroneous/invalid-wref.2.0.0.folia.xml"), checkreferences=False, fixinvalidreferences=True)
+        doc.save(os.path.join(TMPDIR,'foliatest_refs.xml'))
+        doc = folia.Document(file=os.path.join(TMPDIR,"foliatest_refs.xml"))
 
 
 with open(os.path.join(FOLIAPATH, 'examples/full-legacy.1.5.folia.xml'), 'r',encoding='utf-8') as foliaexample_f:

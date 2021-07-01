@@ -6318,9 +6318,19 @@ class WordReference(AbstractElement):
             attribs['id'] = self.id
             try:
                 w = self.doc[self.id]
-                attribs['t'] = w.text()
+                try:
+                    attribs['t'] = w.text()
+                except NoSuchText:
+                    pass
+                orphan = True
+                for a in w.ancestors():
+                    if isinstance(a, (folia.Text, folia.Speech)):
+                        orphan = False
+                if orphan:
+                    assert KeyError
             except KeyError:
-                pass
+                if self.doc.fixinvalidreferences:
+                    return ElementTree.Comment("Reference to non-existant " + self.id + " removed at this point")
 
         return getattr(E, self.XMLTAG)(**attribs)
 
@@ -7219,7 +7229,9 @@ class Document(object):
             debug (bool): Boolean to enable/disable debug
             autodeclare (bool): Automatically declare annotation types and annotators whenever possible (enabled by default for FoLiA v2)
             mode: The mode for loading a document, is either ``folia.Mode.MEMORY``,  in which the entire FoLiA Document will be loaded into memory. This is the default mode and the only mode in which documents can be manipulated and saved againor ``folia.Mode.XPATH``, in which the full XML tree will still be loaded into memory, but conversion to FoLiA classes occurs only when queried. This mode can be used when the full power of XPath is required.
-            fixunassignedprocessor (bool): If set, fixes invalid FoLiA that does not explicitly assign a processor to an annotation when multiple processors are possible (and there is therefore no default). The last processor will be used in this case.
+            checkreferences (bool): Check whether references are valid upon loading (default: True)
+            fixunassignedprocessor (bool): If set, fixes invalid FoLiA that does not explicitly assign a processor to an annotation when multiple processors are possible (and there is therefore no default). The last processor will be used in this case. (default: False)
+            fixinvalidereferences (bool): Do not serialise an invalid reference, remove the reference and output a comment instead. (default: False)
         """
 
 
@@ -7242,7 +7254,7 @@ class Document(object):
         self.index = {} #all IDs go here
         self.declareprocessed = False # Will be set to True when declarations have been processed
 
-        self.checkreferences = True #check whether wrefs point to valid elements, this is good practice but needs to be disabled for streaming readers and <external> (proycon/folia#41)
+        self.checkreferences = kwargs.get('checkreferences', True) #check whether wrefs point to valid elements, this is good practice but needs to be disabled for streaming readers and <external> (proycon/folia#41).
 
         self.metadata = NativeMetaData() #will point to XML Element holding native metadata
         self.metadatatype = "native"
@@ -7264,6 +7276,7 @@ class Document(object):
                                 # False for FoLiA < 2.0
                                 # True for FoLiA >= 2.0
         self.fixunassignedprocessor = kwargs.get('fixunassignedprocessor',False) #Fixes invalid FoLiA that does not explicitly assign a processor and when multiple options are possible (so not defaults)
+        self.fixinvalidreferences = kwargs.get('fixinvalidreferences',False) #Fixes invalid wrefs by simply omitting them from serialisation (if this is not enabled, references will be saved without checking, meaning there is a chance a document may not be load if loaded with the default checkreferences=True)
         self.filename = ""
 
         if 'setdefinitions' in kwargs:
