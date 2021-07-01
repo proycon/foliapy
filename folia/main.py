@@ -970,7 +970,20 @@ class AbstractElement:
         else:
             self.auth = self.__class__.AUTH
 
-
+        if 'textclass' in kwargs:
+            if 'text' in kwargs:
+                #we are editing a text and providing a  textclass,
+                #then what we want is settextclass rather than textclass
+                #(which is for provenance). This may be needed for the FQL library:
+                kwargs['settextclass'] = kwargs['textclass']
+            elif not Attrib.TEXTCLASS in supported:
+                raise ValueError("Textclass is not supported for " + self.__class__.__name__)
+            else:
+                self.textclass = kwargs['textclass']
+            del kwargs['textclass']
+        else:
+            if Attrib.TEXTCLASS in supported:
+                self.textclass = "current"
 
         if 'text' in kwargs:
             if kwargs['text']:
@@ -986,14 +999,6 @@ class AbstractElement:
                 self.setphon(kwargs['phon'])
             del kwargs['phon']
 
-        if 'textclass' in kwargs:
-            if not Attrib.TEXTCLASS in supported:
-                raise ValueError("Textclass is not supported for " + self.__class__.__name__)
-            self.textclass = kwargs['textclass']
-            del kwargs['textclass']
-        else:
-            if Attrib.TEXTCLASS in supported:
-                self.textclass = "current"
 
         if 'tag' in kwargs:
             if kwargs['tag']:
@@ -4454,8 +4459,9 @@ class TextContent(AbstractContentAnnotation):
         """Obtain the text (unicode instance)"""
         return super(TextContent,self).text(normalize_spaces=normalize_spaces, trim_spaces=trim_spaces) #AbstractElement will handle it now, merely overridden to get rid of parameters that dont make sense in this context
 
-    def settext(self, text):
+    def settext(self, text, cls=None):
         self.data = [text]
+        if cls is not None: self.cls = cls
         if not self.data:
             raise ValueError("Empty text content elements are not allowed")
         #if isstring(self.data[0]) and (self.data[0] != self.data[0].translate(ILLEGAL_UNICODE_CONTROL_CHARACTERS)):
