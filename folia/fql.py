@@ -1046,7 +1046,6 @@ class Correction(object): #AS CORRECTION/SUGGESTION expression...
 
         isspan = isinstance(action.focus.Class, folia.AbstractSpanAnnotation)
 
-
         actionassignments = {} #make a copy
         for key, value in action.assignments.items():
             if key == 'class': key = 'cls'
@@ -1087,6 +1086,10 @@ class Correction(object): #AS CORRECTION/SUGGESTION expression...
                 correction = focus.incorrection()
             else:
                 correction = False
+
+            if query.doc.processor and 'processor' not in action.assignments:
+                action.assignments['processor'] = query.doc.processor
+                kwargs['processor'] = query.doc.processor
 
             inheritchildren = []
             if focus and not self.bare: #copy all data within
