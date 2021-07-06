@@ -1150,7 +1150,7 @@ class AbstractElement:
         annotationtype = self.ANNOTATIONTYPE
         if self.doc and annotationtype is not None: #we can only do this check if we have a document, we'll be overly permissive for documentless elements (so caution adviced for those)
             FOLIA2 = self.doc.FOLIA2
-            if not isinstance(self, (Text,Speech)): #Body is an undeclared element
+            if not isinstance(self, (Text,Speech, AbstractCorrectionChild)): #Body is an undeclared element
                 #Check if an element is declared (FoLiA v2+ only), this is a much stricter check than older FoLiA versions
                 #for FoLiA <2 we only check if we have a set
                 if annotationtype in self.doc.alias_set and self.set in self.doc.alias_set[annotationtype]:
