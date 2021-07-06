@@ -8746,8 +8746,8 @@ class Document(object):
 
 
 
-    def text(self, cls='current', retaintokenisation=False, hidden=False, trim_spaces=True):
-        """Returns the text of the entire document (returns a unicode instance)
+    def text(self, cls='current', retaintokenisation=False, hidden=False, trim_spaces=True, correctionhandling=CorrectionHandling.CURRENT):
+        """Returns the text of the entire document, returns a single string
 
         See also:
             :meth:`AbstractElement.text`
@@ -8762,7 +8762,7 @@ class Document(object):
         for c in self.data:
             if s: s += "\n\n\n"
             try:
-                s += c.text(cls, retaintokenisation=retaintokenisation, hidden=hidden, trim_spaces=trim_spaces)
+                s += c.text(cls, retaintokenisation=retaintokenisation, hidden=hidden, trim_spaces=trim_spaces, correctionhandling=correctionhandling)
             except NoSuchText:
                 continue
         return s
