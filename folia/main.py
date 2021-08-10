@@ -4602,12 +4602,21 @@ class TextContent(AbstractContentAnnotation):
     def postappend(self):
         super(TextContent,self).postappend()
         found = set()
+        invalid = set()
         for c in self.parent:
             if isinstance(c,TextContent):
                 if c.cls in found:
-                    raise DuplicateAnnotationError("Can not add multiple text content elements with the same class (" + c.cls + ") to the same structural element!")
+                    invalid.add(c)
                 else:
                     found.add(c.cls)
+
+        if invalid:
+            #ensure invalid elements are removed from the document
+            for c in invalid:
+                cls = c.cls
+                c.parent = None
+                self.parent.remove(c)
+            raise DuplicateAnnotationError("Can not add multiple text content elements with the same class (" + cls + ") to the same structural element!")
 
 
 class PhonContent(AbstractContentAnnotation):
@@ -4719,13 +4728,21 @@ class PhonContent(AbstractContentAnnotation):
     def postappend(self):
         super(PhonContent,self).postappend()
         found = set()
+        invalid = set()
         for c in self.parent:
             if isinstance(c,PhonContent):
                 if c.cls in found:
-                    raise DuplicateAnnotationError("Can not add multiple text content elements with the same class (" + c.cls + ") to the same structural element!")
+                    invalid.add(c)
                 else:
                     found.add(c.cls)
 
+        if invalid:
+            #ensure invalid elements are removed from the document
+            for c in invalid:
+                cls = c.cls
+                c.parent = None
+                self.parent.remove(c)
+            raise DuplicateAnnotationError("Can not add multiple phonetic content elements with the same class (" + cls + ") to the same structural element!")
 
     def finddefaultreference(self):
         """Find the default reference for text offsets:
