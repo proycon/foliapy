@@ -2202,7 +2202,12 @@ class AbstractElement:
         else:
             raise ValueError("Unable to append object of type " + child.__class__.__name__ + " to " + self.__class__.__name__ + ". Type not allowed as child.")
 
-        if dopostappend: child.postappend()
+        if dopostappend:
+            try:
+                child.postappend()
+            except Exception as e:
+                self.data.remove(child)
+                raise e
         return child
 
     def insert(self, index, child, *args, **kwargs):
@@ -2278,7 +2283,11 @@ class AbstractElement:
         else:
             raise ValueError("Unable to append object of type " + child.__class__.__name__ + " to " + self.__class__.__name__ + ". Type not allowed as child.")
 
-        child.postappend()
+        try:
+            child.postappend()
+        except Exception as e:
+            self.data.remove(child)
+            raise e
         return child
 
     def add(self, child, *args, **kwargs):
@@ -2475,7 +2484,11 @@ class AbstractElement:
         else:
             raise ValueError("Unable to substitute to an object of type " + newchild.__class__.__name__ + " in " + self.__class__.__name__ + ". Type not allowed as child.")
 
-        newchild.postappend()
+        try:
+            newchild.postappend()
+        except Exception as e:
+            self.data.remove(newchild)
+            raise e
 
     def ancestors(self, Class=None):
         """Generator yielding all ancestors of this element, effectively back-tracing its path to the root element. A tuple of multiple classes may be specified.
@@ -4602,21 +4615,12 @@ class TextContent(AbstractContentAnnotation):
     def postappend(self):
         super(TextContent,self).postappend()
         found = set()
-        invalid = set()
         for c in self.parent:
             if isinstance(c,TextContent):
                 if c.cls in found:
-                    invalid.add(c)
+                    raise DuplicateAnnotationError("Can not add multiple text content elements with the same class (" + cls + ") to the same structural element!")
                 else:
                     found.add(c.cls)
-
-        if invalid:
-            #ensure invalid elements are removed from the document
-            for c in invalid:
-                cls = c.cls
-                c.parent = None
-                self.parent.remove(c)
-            raise DuplicateAnnotationError("Can not add multiple text content elements with the same class (" + cls + ") to the same structural element!")
 
 
 class PhonContent(AbstractContentAnnotation):
@@ -4732,17 +4736,9 @@ class PhonContent(AbstractContentAnnotation):
         for c in self.parent:
             if isinstance(c,PhonContent):
                 if c.cls in found:
-                    invalid.add(c)
+                    raise DuplicateAnnotationError("Can not add multiple phonetic content elements with the same class (" + cls + ") to the same structural element!")
                 else:
                     found.add(c.cls)
-
-        if invalid:
-            #ensure invalid elements are removed from the document
-            for c in invalid:
-                cls = c.cls
-                c.parent = None
-                self.parent.remove(c)
-            raise DuplicateAnnotationError("Can not add multiple phonetic content elements with the same class (" + cls + ") to the same structural element!")
 
     def finddefaultreference(self):
         """Find the default reference for text offsets:
@@ -5220,7 +5216,11 @@ class AbstractSpanAnnotation(AbstractElement, AllowGenerateID, AllowCorrections)
                         needsort = True
 
             self.data.insert(insertionpoint, child)
-            child.postappend()
+            try:
+                child.postappend()
+            except Exception as e:
+                self.data.remove(child)
+                raise e
             if needsort and self.doc and self.doc.doneparsing:
                 try:
                     self.doc.layersortbuffer.append(self.layer())
