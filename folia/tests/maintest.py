@@ -4502,6 +4502,10 @@ class Test88b_Whitespace(unittest.TestCase):
         """Whitespace - Explicit linebreaks"""
         self.assertEqual( self.doc['test.p.10'].text() , "deel\nwoord\nextra\n" )
 
+    def test010b_linebreaks(self):
+        """Whitespace - Explicit linebreaks (2)"""
+        self.assertEqual( self.doc['test.p.10b'].text() , "deel\nwoord\nextra\n" )
+
     def test011_running(self):
         """Whitespace - Running text"""
         self.assertEqual( self.doc['test.p.11'].text() , "I Buiten- en binnenlandse hoogleraren, lectoren en oud-docenten in de neerlandistiek, sprekers, bestuurs- en stafleden van de IVN." )
