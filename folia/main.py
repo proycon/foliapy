@@ -1483,7 +1483,7 @@ class AbstractElement:
                         s += e
                 elif e.PRINTABLE:
                     if pendingspace:
-                        if not isinstance(e, (Linebreak, Whitespace)):
+                        if not e.IMPLICITSPACE:
                             s += " "
                         pendingspace = False
                     if s:
