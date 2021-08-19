@@ -1155,6 +1155,11 @@ class Test02Sanity(unittest.TestCase):
         #resolving returns self if it's not a reference
         self.assertEqual( self.doc['sandbox.3.str.bold'].resolve(), self.doc['sandbox.3.str.bold'])
 
+    def test044b_textmarkup(self):
+        """Sanity check - Text Markup (Linebreak)"""
+        s = self.doc["entry.1.def.1.p.1"]
+        self.assertEqual( s.text(), "Term uit de editiewetenschap en tekstkritiek voor de schematische weergave in de vorm van een boomdiagram van de onderlinge verwantschap van\ndocumentaire bronnen (handschrift, codex, druk), waarin een tekst bewaard is gebleven.\n" );
+
 
     def test045_spancorrection(self):
         """Sanity Check - Corrections over span elements"""
