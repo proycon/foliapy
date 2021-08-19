@@ -4460,7 +4460,7 @@ het    ook   ?
 
 class Test88b_Whitespace(unittest.TestCase):
     def setUp(self):
-        self.doc = folia.Document(file=os.path.join(FOLIAPATH,"examples/tests/issue88b.2.5.0.folia.xml"))
+        self.doc = folia.Document(file=os.path.join(FOLIAPATH,"examples/tests/issue88b.2.5.1.folia.xml"))
 
     def test001_doublenested(self):
         """Whitespace - Heavy markedup, double nested and multiline"""

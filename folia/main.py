@@ -53,7 +53,7 @@ from folia import LIBVERSION
 
 #foliaspec:version:FOLIAVERSION
 #The FoLiA version
-FOLIAVERSION = "2.5.0"
+FOLIAVERSION = "2.5.1"
 
 #foliaspec:namespace:NSFOLIA
 #The FoLiA XML namespace
@@ -9353,7 +9353,7 @@ def validate(filename,schema=None,deep=False):
 #================================= FOLIA SPECIFICATION ==========================================================
 
 #foliaspec:header
-#This file was last updated according to the FoLiA specification for version 2.5.0 on 2021-04-02 13:45:09, using foliaspec.py
+#This file was last updated according to the FoLiA specification for version 2.5.1 on 2021-08-19 11:16:16, using foliaspec.py
 #Code blocks after a foliaspec comment (until the next newline) are automatically generated. **DO NOT EDIT THOSE** and **DO NOT REMOVE ANY FOLIASPEC COMMENTS** !!!
 
 #foliaspec:structurescope:STRUCTURESCOPE
@@ -9585,6 +9585,7 @@ AbstractElement.ANNOTATIONTYPE = None
 AbstractElement.AUTH = True
 AbstractElement.AUTO_GENERATE_ID = False
 AbstractElement.HIDDEN = False
+AbstractElement.IMPLICITSPACE = False
 AbstractElement.OCCURRENCES = 0
 AbstractElement.OCCURRENCES_PER_SET = 0
 AbstractElement.OPTIONAL_ATTRIBS = None
@@ -9888,6 +9889,7 @@ Hiddenword.WREFABLE = True
 Hiddenword.XMLTAG = "hiddenw"
 #------ Hyphbreak -------
 Hyphbreak.ANNOTATIONTYPE = AnnotationType.HYPHENATION
+Hyphbreak.IMPLICITSPACE = True
 Hyphbreak.LABEL = "Hyphbreak"
 Hyphbreak.TEXTDELIMITER = ""
 Hyphbreak.XMLTAG = "t-hbr"
@@ -9908,6 +9910,7 @@ LevelFeature.SUBSET = "level"
 LevelFeature.XMLTAG = None
 #------ Linebreak -------
 Linebreak.ANNOTATIONTYPE = AnnotationType.LINEBREAK
+Linebreak.IMPLICITSPACE = True
 Linebreak.LABEL = "Linebreak"
 Linebreak.TEXTDELIMITER = ""
 Linebreak.XLINK = True
@@ -10227,6 +10230,7 @@ TextMarkupGap.PRIMARYELEMENT = False
 TextMarkupGap.XMLTAG = "t-gap"
 #------ TextMarkupHSpace -------
 TextMarkupHSpace.ANNOTATIONTYPE = AnnotationType.HSPACE
+TextMarkupHSpace.IMPLICITSPACE = True
 TextMarkupHSpace.TEXTDELIMITER = ""
 TextMarkupHSpace.XMLTAG = "t-hspace"
 #------ TextMarkupLanguage -------
@@ -10248,6 +10252,7 @@ TextMarkupStyle.PRIMARYELEMENT = True
 TextMarkupStyle.XMLTAG = "t-style"
 #------ TextMarkupWhitespace -------
 TextMarkupWhitespace.ANNOTATIONTYPE = AnnotationType.WHITESPACE
+TextMarkupWhitespace.IMPLICITSPACE = True
 TextMarkupWhitespace.PRIMARYELEMENT = False
 TextMarkupWhitespace.TEXTDELIMITER = ""
 TextMarkupWhitespace.XMLTAG = "t-whitespace"
@@ -10275,6 +10280,7 @@ ValueFeature.SUBSET = "value"
 ValueFeature.XMLTAG = None
 #------ Whitespace -------
 Whitespace.ANNOTATIONTYPE = AnnotationType.WHITESPACE
+Whitespace.IMPLICITSPACE = True
 Whitespace.LABEL = "Whitespace"
 Whitespace.TEXTDELIMITER = ""
 Whitespace.XMLTAG = "whitespace"
