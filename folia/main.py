@@ -1464,7 +1464,7 @@ class AbstractElement:
                                                                     #norm_spaces strips multi-spaces in the middle
                                                                     #also strips artefacts of DOS-style line-endings
                             if j > 0 and s2 and len(s) != l:
-                                #insert spaces between lines that used to be newline separated
+                                #insert spaces between lines that used to be newline separated, except if there already is space
                                 s += " "
                             elif s2 and line and (line[0] != "\n" and is_space(line[0])) and not self.preservespace:
                                 #we have leading indentation we may need to collapse or ignore entirely
@@ -1473,7 +1473,7 @@ class AbstractElement:
                                 s += "\0"
                             s += s2
 
-                        if e and is_space(e[-1]) and s and not self.preservespace:
+                        if e and is_space(e[-1]) and s and not is_space(s[-1]) and not self.preservespace:
                             #this item has trailing spaces but we stripped them
                             #this may be premature so
                             #we reserve to output them later in case there is a next item
@@ -1483,7 +1483,8 @@ class AbstractElement:
                         s += e
                 elif e.PRINTABLE:
                     if pendingspace:
-                        s += " "
+                        if not isinstance(e, (Linebreak, Whitespace)):
+                            s += " "
                         pendingspace = False
                     if s:
                         s += e.gettextdelimiter() #for AbstractMarkup, will usually be "" (but we need it still for <br/>)
@@ -4495,7 +4496,7 @@ class TextContent(AbstractContentAnnotation):
         elif not ref.hastext(self.cls):
             raise UnresolvableTextContent("Reference (ID " + str(ref.id) + ") has no such text (class=" + self.cls+")")
         elif validate and self.text() != ref.textcontent(self.cls).text(trim_spaces=trim_spaces)[self.offset:self.offset+len(self.data[0])]:
-            raise UnresolvableTextContent("Reference (ID " + str(ref.id) + ", class=" + self.cls+") found but no text match at specified offset ("+str(self.offset)+")! Expected '" + self.text() + "', got '" + ref.textcontent(self.cls).text(trim_spaces=trim_spaces)[self.offset:self.offset+len(self.data[0])] +"'")
+            raise UnresolvableTextContent("Reference (ID " + str(ref.id) + ", class=" + self.cls+") found but no text match at specified offset ("+str(self.offset)+")! Expected '" + self.text() + "', got '" + ref.textcontent(self.cls).text(trim_spaces=trim_spaces)[self.offset:self.offset+len(self.data[0])] +"', full text: '" + ref.textcontent(self.cls).text(trim_spaces=trim_spaces) + '"')
         else:
             #finally, we made it!
             return ref
