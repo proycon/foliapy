@@ -6348,7 +6348,7 @@ class WordReference(AbstractElement):
                     pass
                 orphan = True
                 for a in w.ancestors():
-                    if isinstance(a, (folia.Text, folia.Speech)):
+                    if isinstance(a, (Text, Speech)):
                         orphan = False
                 if orphan:
                     assert KeyError
