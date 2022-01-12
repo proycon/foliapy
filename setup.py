@@ -28,7 +28,7 @@ setup(
     author_email = "proycon@anaproy.nl",
     description = ("An extensive library for processing FoLiA documents. FoLiA stands for Format for Linguistic Annotation and is a very rich XML-based format used by various Natural Language Processing tools."),
     license = "GPL",
-    keywords = [ "nlp", "computational linguistics", "folia", "format"],
+    keywords = [ "nlp", "computational linguistics", "folia", "format", "xml", "annotation"],
     url = "https://github.com/proycon/foliapy",
     packages=['folia'],
     long_description=read('README.rst'),
