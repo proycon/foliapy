@@ -25,6 +25,7 @@ from __future__ import absolute_import
 
 import sys
 import io
+import os
 import rdflib
 from lxml import etree as ElementTree
 if sys.version < '3':
@@ -361,6 +362,8 @@ class SetDefinition(object):
             elif url.endswith('.xml'): #other XML will be considered legacy
                 format = 'application/foliaset+xml' #legacy
 
+        if os.environ.get("FOLIAPY_FORCE_LOCALSETDIR"):
+            url = os.path.join(os.environ['FOLIAPY_FORCE_LOCALSETDIR'], os.path.basename(url))
         if format in ('application/foliaset+xml','legacy',None):
             #legacy format, has some checks and fallbacks if the format turns out to be RDF anyway
             self.legacyset = None
@@ -405,6 +408,8 @@ class SetDefinition(object):
                 self.graph.parse(location=url, format=format)
             except HTTPError:
                 raise DeepValidationError("Unable to download set definition from " + url)
+            except FileNotFoundError:
+                raise DeepValidationError("Set definition not found: " + url)
             if self.verbose:
                 print("Loaded set " + url + " (" + str(len(self.graph)) + " triples)",file=sys.stderr)
 
