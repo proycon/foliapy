@@ -46,7 +46,7 @@ Installation
 --------------------
 
 Download and install the latest stable version directly from the Python Package
-Index with ``pip install folia`` (or ``pip3`` for Python 3 on most
+Index with ``pip install folia`` (or ``pip3`` for Python 3.7+ on most
 systems). For global installations prepend ``sudo``.
 
 Alternatively, clone this repository and run ``python setup.py install`` (or

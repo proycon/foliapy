@@ -41,6 +41,7 @@ setup(
         "Intended Audience :: Science/Research",
         "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
     ],
+    python_requires=">=3.7",
     zip_safe=False,
     include_package_data=True,
     package_data = {'folia': ['tests/test.sh'] },
