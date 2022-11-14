@@ -526,6 +526,28 @@ Some span annotation elements take *span roles*, depending on their type:
     DependencyDependent
     Headspan
 
+Subtoken Annotation Types
++++++++++++++++++++++++++
+
+The following subtoken annotation types are available in FoLiA.
+
+.. autosummary::
+    :nosignatures:
+    :toctree: _autosummary
+    :template: foliaelement.rst
+
+    Morpheme
+    Phoneme
+
+Like span annotation, they are placed in annotation layers:
+
+.. autosummary::
+    :nosignatures:
+    :toctree: _autosummary
+    :template: foliaelement.rst
+
+    MorphologyLayer
+    PhonologyLayer
 
 Editing FoLiA
 ======================
