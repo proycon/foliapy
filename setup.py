@@ -23,11 +23,11 @@ def read(fname):
 
 setup(
     name = "FoLiA",
-    version = "2.5.8", #edit LIBVERSION in __init__.py as well
+    version = "2.5.9", #edit LIBVERSION in __init__.py as well
     author = "Maarten van Gompel",
     author_email = "proycon@anaproy.nl",
     description = ("An extensive library for processing FoLiA documents. FoLiA stands for Format for Linguistic Annotation and is a very rich XML-based format used by various Natural Language Processing tools."),
-    license = "GPL",
+    license = "GPL-3.0-only",
     keywords = [ "nlp", "computational linguistics", "folia", "format", "xml", "annotation"],
     url = "https://github.com/proycon/foliapy",
     packages=['folia'],
