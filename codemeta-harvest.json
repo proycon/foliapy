@@ -1,0 +1,5 @@
+{
+    "name": "FoLiApy",
+	"developmentStatus": [ "https://www.repostatus.org/#active", "https://w3id.org/research-technology-readiness-levels#Level9Proven" ],
+    "applicationCategory": [ "https://vocabs.dariah.eu/tadirah/annotating", "https://w3id.org/nwo-research-fields#ComputationalLinguisticsandPhilology", "https://w3id.org/nwo-research-fields#TextualAndLinguisticCorpora" ]
+}
