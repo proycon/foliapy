@@ -53,7 +53,7 @@ from folia import LIBVERSION
 
 #foliaspec:version:FOLIAVERSION
 #The FoLiA version
-FOLIAVERSION = "2.5.1"
+FOLIAVERSION = "2.5.2"
 
 #foliaspec:namespace:NSFOLIA
 #The FoLiA XML namespace
@@ -2294,7 +2294,7 @@ class AbstractElement:
     def add(self, child, *args, **kwargs):
         """Add a child element.
 
-        This is a higher level function that adds (appends) an annotation to an element, it will simply call :meth:`AbstractElement.append` for token annotation elements that fit within the scope. For span annotation, it will create and find or create the proper annotation layer and insert the element there.
+        This is a higher level function that adds (appends) an annotation to an element, it will simply call :meth:`AbstractElement.append` for inline annotation elements that fit within the scope. For span annotation, it will create and find or create the proper annotation layer and insert the element there.
 
         Arguments:
             child (instance or class): 1) The instance to add (usually an instance derived from  :class:`AbstractElement`. or 2) a class subclassed from :class:`AbstractElement`.
@@ -3732,7 +3732,7 @@ class AllowCorrections(object):
 
 
 class AllowInlineAnnotation(AllowCorrections):
-    """Elements that allow token annotation (including extended annotation) must inherit from this class"""
+    """Elements that allow inline annotation (including extended annotation) must inherit from this class"""
 
 
     def annotations(self,Class,set=False):
@@ -3858,6 +3858,10 @@ class AbstractWord: #interface grouping elements that act like words
     def sense(self,set=False):
         """Shortcut: returns the FoLiA class of the sense annotation (will return only one if there are multiple!)"""
         return self.annotation(SenseAnnotation,set).cls
+
+    def etymology(self,set=False):
+        """Shortcut: returns the FoLiA class of the etymology annotation (will return only one if there are multiple!)"""
+        return self.annotation(EtymologyAnnotation,set).cls
 
     def domain(self,set=False):
         """Shortcut: returns the FoLiA class of the domain annotation (will return only one if there are multiple!)"""
@@ -4163,7 +4167,7 @@ class AbstractStructureElement(AbstractElement, AllowInlineAnnotation, AllowGene
 
 
 class AbstractInlineAnnotation(AbstractElement, AllowGenerateID):
-    """Abstract element, all token annotation elements are derived from this class"""
+    """Abstract element, all inline annotation elements are derived from this class"""
 
 
     def append(self, child, *args, **kwargs):
@@ -5035,7 +5039,7 @@ class Whitespace(AbstractStructureElement):
 
 
 class Word(AbstractStructureElement, AbstractWord, AllowCorrections):
-    """Word (aka token) element. Holds a word/token and all its related token annotations."""
+    """Word (aka token) element. Holds a word/token and all its related inline annotations."""
 
     def __init__(self, doc, *args, **kwargs):
         """Constructor for words.
@@ -5069,7 +5073,7 @@ class Word(AbstractStructureElement, AbstractWord, AllowCorrections):
         self.sentence().splitword(self, *newwords, **kwargs)
 
 class Hiddenword(AbstractStructureElement, AbstractWord, AllowCorrections):
-    """Hidden word (aka token) element. Holds a word/token and all its related token annotations, but the word is ignored for most intents and purposes. It may act as a dummy for e.g. syntactic movement annotation."""
+    """Hidden word (aka token) element. Holds a word/token and all its related inline annotations, but the word is ignored for most intents and purposes. It may act as a dummy for e.g. syntactic movement annotation."""
     pass
 
 
@@ -5915,7 +5919,7 @@ class Correction(AbstractHigherOrderAnnotation, AllowGenerateID):
     """
     Corrections are one of the most complex annotation types in FoLiA. Corrections
     can be applied not just over text, but over any type of structure annotation,
-    token annotation or span annotation. Corrections explicitly preserve the
+    inline annotation or span annotation. Corrections explicitly preserve the
     original, and recursively so if corrections are done over other corrections.
 
     Despite their complexity, the library treats correction transparently. Whenever
@@ -6195,7 +6199,7 @@ class Alternative(AbstractHigherOrderAnnotation, AllowInlineAnnotation, AllowGen
     Multiple alternative elements may occur, each denoting a different alternative. Elements grouped inside an alternative block are considered dependent.
 
     A key feature of FoLiA is its ability to make explicit alternative
-    annotations, for token annotations, this class is used to this end.
+    annotations, for inline annotations, this class is used to this end.
     Alternative annotations are embedded in this structure. This implies the
     annotation is *not authoritative*, but is merely an alternative to the
     actual annotation (if any). Alternatives may typically occur in larger
@@ -6536,13 +6540,13 @@ class HeadFeature(Feature):
     """Head feature, to be used within :class:`PosAnnotation`"""
 
 class PosAnnotation(AbstractInlineAnnotation):
-    """Part-of-Speech annotation:  a token annotation element"""
+    """Part-of-Speech annotation:  an inline annotation element"""
 
 class LemmaAnnotation(AbstractInlineAnnotation):
-    """Lemma annotation:  a token annotation element"""
+    """Lemma annotation:  an inline annotation element"""
 
 class LangAnnotation(AbstractInlineAnnotation):
-    """Language annotation:  an extended token annotation element"""
+    """Language annotation:  an extended inline annotation element"""
 
 #class PhonAnnotation(AbstractInlineAnnotation): #DEPRECATED in v0.9
 #    """Phonetic annotation:  a token annotation element"""
@@ -6552,7 +6556,7 @@ class LangAnnotation(AbstractInlineAnnotation):
 
 
 class DomainAnnotation(AbstractInlineAnnotation):
-    """Domain annotation:  an extended token annotation element"""
+    """Domain annotation:  an inline annotation element"""
 
 class SynsetFeature(Feature):
     """Synset feature, to be used within :class:`Sense`"""
@@ -6607,10 +6611,13 @@ class TimingLayer(AbstractAnnotationLayer):
 
 
 class SenseAnnotation(AbstractInlineAnnotation):
-    """Sense annotation: a token annotation element"""
+    """Sense annotation: an inline annotation element"""
+
+class EtymologyAnnotation(AbstractInlineAnnotation):
+    """Etymology Annotation allows to relate a word/morpheme to its historic origin (often in some kind of etymological database)"""
 
 class SubjectivityAnnotation(AbstractInlineAnnotation):
-    """Subjectivity annotation/Sentiment analysis: a token annotation element"""
+    """Subjectivity annotation/Sentiment analysis: an inline annotation element"""
 
 
 class Quote(AbstractStructureElement):
@@ -7029,7 +7036,7 @@ this, first a trivial example of searching for one word::
 
 
     Rather than searching on the text content of the words, you can search on the
-    classes of any kind of token annotation using the keyword argument
+    classes of any kind of inline annotation using the keyword argument
     ``matchannotation=``::
 
         for match in doc.findwords( folia.Pattern('det','adj','noun',matchannotation=folia.PosAnnotation ) ):
@@ -9353,7 +9360,7 @@ def validate(filename,schema=None,deep=False):
 #================================= FOLIA SPECIFICATION ==========================================================
 
 #foliaspec:header
-#This file was last updated according to the FoLiA specification for version 2.5.1 on 2021-08-19 11:16:16, using foliaspec.py
+#This file was last updated according to the FoLiA specification for version 2.5.2 on 2022-11-18 16:09:29, using foliaspec.py
 #Code blocks after a foliaspec comment (until the next newline) are automatically generated. **DO NOT EDIT THOSE** and **DO NOT REMOVE ANY FOLIASPEC COMMENTS** !!!
 
 #foliaspec:structurescope:STRUCTURESCOPE
@@ -9377,6 +9384,7 @@ ANNOTATIONTYPE2XML = {
     AnnotationType.ENTITY:  "entity" ,
     AnnotationType.ENTRY:  "entry" ,
     AnnotationType.ERRORDETECTION:  "errordetection" ,
+    AnnotationType.ETYMOLOGY:  "etymology" ,
     AnnotationType.EVENT:  "event" ,
     AnnotationType.EXAMPLE:  "ex" ,
     AnnotationType.EXTERNAL:  "external" ,
@@ -9450,6 +9458,7 @@ XML2CLASS = {
     "entity": Entity,
     "entry": Entry,
     "errordetection": ErrorDetection,
+    "etymology": EtymologyAnnotation,
     "event": Event,
     "ex": Example,
     "external": External,
@@ -9571,7 +9580,7 @@ ignore_wrefables = tuple([True] + list(wrefables))
 default_ignore = ( Original, Suggestion, Alternative, AlternativeLayers, ForeignData,)
 
 #foliaspec:default_ignore_annotations
-#Default ignore list for token annotation
+#Default ignore list for inline annotation
 default_ignore_annotations = ( Original, Suggestion, Alternative, AlternativeLayers, MorphologyLayer, PhonologyLayer,)
 
 #foliaspec:default_ignore_structure
@@ -9821,6 +9830,10 @@ ErrorDetection.ANNOTATIONTYPE = AnnotationType.ERRORDETECTION
 ErrorDetection.LABEL = "Error Detection"
 ErrorDetection.OCCURRENCES_PER_SET = 0
 ErrorDetection.XMLTAG = "errordetection"
+#------ EtymologyAnnotation -------
+EtymologyAnnotation.ANNOTATIONTYPE = AnnotationType.ETYMOLOGY
+EtymologyAnnotation.LABEL = "Etymology"
+EtymologyAnnotation.XMLTAG = "etymology"
 #------ Event -------
 Event.ACCEPTED_DATA = (AbstractAnnotationLayer, AbstractInlineAnnotation, ActorFeature, Alternative, AlternativeLayers, BegindatetimeFeature, Comment, Correction, Description, Division, EnddatetimeFeature, Entry, Event, Example, External, Feature, Figure, ForeignData, Gap, Head, Hiddenword, Linebreak, List, Metric, Note, Paragraph, Part, PhonContent, Quote, Reference, Relation, Sentence, String, Table, TextContent, Utterance, Whitespace, Word,)
 Event.ANNOTATIONTYPE = AnnotationType.EVENT
