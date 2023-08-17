@@ -1076,7 +1076,7 @@ class AbstractElement:
 
         #Parse feature attributes (shortcut for feature specification for some elements)
         for c in self.ACCEPTED_DATA:
-            if issubclass(c, Feature):
+            if issubclass(c, AbstractFeature):
                 if c.SUBSET in kwargs:
                     if kwargs[c.SUBSET]:
                         self.append(c,cls=kwargs[c.SUBSET])
@@ -1712,7 +1712,7 @@ class AbstractElement:
         """
         r = None
         for f in self:
-            if isinstance(f, Feature) and f.subset == subset:
+            if isinstance(f, AbstractFeature) and f.subset == subset:
                 if r: #support for multiclass features
                     if isinstance(r,list):
                         r.append(f.cls)
@@ -2101,7 +2101,7 @@ class AbstractElement:
         if self.doc and self.doc.deepvalidation and self.set and self.set[0] != '_':
             try:
                 self.doc.setdefinitions[self.set].testclass(self.cls)
-                self.doc.setdefinitions[self.set].testconstraints(self.cls, { f.subset: f.cls for f in self.select(Feature,recursive=False) }, self.doc.debug)
+                self.doc.setdefinitions[self.set].testconstraints(self.cls, { f.subset: f.cls for f in self.select(AbstractFeature,recursive=False) }, self.doc.debug)
             except KeyError:
                 if self.cls and not self.doc.allowadhocsets:
                     raise DeepValidationError("Set definition " + self.set + " for " + self.XMLTAG + " not loaded (document " + self.doc.id+ ", " + str(self.doc.filename) + ")")
@@ -2577,7 +2577,7 @@ class AbstractElement:
                 attribs['typegroup'] = "subtoken"
             elif isinstance(self, AbstractCorrectionChild):
                 attribs['typegroup'] = "correctionchild"
-            elif isinstance(self, Feature):
+            elif isinstance(self, AbstractFeature):
                 attribs['typegroup'] = "feature"
 
         #The set attribute is only added on elements that can take classes
@@ -2696,7 +2696,7 @@ class AbstractElement:
         #Are there predetermined Features in ACCEPTED_DATA?
         if form == Form.NORMAL:
             for c in self.ACCEPTED_DATA:
-                if issubclass(c, Feature) and c.SUBSET:
+                if issubclass(c, AbstractFeature) and c.SUBSET:
                     #Do we have any of those?
                     for c2 in self.data:
                         if c2.__class__ is c and c.SUBSET == c2.SUBSET and c2.cls:
@@ -2704,7 +2704,6 @@ class AbstractElement:
                             attribs[c2.SUBSET] = c2.cls
                             omitchildren.append(c2) #and skip them as elements
                             break #only one
-
         tag = self.XMLTAG
         if self.doc and FOLIA1 and self.doc.keepversion and tag in OLDTAGS_REVERSE and tag != "item":
             tag = OLDTAGS_REVERSE[tag]
@@ -3282,7 +3281,7 @@ class AbstractElement:
                                     continue
                         except TypeError:
                             pass
-                elif issubclass(c, Feature) and c.SUBSET:
+                elif issubclass(c, AbstractFeature) and c.SUBSET:
                     attribs.append( RXE.optional( RXE.attribute(name=c.SUBSET)))  #features as attributes
                 else:
                     try:
@@ -5077,7 +5076,7 @@ class Hiddenword(AbstractStructureElement, AbstractWord, AllowCorrections):
     pass
 
 
-class Feature(AbstractElement):
+class AbstractFeature(AbstractElement):
     """Feature elements can be used to associate subsets and subclasses with almost any
     annotation element"""
 
@@ -5117,13 +5116,13 @@ class Feature(AbstractElement):
 
     def xml(self, attribs = None, elements = None, skipchildren = False, form = Form.NORMAL):
         attribs = {}
-        if self.subset != self.SUBSET or form == Form.EXPLICIT:
-            attribs['subset'] = self.subset
+#        if self.subset != self.SUBSET or form == Form.EXPLICIT:
+        attribs['subset'] = self.subset
         attribs['class'] =  self.cls
-        return getattr(E, Feature.XMLTAG)(**attribs)
+        return getattr(E, AbstractFeature.XMLTAG)(**attribs)
 
     def json(self,attribs=None, recurse=True, ignorelist=False):
-        jsonnode= {'type': Feature.XMLTAG}
+        jsonnode= {'type': AbstractFeature.XMLTAG}
         jsonnode['subset'] = self.subset
         jsonnode['class'] = self.cls
         return jsonnode
@@ -5152,7 +5151,11 @@ class Feature(AbstractElement):
                 raise DeepValidationError(errormsg)
 
 
-class ValueFeature(Feature):
+class Feature(AbstractFeature):
+    """Value feature, to be used within :class:`Metric`"""
+    pass
+
+class ValueFeature(AbstractFeature):
     """Value feature, to be used within :class:`Metric`"""
     pass
 
@@ -5180,7 +5183,7 @@ class AbstractSpanAnnotation(AbstractElement, AllowGenerateID, AllowCorrections)
                 if child.PRINTABLE and child.hastext(self.textclass):
                     attribs['t'] = child.text(self.textclass)
                 e.append( E.wref(**attribs) )
-            elif not (isinstance(child, Feature) and child.SUBSET and form != Form.EXPLICIT): #Don't add pre-defined features, they are already added as attributes, except in explicit form
+            elif not (isinstance(child, AbstractFeature) and child.SUBSET and form != Form.EXPLICIT): #Don't add pre-defined features, they are already added as attributes, except in explicit form
                 e.append( child.xml(form=form) )
         return e
 
@@ -6425,13 +6428,13 @@ class Dependency(AbstractSpanAnnotation):
 class Modality(AbstractSpanAnnotation):
     """Span annotation element to encode modality (e.g. sentiment, negation, truthfulness, doubt)"""
 
-class ModalityFeature(Feature):
+class ModalityFeature(AbstractFeature):
     """Modality feature, to be used with coreferences"""
 
-class TimeFeature(Feature):
+class TimeFeature(AbstractFeature):
     """Time feature, to be used with coreferences"""
 
-class LevelFeature(Feature):
+class LevelFeature(AbstractFeature):
     """Level feature, to be used with coreferences"""
 
 class CoreferenceLink(AbstractSpanRole):
@@ -6472,7 +6475,7 @@ class SpanRelation(AbstractHigherOrderAnnotation):
         else:
             raise NoSuchAnnotation()
 
-class FunctionFeature(Feature):
+class FunctionFeature(AbstractFeature):
     """Function feature, to be used with :class:`Morpheme`"""
 
 class Morpheme(AbstractSubtokenAnnotation, AbstractWord):
@@ -6536,7 +6539,7 @@ class SpanRelationLayer(AbstractAnnotationLayer):
     """Span Relation Layer: Annotation layer for :class:`SpanRelation`"""
 
 
-class HeadFeature(Feature):
+class HeadFeature(AbstractFeature):
     """Head feature, to be used within :class:`PosAnnotation`"""
 
 class PosAnnotation(AbstractInlineAnnotation):
@@ -6558,31 +6561,31 @@ class LangAnnotation(AbstractInlineAnnotation):
 class DomainAnnotation(AbstractInlineAnnotation):
     """Domain annotation:  an inline annotation element"""
 
-class SynsetFeature(Feature):
+class SynsetFeature(AbstractFeature):
     """Synset feature, to be used within :class:`Sense`"""
 
-class ActorFeature(Feature):
+class ActorFeature(AbstractFeature):
     """Actor feature, to be used within :class:`Event`"""
 
-class PolarityFeature(Feature):
+class PolarityFeature(AbstractFeature):
     """Polarity feature, to be used within :class:`Sentiment`"""
 
-class StrengthFeature(Feature):
+class StrengthFeature(AbstractFeature):
     """Strength feature, to be used within :class:`Sentiment`"""
 
-class BegindatetimeFeature(Feature):
+class BegindatetimeFeature(AbstractFeature):
     """Begindatetime feature, to be used within :class:`Event`"""
 
-class EnddatetimeFeature(Feature):
+class EnddatetimeFeature(AbstractFeature):
     """Enddatetime feature, to be used within :class:`Event`"""
 
-class StyleFeature(Feature):
+class StyleFeature(AbstractFeature):
     pass
 
-class FontFeature(Feature):
+class FontFeature(AbstractFeature):
     """Font feature, to be used within :class:`TextMarkupStyle`"""
 
-class SizeFeature(Feature):
+class SizeFeature(AbstractFeature):
     """Size feature, to be used within :class:`TextMarkupStyle`"""
 
 class Note(AbstractStructureElement):
@@ -9462,6 +9465,7 @@ XML2CLASS = {
     "event": Event,
     "ex": Example,
     "external": External,
+    "feat": Feature,
     "figure": Figure,
     "foreign-data": ForeignData,
     "gap": Gap,
@@ -9631,6 +9635,8 @@ AbstractCorrectionChild.SPEAKABLE = True
 AbstractCorrectionChild.TEXTDELIMITER = None
 #------ AbstractFeature -------
 AbstractFeature.LABEL = "AbstractFeature"
+AbstractFeature.SUBSET = None
+AbstractFeature.XMLTAG = "feat"
 #------ AbstractHigherOrderAnnotation -------
 AbstractHigherOrderAnnotation.OPTIONAL_ATTRIBS = None
 AbstractHigherOrderAnnotation.REQUIRED_ATTRIBS = None
@@ -9855,7 +9861,7 @@ External.REQUIRED_ATTRIBS = (Attrib.SRC,)
 External.SPEAKABLE = True
 External.XMLTAG = "external"
 #------ Feature -------
-Feature.SUBSET = "feat"
+Feature.SUBSET = "feature"
 Feature.XMLTAG = None
 #------ Figure -------
 Figure.ACCEPTED_DATA = (AbstractAnnotationLayer, AbstractFeature, Alternative, AlternativeLayers, Caption, Comment, Correction, Description, External, ForeignData, Linebreak, Metric, Part, Relation, String, TextContent,)
