@@ -5098,10 +5098,10 @@ class AbstractFeature(AbstractElement):
         self.auth = True
 
 
-        if self.SUBSET:
-            self.subset = self.SUBSET
-        elif 'subset' in kwargs:
+        if 'subset' in kwargs:
             self.subset = kwargs['subset']
+        elif self.SUBSET:
+            self.subset = self.SUBSET
         else:
             raise Exception("No subset specified for " + self.__class__.__name__)
         if 'cls' in kwargs:
@@ -5116,7 +5116,7 @@ class AbstractFeature(AbstractElement):
 
     def xml(self, attribs = None, elements = None, skipchildren = False, form = Form.NORMAL):
         attribs = {}
-#        if self.subset != self.SUBSET or form == Form.EXPLICIT:
+        #        if self.subset != self.SUBSET or form == Form.EXPLICIT:
         attribs['subset'] = self.subset
         attribs['class'] =  self.cls
         return getattr(E, AbstractFeature.XMLTAG)(**attribs)
@@ -9635,7 +9635,6 @@ AbstractCorrectionChild.SPEAKABLE = True
 AbstractCorrectionChild.TEXTDELIMITER = None
 #------ AbstractFeature -------
 AbstractFeature.LABEL = "AbstractFeature"
-AbstractFeature.SUBSET = None
 AbstractFeature.XMLTAG = "feat"
 #------ AbstractHigherOrderAnnotation -------
 AbstractHigherOrderAnnotation.OPTIONAL_ATTRIBS = None
