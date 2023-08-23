@@ -5119,10 +5119,10 @@ class AbstractFeature(AbstractElement):
         #        if self.subset != self.SUBSET or form == Form.EXPLICIT:
         attribs['subset'] = self.subset
         attribs['class'] =  self.cls
-        return getattr(E, AbstractFeature.XMLTAG)(**attribs)
+        return getattr(E, "feat" )(**attribs)
 
     def json(self,attribs=None, recurse=True, ignorelist=False):
-        jsonnode= {'type': AbstractFeature.XMLTAG}
+        jsonnode= {'type': self.XMLTAG}
         jsonnode['subset'] = self.subset
         jsonnode['class'] = self.cls
         return jsonnode
@@ -5152,7 +5152,7 @@ class AbstractFeature(AbstractElement):
 
 
 class Feature(AbstractFeature):
-    """Value feature, to be used within :class:`Metric`"""
+    """generic Feature"""
     pass
 
 class ValueFeature(AbstractFeature):
@@ -9635,7 +9635,6 @@ AbstractCorrectionChild.SPEAKABLE = True
 AbstractCorrectionChild.TEXTDELIMITER = None
 #------ AbstractFeature -------
 AbstractFeature.LABEL = "AbstractFeature"
-AbstractFeature.XMLTAG = "feat"
 #------ AbstractHigherOrderAnnotation -------
 AbstractHigherOrderAnnotation.OPTIONAL_ATTRIBS = None
 AbstractHigherOrderAnnotation.REQUIRED_ATTRIBS = None
