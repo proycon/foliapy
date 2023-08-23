@@ -9363,7 +9363,7 @@ def validate(filename,schema=None,deep=False):
 #================================= FOLIA SPECIFICATION ==========================================================
 
 #foliaspec:header
-#This file was last updated according to the FoLiA specification for version 2.5.4 on 2023-08-07 17:25:50, using foliaspec.py
+#This file was last updated according to the FoLiA specification for version 2.5.4 on 2023-08-23 15:26:40, using foliaspec.py
 #Code blocks after a foliaspec comment (until the next newline) are automatically generated. **DO NOT EDIT THOSE** and **DO NOT REMOVE ANY FOLIASPEC COMMENTS** !!!
 
 #foliaspec:structurescope:STRUCTURESCOPE
@@ -9859,7 +9859,7 @@ External.REQUIRED_ATTRIBS = (Attrib.SRC,)
 External.SPEAKABLE = True
 External.XMLTAG = "external"
 #------ Feature -------
-Feature.SUBSET = "feature"
+Feature.SUBSET = "feat"
 Feature.XMLTAG = None
 #------ Figure -------
 Figure.ACCEPTED_DATA = (AbstractAnnotationLayer, AbstractFeature, Alternative, AlternativeLayers, Caption, Comment, Correction, Description, External, ForeignData, Linebreak, Metric, Part, Relation, String, TextContent,)
