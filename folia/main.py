@@ -3365,6 +3365,9 @@ class AbstractElement:
             if isinstance(subnode, ElementTree._Comment): #pylint: disable=protected-access
                 if (Class.TEXTCONTAINER or Class.PHONCONTAINER) and subnode.tail:
                     args.append(subnode.tail)
+            elif isinstance(subnode, ElementTree._ProcessingInstruction): #pylint: disable=protected-access
+                #ignore processing instructions
+                pass
             else:
                 if subnode.tag.startswith('{' + NSFOLIA + '}'):
                     if doc.debug >= 1: print("[FoLiA DEBUG] Processing subnode " + subnode.tag[nslen:],file=stderr)
