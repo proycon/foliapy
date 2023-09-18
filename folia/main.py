@@ -8703,7 +8703,7 @@ class Document(object):
                         except UnresolvableTextContent as e2:
                             msg += "\n(also checked against older rules prior to FoLiA v2.4.1)"
 
-                        if ( self.filename ):
+                        if self.filename:
                             print( self.filename + ": TEXT VALIDATION ERROR: " + msg,file=sys.stderr)
                         else:
                             print("TEXT VALIDATION ERROR: " + msg,file=sys.stderr)
