@@ -5116,8 +5116,8 @@ class AbstractFeature(AbstractElement):
 
     def xml(self, attribs = None, elements = None, skipchildren = False, form = Form.NORMAL):
         attribs = {}
-        #        if self.subset != self.SUBSET or form == Form.EXPLICIT:
-        attribs['subset'] = self.subset
+        if self.subset != self.SUBSET or form == Form.EXPLICIT:
+            attribs['subset'] = self.subset
         attribs['class'] =  self.cls
         return getattr(E, "feat" )(**attribs)
 
@@ -5153,7 +5153,12 @@ class AbstractFeature(AbstractElement):
 
 class Feature(AbstractFeature):
     """generic Feature"""
-    pass
+    @classmethod
+    def parsexml(Class, node, doc, **kwargs):
+        if not kwargs: kwargs = {}
+        kwargs['subset'] = "feat"
+        return super(AbstractFeature,Class).parsexml(node, doc, **kwargs)
+
 
 class ValueFeature(AbstractFeature):
     """Value feature, to be used within :class:`Metric`"""
@@ -9363,7 +9368,7 @@ def validate(filename,schema=None,deep=False):
 #================================= FOLIA SPECIFICATION ==========================================================
 
 #foliaspec:header
-#This file was last updated according to the FoLiA specification for version 2.5.4 on 2023-08-23 15:26:40, using foliaspec.py
+#This file was last updated according to the FoLiA specification for version 2.5.4 on 2023-09-27 17:21:54, using foliaspec.py
 #Code blocks after a foliaspec comment (until the next newline) are automatically generated. **DO NOT EDIT THOSE** and **DO NOT REMOVE ANY FOLIASPEC COMMENTS** !!!
 
 #foliaspec:structurescope:STRUCTURESCOPE

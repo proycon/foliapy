@@ -2265,7 +2265,3 @@ class Query(object):
             if isinstance(e, folia.AbstractElement):
                 e.changedbyquery = self
                 self._touch(*e.data)
-
-
-
-
