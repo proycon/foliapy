@@ -3355,6 +3355,7 @@ class AbstractElement:
         if node.text:
             if Class.TEXTCONTAINER or Class.PHONCONTAINER:
                 args.append(node.text)
+
             elif node.text.strip()  != "" and Class not in (Comment, Description, TextContent, PhonContent, Content):
                 raise ParseError("Found extra text '" + node.text.strip() + "' in handling of  <" + node.tag[len(NSFOLIA)+2:] + "> @ line " + str(node.sourceline))
 
@@ -3364,6 +3365,9 @@ class AbstractElement:
             if isinstance(subnode, ElementTree._Comment): #pylint: disable=protected-access
                 if (Class.TEXTCONTAINER or Class.PHONCONTAINER) and subnode.tail:
                     args.append(subnode.tail)
+            elif isinstance(subnode, ElementTree._ProcessingInstruction): #pylint: disable=protected-access
+                #ignore processing instructions
+                pass
             else:
                 if subnode.tag.startswith('{' + NSFOLIA + '}'):
                     if doc.debug >= 1: print("[FoLiA DEBUG] Processing subnode " + subnode.tag[nslen:],file=stderr)
@@ -5097,7 +5101,6 @@ class AbstractFeature(AbstractElement):
         self.doc = doc
         self.auth = True
 
-
         if 'subset' in kwargs:
             self.subset = kwargs['subset']
         elif self.SUBSET:
@@ -5119,7 +5122,7 @@ class AbstractFeature(AbstractElement):
         if self.subset != self.SUBSET or form == Form.EXPLICIT:
             attribs['subset'] = self.subset
         attribs['class'] =  self.cls
-        return getattr(E, "feat" )(**attribs)
+        return getattr(E, self.subset )(**attribs)
 
     def json(self,attribs=None, recurse=True, ignorelist=False):
         jsonnode= {'type': self.XMLTAG}
@@ -5157,7 +5160,15 @@ class Feature(AbstractFeature):
     def parsexml(Class, node, doc, **kwargs):
         if not kwargs: kwargs = {}
         kwargs['subset'] = "feat"
-        return super(AbstractFeature,Class).parsexml(node, doc, **kwargs)
+        return super(Feature,Class).parsexml(node, doc, **kwargs)
+
+    def xml(self, attribs = None, elements = None, skipchildren = False, form = Form.NORMAL):
+        attribs = {}
+        if self.subset != self.SUBSET or form == Form.EXPLICIT:
+            attribs['subset'] = self.subset
+        attribs['class'] =  self.cls
+        return getattr(E, "feat" )(**attribs)
+
 
 
 class ValueFeature(AbstractFeature):
