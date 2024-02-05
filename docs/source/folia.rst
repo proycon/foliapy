@@ -933,8 +933,6 @@ previous section:
 
     Query
 
-.. currentmodule:: folia.fq
-
 Selecting a word with a particular text is done as follows::
 
     query = fql.Query('SELECT w WHERE text = "house"')
