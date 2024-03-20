@@ -8633,6 +8633,9 @@ class Document(object):
                     raise ParseError("Found extra leading text '" + node.text.strip() + "' in handling of <FoLiA> @ line " + str(node.sourceline))
 
                 for subnode in node:
+                    # don't trip over comments
+                    if isinstance(subnode, ElementTree._Comment):
+                        continue
                     if subnode.text and subnode.text.strip():
                         raise ParseError("Found extra leading text '" + subnode.text.strip() + "' in handling of <"+ subnode.tag+"> @ line " + str(node.sourceline))
                     if subnode.tag == '{' + NSFOLIA + '}metadata':
