@@ -4313,7 +4313,6 @@ class TextMarkupReference(AbstractTextMarkup):
         if not kwargs: kwargs = {}
         if 'id' in node.attrib:
             kwargs['idref'] = node.attrib['id']
-            print("DEBUG parsed ", kwargs['idref'],file=sys.stderr)
             del node.attrib['id']
         if 'type' in node.attrib:
             kwargs['type'] = node.attrib['type']
@@ -6884,6 +6883,7 @@ class Paragraph(AbstractStructureElement):
 class Cell(AbstractStructureElement):
     """A cell in a :class:`Row` in a :class:`Table`"""
     pass
+
 
 class Row(AbstractStructureElement):
     """A row in a :class:`Table`"""
