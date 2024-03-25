@@ -6882,12 +6882,21 @@ class Paragraph(AbstractStructureElement):
 
 class Cell(AbstractStructureElement):
     """A cell in a :class:`Row` in a :class:`Table`"""
-    pass
 
+    def text(self, cls='current', retaintokenisation=False, previousdelimiter="",strict=False, correctionhandling=CorrectionHandling.CURRENT, normalize_spaces=False, hidden=False, trim_spaces=True):
+        if self.hastext(cls, strict, correctionhandling, hidden):
+            return super(AbstractStructureElement, self).text(cls,retaintokenisation, previousdelimiter,strict, correctionhandling, normalize_spaces, hidden, trim_spaces)
+        else:
+            return previousdelimiter #force output of previous delimiter, needed for empty cells
 
 class Row(AbstractStructureElement):
     """A row in a :class:`Table`"""
-    pass
+
+    def text(self, cls='current', retaintokenisation=False, previousdelimiter="",strict=False, correctionhandling=CorrectionHandling.CURRENT, normalize_spaces=False, hidden=False, trim_spaces=True):
+        if self.hastext(cls, strict, correctionhandling, hidden):
+            return super(AbstractStructureElement, self).text(cls,retaintokenisation, previousdelimiter,strict, correctionhandling, normalize_spaces, hidden, trim_spaces)
+        else:
+            return previousdelimiter #force output of previous delimiter, needed for empty cells
 
 
 class TableHead(AbstractStructureElement):
