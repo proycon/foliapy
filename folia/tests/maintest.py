@@ -1229,6 +1229,30 @@ class Test02Sanity(unittest.TestCase):
         self.assertEqual( sentiment.annotation(folia.Source).text(), "Hij")
         self.assertEqual( sentiment.annotation(folia.Headspan).text(), "hij zou winnen")
 
+    def test051_parse_comments(self):
+        folia.Document(
+            string="""<?xml version="1.0" encoding="utf-8"?>
+    <?xml-stylesheet type="text/xsl" href="folia.xsl"?>
+    <!-- Foo -->
+    <FoLiA xmlns="http://ilk.uvt.nl/folia" version="2.0" xml:id="example">
+      <!-- Foo -->
+      <text>
+        <!-- Foo -->
+        <p>
+          <!-- Foo -->
+          <t><!-- Foo -->Dit is een test.</t>
+        <!-- Foo -->
+        </p>
+        <!-- Foo -->
+      </text>
+      <!-- Foo -->
+    </FoLiA>
+    <!-- Foo -->
+    """,
+            autodeclare=True,
+            loadsetdefinitions=False,
+        )
+
     def test099_write(self):
         """Sanity Check - Writing to file"""
         self.doc.save(os.path.join(TMPDIR,'foliasavetest.xml'))
