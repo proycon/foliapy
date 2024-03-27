@@ -1122,6 +1122,50 @@ class Test02Sanity(unittest.TestCase):
         self.assertEqual( table[0][0].text(), "Naam | Universiteit" ) #text of whole row
 
 
+    def test042b_table(self):
+        """Sanity check - Table (empty cells/rows)"""
+        doc = folia.Document(
+            string="""<?xml version="1.0" encoding="utf-8"?>
+    <FoLiA xmlns="http://ilk.uvt.nl/folia" version="2.5.1" xml:id="example">
+      <text>
+         <table xml:id="example.table.1">
+             <row>
+                <cell />
+                <cell><t>right 1</t></cell>
+             </row>
+             <row>
+                <cell><t>left 2</t></cell>
+                <cell />
+             </row>
+             <row>
+                <cell/>
+                <cell/>
+             </row>
+         </table>
+      </text>
+    </FoLiA>
+    """,
+            autodeclare=True,
+            loadsetdefinitions=False,
+        )
+        table = doc["example.table.1"]
+        self.assertTrue( isinstance(table, folia.Table))
+        self.assertTrue( isinstance(table[0], folia.Row))
+        self.assertEqual( len(table[0]), 2) #two cells
+        self.assertTrue( isinstance(table[0][0], folia.Cell))
+        self.assertEqual( table[0][1].text(), "right 1" )
+        self.assertEqual( table[0].text(), " | right 1" )
+        self.assertTrue( isinstance(table[1], folia.Row))
+        self.assertEqual( len(table[1]), 2) #two cells
+        self.assertTrue( isinstance(table[1][0], folia.Cell))
+        self.assertTrue( isinstance(table[1][1], folia.Cell))
+        self.assertEqual( table[1][0].text(), "left 2" )
+        self.assertEqual( table[1].text(), "left 2 | " )
+        self.assertEqual( len(table[2]), 2) #two cells
+        self.assertTrue( isinstance(table[2][0], folia.Cell))
+        self.assertEqual( table[2].text(), " | | " )
+
+
     def test043_string(self):
         """Sanity check - String"""
         s = self.doc["sandbox.3.head"]
