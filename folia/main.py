@@ -6905,7 +6905,16 @@ class Row(AbstractStructureElement):
 
 class TableHead(AbstractStructureElement):
     """Encapsulated the header of a table, contains :class:`Cell` elements"""
-    pass
+
+    def text(self, cls='current', retaintokenisation=False, previousdelimiter="",strict=False, correctionhandling=CorrectionHandling.CURRENT, normalize_spaces=False, hidden=False, trim_spaces=True):
+        if self.hastext(cls, strict, correctionhandling, hidden):
+            return super(AbstractStructureElement, self).text(cls,retaintokenisation, previousdelimiter,strict, correctionhandling, normalize_spaces, hidden, trim_spaces)
+        else:
+            s = previousdelimiter
+            count = self.count(Cell) #needed for edge case with all empty cells
+            if count > 1:
+                s += Cell.TEXTDELIMITER * (count - 1)
+            return s
 
 
 class Table(AbstractStructureElement):
