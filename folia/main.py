@@ -6896,7 +6896,11 @@ class Row(AbstractStructureElement):
         if self.hastext(cls, strict, correctionhandling, hidden):
             return super(AbstractStructureElement, self).text(cls,retaintokenisation, previousdelimiter,strict, correctionhandling, normalize_spaces, hidden, trim_spaces)
         else:
-            return previousdelimiter #force output of previous delimiter, needed for empty cells
+            s = previousdelimiter
+            count = self.count(Cell) #needed for edge case with all empty cells
+            if count > 1:
+                s += Cell.TEXTDELIMITER * (count - 1)
+            return s
 
 
 class TableHead(AbstractStructureElement):

@@ -1163,7 +1163,7 @@ class Test02Sanity(unittest.TestCase):
         self.assertEqual( table[1].text(), "left 2 | " )
         self.assertEqual( len(table[2]), 2) #two cells
         self.assertTrue( isinstance(table[2][0], folia.Cell))
-        self.assertEqual( table[2].text(), " | | " )
+        self.assertEqual( table[2].text(), " | " )
 
 
     def test043_string(self):
