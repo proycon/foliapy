@@ -483,9 +483,10 @@ def parsetime(s):
         raise ValueError("Invalid timestamp, must be in HH:MM:SS.mmm format: " + s)
 
 
-
 def norm_spaces(s):
-    r"""Normalize spaces, splits on all kinds of whitespace and rejoins"""
+    r"""Normalize spaces, splits on all kinds of whitespace and rejoins. Also removes control characters"""
+    #remove control characters
+    s = "".join(c for c in s if unicodedata.category(c)[0]!="C" or c in ('\n','\t'))
     return " ".join(( x for x in re.split(r"\s+",s) if x))
 
 def is_space(c):
