@@ -884,7 +884,7 @@ class AbstractElement:
                     if doc and doc.autodeclare:
                         self.annotator2processor(kwargs['annotator'], kwargs.get('annotatortype', AnnotatorType.AUTO))
                     else:
-                        raise DeclarationError("Autodeclarations are disabled but an annotator (" + str(kwargs['annotator']) + ") was specified that differs from the one in the declared processor for this annoation type: " + repr(self))
+                        raise DeclarationError("Autodeclarations are disabled but an annotator (" + str(kwargs['annotator']) + ") was specified that differs from the one in the declared processor for this annotation type: " + repr(self))
                 del kwargs['annotator']
             if 'annotatortype' in kwargs:
                 del kwargs['annotatortype']
