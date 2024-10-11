@@ -6331,6 +6331,9 @@ class WordReference(AbstractElement):
             if doc.debug >= 1: print("[FoLiA DEBUG] ...Unresolvable!",file=stderr)
             if doc.checkreferences:
                 raise InvalidReference(id)
+            elif doc.checkreferences and doc.fixinvalidreferences:
+                print(f"[FoLiA WARNING] Dropping invalid reference (wref) to {id}!",file=stderr)
+                return None
             else:
                 return WordReference(doc, id=id)
 
@@ -7288,8 +7291,7 @@ class Document(object):
             mode: The mode for loading a document, is either ``folia.Mode.MEMORY``,  in which the entire FoLiA Document will be loaded into memory. This is the default mode and the only mode in which documents can be manipulated and saved againor ``folia.Mode.XPATH``, in which the full XML tree will still be loaded into memory, but conversion to FoLiA classes occurs only when queried. This mode can be used when the full power of XPath is required.
             checkreferences (bool): Check whether references are valid upon loading (default: True)
             fixunassignedprocessor (bool): If set, fixes invalid FoLiA that does not explicitly assign a processor to an annotation when multiple processors are possible (and there is therefore no default). The last processor will be used in this case. (default: False)
-            fixinvalidereferences (bool): Do not serialise an invalid reference, remove the reference and output a comment instead. (default: False)
-        """
+            fixinvalidreferences (bool): Do not serialise an invalid reference, remove the reference and output a comment instead. If checkreferences is set, this will apply at parse time and output warnings to standard error output instead (default: False)"""
 
 
         self.version = kwargs.get('version', FOLIAVERSION)
